@@ -7,6 +7,7 @@ export const NAV_PERMISSIONS: Record<string, string> = {
     'treasury.funds': 'fund-requests.view',
     'treasury.transactions': 'transactions.view',
     clients: 'clients.view',
+    vendors: 'vendors.view',
     'settings.theme': 'theme.view',
     'settings.categories': 'categories.view',
     'settings.roles': 'roles.view',

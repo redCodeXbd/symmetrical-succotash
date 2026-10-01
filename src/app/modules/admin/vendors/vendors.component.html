@@ -1,0 +1,75 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div class="text-secondary text-md">Vendors</div>
+                <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Vendors</h1>
+                <div class="text-secondary mt-0.5 text-lg">Suppliers and service providers: orders, invoices, payments and portal access.</div>
+            </div>
+            <div class="flex flex-wrap items-center gap-4">
+                <treasury-user-switch></treasury-user-switch>
+                @if (access.can('vendors.add')) {
+                    <treasury-add-button label="New vendor" (pressed)="formOpen.set(true)"></treasury-add-button>
+                }
+            </div>
+        </div>
+
+        <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            @for (t of types; track t.id) {
+                <div class="stat-tile cursor-pointer" style="--tile: var(--fuse-primary-rgb)" role="button" tabindex="0" [attr.aria-pressed]="type() === t.id" (click)="type.set(type() === t.id ? 'all' : t.id)" (keydown.enter)="type.set(type() === t.id ? 'all' : t.id)">
+                    <div class="stat-head"><span class="stat-label">{{ t.label }}</span></div>
+                    <div class="stat-value">{{ countOf(t.id) }}</div>
+                    <div class="stat-sub">{{ t.description }}</div>
+                </div>
+            }
+        </div>
+
+        <div class="mt-6 rounded-2xl bg-card shadow">
+            <div class="flex flex-wrap items-center gap-3 border-b p-4">
+                <input type="search" class="h-11 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" placeholder="Search by name, contact, city or ID..." aria-label="Search vendors" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+                <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Type" [ngModel]="type()" (ngModelChange)="type.set($event)">
+                    <option value="all">All types</option>
+                    @for (t of types; track t.id) { <option [value]="t.id">{{ t.label }}</option> }
+                </select>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="app-table w-full">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="text-left font-medium">Vendor</th>
+                            <th scope="col" class="text-left font-medium">Type</th>
+                            <th scope="col" class="text-left font-medium">Contact</th>
+                            <th scope="col" class="text-right font-medium">Total invoiced</th>
+                            <th scope="col" class="text-right font-medium">Paid</th>
+                            <th scope="col" class="text-right font-medium">Due</th>
+                            <th scope="col" class="text-left font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (v of list(); track v.id) {
+                            <tr class="cursor-pointer" (click)="open(v.id)">
+                                <td>
+                                    <button type="button" class="text-left font-medium text-primary hover:underline" (click)="open(v.id); $event.stopPropagation()">{{ v.name }}</button>
+                                    <div class="text-secondary text-sm">{{ v.id }} · {{ v.city }}</div>
+                                </td>
+                                <td><span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="typeClasses[v.type]">{{ typeLabels[v.type] }}</span></td>
+                                <td>{{ v.contactPerson || '-' }}<div class="text-secondary text-sm">{{ v.email }}</div></td>
+                                <td class="text-right">{{ service.invoiced(v.id) | number: '1.0-0' }}</td>
+                                <td class="text-right">{{ service.paid(v.id) | number: '1.0-0' }}</td>
+                                <td class="text-right font-medium">{{ service.due(v.id) | number: '1.0-0' }}</td>
+                                <td><span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="v.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'">{{ v.status === 'active' ? 'Active' : 'Inactive' }}</span></td>
+                            </tr>
+                        } @empty {
+                            <tr><td colspan="7" class="text-secondary py-10 text-center">{{ service.vendors().length === 0 ? 'No vendor is linked to your login yet.' : 'No vendors match.' }}</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-secondary border-t px-4 py-3 text-sm">{{ list().length }} {{ list().length === 1 ? 'vendor' : 'vendors' }} · amounts in BDT</div>
+        </div>
+    </div>
+</div>
+
+@if (formOpen()) {
+    <vendors-form (saved)="saved($event)" (cancelled)="formOpen.set(false)"></vendors-form>
+}

@@ -106,6 +106,22 @@ export const FEATURES: FeatureDef[] = [
         ],
     },
     {
+        id: 'vendors',
+        title: 'Vendors',
+        permissions: [
+            { key: 'view', label: 'View', description: "Open Vendors. Without \"View all\", only the user's own vendor is shown" },
+            { key: 'view_all', label: 'View all', description: 'See every vendor, order, invoice and payment' },
+            { key: 'add', label: 'Add', description: 'Create vendors' },
+            { key: 'edit', label: 'Edit', description: 'Edit vendors and their product lists' },
+            { key: 'delete', label: 'Delete', description: 'Delete vendors' },
+            { key: 'assign_user', label: 'Assign user', description: 'Give a user login access to a vendor' },
+            { key: 'create_po', label: 'Create purchase orders', description: 'Send purchase orders to product vendors' },
+            { key: 'approve_invoice', label: 'Approve invoices', description: 'Approve or reject vendor invoices and answer due payment requests' },
+            { key: 'pay', label: 'Record payments', description: 'Record payments made to vendors' },
+            { key: 'submit', label: 'Submit', description: 'Submit invoices and due payment requests, and keep own product list (vendor side)' },
+        ],
+    },
+    {
         id: 'notifications',
         title: 'Notifications',
         permissions: [
@@ -134,6 +150,8 @@ export interface AppUser {
     roleIds: string[];
     /** Set for a client user: they only see this client's projects and documents. */
     clientId?: string | null;
+    /** Set for a vendor user: they only see this vendor's orders, invoices and payments. */
+    vendorId?: string | null;
 }
 
 /**
