@@ -45,11 +45,75 @@
     <body>
         <!-- Splash screen -->
         <fuse-splash-screen>
-            <img src="images/logo/encore-logo.png" alt="Encore" style="width: 160px; height: auto" />
-            <div class="spinner">
-                <div class="bounce1"></div>
-                <div class="bounce2"></div>
-                <div class="bounce3"></div>
+            <div class="sp-stars"></div>
+            <div class="sp-stars sp-stars-2"></div>
+
+            <!-- Planets rolling around the page -->
+            <div class="sp-orbit sp-orbit-1"><span class="sp-planet sp-sun"></span></div>
+            <div class="sp-orbit sp-orbit-2"><span class="sp-planet sp-jupiter"></span></div>
+            <div class="sp-orbit sp-orbit-3">
+                <span class="sp-planet sp-saturn"><i></i></span>
+            </div>
+            <div class="sp-orbit sp-orbit-4">
+                <span class="sp-planet sp-earth"></span>
+                <span class="sp-moon-orbit"><span class="sp-moon"></span></span>
+            </div>
+            <div class="sp-orbit sp-orbit-5"><span class="sp-planet sp-mars"></span></div>
+
+            <!-- Gears -->
+            <div class="sp-gears" aria-hidden="true">
+                <svg class="sp-gear sp-g1" viewBox="-60 -60 120 120" width="150" height="150" aria-hidden="true">
+<circle r="44" fill="none" stroke="#2f9a2b" stroke-width="12" stroke-dasharray="11.52 11.52"/>
+<circle r="38" fill="#2f9a2b"/>
+<circle r="23.6" fill="#0b1220"/>
+<circle r="6.8" fill="#2f9a2b"/>
+<g stroke="#2f9a2b" stroke-width="5"><line x1="-23.6" x2="23.6"/><line y1="-23.6" y2="23.6"/></g>
+</svg>
+                <svg class="sp-gear sp-g2" viewBox="-60 -60 120 120" width="96" height="96" aria-hidden="true">
+<circle r="44" fill="none" stroke="#1E96F7" stroke-width="12" stroke-dasharray="15.36 15.36"/>
+<circle r="38" fill="#1E96F7"/>
+<circle r="23.6" fill="#0b1220"/>
+<circle r="6.8" fill="#1E96F7"/>
+<g stroke="#1E96F7" stroke-width="5"><line x1="-23.6" x2="23.6"/><line y1="-23.6" y2="23.6"/></g>
+</svg>
+                <svg class="sp-gear sp-g3" viewBox="-60 -60 120 120" width="120" height="120" aria-hidden="true">
+<circle r="44" fill="none" stroke="#475569" stroke-width="12" stroke-dasharray="13.82 13.82"/>
+<circle r="38" fill="#475569"/>
+<circle r="23.6" fill="#0b1220"/>
+<circle r="6.8" fill="#475569"/>
+<g stroke="#475569" stroke-width="5"><line x1="-23.6" x2="23.6"/><line y1="-23.6" y2="23.6"/></g>
+</svg>
+                <svg class="sp-gear sp-g4" viewBox="-60 -60 120 120" width="70" height="70" aria-hidden="true">
+<circle r="44" fill="none" stroke="#2f9a2b" stroke-width="12" stroke-dasharray="17.28 17.28"/>
+<circle r="38" fill="#2f9a2b"/>
+<circle r="23.6" fill="#0b1220"/>
+<circle r="6.8" fill="#2f9a2b"/>
+<g stroke="#2f9a2b" stroke-width="5"><line x1="-23.6" x2="23.6"/><line y1="-23.6" y2="23.6"/></g>
+</svg>
+            </div>
+
+            <div class="sp-center">
+                <img class="sp-logo" src="images/logo/encore-logo.png" alt="Encore" />
+                <!-- Rocket under the logo, firing up -->
+                <svg class="sp-rocket" viewBox="0 0 80 150" width="80" height="150" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="spBody" x1="0" x2="1"><stop offset="0" stop-color="#cbd5e1"/><stop offset=".5" stop-color="#fff"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+                        <linearGradient id="spFlame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7ae"/><stop offset=".4" stop-color="#ffb020"/><stop offset="1" stop-color="#ff3d00" stop-opacity="0"/></linearGradient>
+                    </defs>
+                    <g class="sp-flame">
+                        <path d="M28 88 Q40 150 52 88 Z" fill="url(#spFlame)"/>
+                        <path d="M34 88 Q40 128 46 88 Z" fill="#fff" opacity=".85"/>
+                    </g>
+                    <path d="M40 4 C58 22 60 52 56 84 H24 C20 52 22 22 40 4 Z" fill="url(#spBody)"/>
+                    <path d="M24 60 L8 88 L26 84 Z M56 60 L72 88 L54 84 Z" fill="#2f9a2b"/>
+                    <path d="M33 84 H47 L44 92 H36 Z" fill="#475569"/>
+                    <circle cx="40" cy="40" r="8.5" fill="#0b1220" stroke="#1E96F7" stroke-width="3"/>
+                    <circle cx="37.5" cy="37.5" r="2.5" fill="#7dd3fc"/>
+                    <path d="M40 4 C46 10 50 16 52 22 H28 C30 16 34 10 40 4 Z" fill="#2f9a2b"/>
+                </svg>
+                <span class="sp-spark sp-spark-1"></span><span class="sp-spark sp-spark-2"></span><span class="sp-spark sp-spark-3"></span>
+                <div class="sp-bar" role="progressbar" aria-label="Loading"><span></span></div>
+                <div class="sp-text">Launching Encore<span>.</span><span>.</span><span>.</span></div>
             </div>
         </fuse-splash-screen>
 
