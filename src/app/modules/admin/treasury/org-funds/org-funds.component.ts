@@ -1,10 +1,12 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { DateTime } from 'luxon';
 import { FundsService } from '../funds/funds.service';
+import { AddFundComponent } from './add-fund/add-fund.component';
 import { FundDetailComponent } from './fund-detail/fund-detail.component';
 import { OrgFundsService } from './org-funds.service';
 import {
@@ -29,7 +31,7 @@ export interface Alert {
     templateUrl: './org-funds.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [DatePipe, DecimalPipe, FormsModule, MatIconModule, NgApexchartsModule, FundDetailComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatIconModule, NgApexchartsModule, FundDetailComponent, AddFundComponent],
 })
 export class OrgFundsComponent {
     readonly statusLabels = STATUS_LABELS;
@@ -43,6 +45,8 @@ export class OrgFundsComponent {
     department = signal('all');
     currency = signal('BDT');
     type = signal('all');
+    category = signal('all');
+    addOpen = signal(false);
     trendMode = signal<TrendMode>('total');
     selectedId = signal<string | null>(null);
 
@@ -62,7 +66,8 @@ export class OrgFundsComponent {
                     (this.company() === 'all' || f.company === this.company()) &&
                     (this.branch() === 'all' || f.branch === this.branch()) &&
                     (this.department() === 'all' || f.department === this.department()) &&
-                    (this.type() === 'all' || f.type === this.type())
+                    (this.type() === 'all' || f.type === this.type()) &&
+                    (this.category() === 'all' || f.category === this.category())
             )
     );
     activeFunds = computed(() => this.funds().filter((f) => f.active));
@@ -81,6 +86,19 @@ export class OrgFundsComponent {
                 .filter((o) => !o.paid && this.fundIds().has(o.fundId))
                 .map((o) => o.amount)
         )
+    );
+
+    /** Balances grouped by category, for the selected filters. */
+    byCategory = computed(() =>
+        this.org
+            .categories()
+            .map((name) => {
+                const funds = this.activeFunds().filter((f) => f.category === name);
+                const current = this._sum(funds.map((f) => f.balance));
+                const reserved = this._sum(funds.map((f) => f.reserved));
+                return { name, count: funds.length, current, available: current - reserved };
+            })
+            .filter((c) => c.count > 0)
     );
 
     alerts = computed<Alert[]>(() => {
@@ -168,6 +186,18 @@ export class OrgFundsComponent {
     ) {}
 
     fmtAxis = (n: number): string => this._n(n);
+
+    onFundAdded(fund: OrgFund): void {
+        this.addOpen.set(false);
+        // Show the new fund even if the current filters would hide it.
+        this.currency.set(fund.currency);
+        this.company.set('all');
+        this.branch.set('all');
+        this.department.set('all');
+        this.type.set('all');
+        this.category.set('all');
+        this.selectedId.set(fund.id);
+    }
 
     cardFmt(n: number): string {
         return this._n(n);

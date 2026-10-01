@@ -1,9 +1,11 @@
 import { Injectable, signal } from '@angular/core';
 import { DateTime } from 'luxon';
 import {
+    DEFAULT_CATEGORIES,
     ExpectedIncoming,
     FundMovement,
     FundStatus,
+    NewFundInput,
     OrgFund,
     ScheduledOutgoing,
 } from './org-funds.types';
@@ -18,20 +20,22 @@ const TRADING = 'Encore Trading Ltd.';
 @Injectable({ providedIn: 'root' })
 export class OrgFundsService {
     private _funds = signal<OrgFund[]>([
-        { id: 'F-01', name: 'Head Office Cash Fund', company: ENCORE, branch: 'Head Office', department: 'Accounts', type: 'Cash', currency: 'BDT', balance: 150000, reserved: 0, minBalance: 50000, active: true },
-        { id: 'F-02', name: 'Operating Bank Fund', company: ENCORE, branch: 'Head Office', department: 'Accounts', type: 'Bank', currency: 'BDT', balance: 800000, reserved: 50000, minBalance: 200000, active: true },
-        { id: 'F-03', name: 'Project Fund', company: ENCORE, branch: 'Head Office', department: 'Operations', type: 'Project', currency: 'BDT', balance: 300000, reserved: 80000, minBalance: 100000, active: true },
-        { id: 'F-04', name: 'Petty Cash - Dhaka Site', company: ENCORE, branch: 'Dhaka Site', department: 'Operations', type: 'Petty cash', currency: 'BDT', balance: 18000, reserved: 0, minBalance: 20000, active: true },
-        { id: 'F-05', name: 'USD Import Account', company: ENCORE, branch: 'Head Office', department: 'Accounts', type: 'Bank', currency: 'USD', balance: 12500, reserved: 2000, minBalance: 3000, active: true },
-        { id: 'F-06', name: 'Trading Operating Fund', company: TRADING, branch: 'Head Office', department: 'Accounts', type: 'Bank', currency: 'BDT', balance: 420000, reserved: 0, minBalance: 100000, active: true },
-        { id: 'F-07', name: 'Trading Cash Fund', company: TRADING, branch: 'Head Office', department: 'Sales', type: 'Cash', currency: 'BDT', balance: 65000, reserved: 0, minBalance: 30000, active: true },
-        { id: 'F-08', name: 'Legacy Site Fund', company: ENCORE, branch: 'Dhaka Site', department: 'Operations', type: 'Project', currency: 'BDT', balance: 0, reserved: 0, minBalance: 0, active: false },
+        { id: 'F-01', name: 'Head Office Cash Fund', company: ENCORE, branch: 'Head Office', department: 'Accounts', category: 'Operations', type: 'Cash', currency: 'BDT', balance: 150000, reserved: 0, minBalance: 50000, active: true },
+        { id: 'F-02', name: 'Operating Bank Fund', company: ENCORE, branch: 'Head Office', department: 'Accounts', category: 'Operations', type: 'Bank', currency: 'BDT', balance: 800000, reserved: 50000, minBalance: 200000, active: true },
+        { id: 'F-03', name: 'Project Fund', company: ENCORE, branch: 'Head Office', department: 'Operations', category: 'Project', type: 'Project', currency: 'BDT', balance: 300000, reserved: 80000, minBalance: 100000, active: true },
+        { id: 'F-04', name: 'Petty Cash - Dhaka Site', company: ENCORE, branch: 'Dhaka Site', department: 'Operations', category: 'Petty cash', type: 'Petty cash', currency: 'BDT', balance: 18000, reserved: 0, minBalance: 20000, active: true },
+        { id: 'F-05', name: 'USD Import Account', company: ENCORE, branch: 'Head Office', department: 'Accounts', category: 'Procurement', type: 'Bank', currency: 'USD', balance: 12500, reserved: 2000, minBalance: 3000, active: true },
+        { id: 'F-06', name: 'Trading Operating Fund', company: TRADING, branch: 'Head Office', department: 'Accounts', category: 'Operations', type: 'Bank', currency: 'BDT', balance: 420000, reserved: 0, minBalance: 100000, active: true },
+        { id: 'F-07', name: 'Trading Cash Fund', company: TRADING, branch: 'Head Office', department: 'Sales', category: 'Petty cash', type: 'Cash', currency: 'BDT', balance: 65000, reserved: 0, minBalance: 30000, active: true },
+        { id: 'F-08', name: 'Legacy Site Fund', company: ENCORE, branch: 'Dhaka Site', department: 'Operations', category: 'Project', type: 'Project', currency: 'BDT', balance: 0, reserved: 0, minBalance: 0, active: false },
     ]);
+    private _categories = signal<string[]>([...DEFAULT_CATEGORIES]);
     private _movements = signal<FundMovement[]>(this._seedMovements());
     private _incoming = signal<ExpectedIncoming[]>(this._seedIncoming());
     private _outgoing = signal<ScheduledOutgoing[]>(this._seedOutgoing());
 
     readonly funds = this._funds.asReadonly();
+    readonly categories = this._categories.asReadonly();
     readonly movements = this._movements.asReadonly();
     readonly expectedIncoming = this._incoming.asReadonly();
     readonly scheduledOutgoing = this._outgoing.asReadonly();
@@ -45,6 +49,52 @@ export class OrgFundsService {
             return 'inactive';
         }
         return this.available(fund) < fund.minBalance ? 'low' : 'healthy';
+    }
+
+    addCategory(name: string): void {
+        const clean = name.trim();
+        if (clean && !this._categories().some((c) => c.toLowerCase() === clean.toLowerCase())) {
+            this._categories.update((list) => [...list, clean]);
+        }
+    }
+
+    /** Creates a fund. A new category name is added to the category list. */
+    addFund(input: NewFundInput, by: string): OrgFund {
+        this.addCategory(input.category);
+        const category = this._categories().find((c) => c.toLowerCase() === input.category.trim().toLowerCase());
+        const max = this._funds().reduce((m, f) => Math.max(m, Number(f.id.slice(2)) || 0), 0);
+        const fund: OrgFund = {
+            id: `F-${String(max + 1).padStart(2, '0')}`,
+            name: input.name.trim(),
+            company: input.company,
+            branch: input.branch.trim(),
+            department: input.department.trim(),
+            category,
+            type: input.type,
+            currency: input.currency,
+            balance: input.openingBalance,
+            reserved: 0,
+            minBalance: input.minBalance,
+            active: true,
+        };
+        this._funds.update((list) => [...list, fund]);
+        if (fund.balance > 0) {
+            this._movements.update((list) => [
+                {
+                    id: `M-${String(list.length + 1).padStart(2, '0')}`,
+                    fundId: fund.id,
+                    date: DateTime.now().toISO(),
+                    type: 'deposit',
+                    direction: 'in',
+                    amount: fund.balance,
+                    reference: 'OPENING',
+                    description: 'Opening balance',
+                    by,
+                },
+                ...list,
+            ]);
+        }
+        return fund;
     }
 
     /** Records a disbursement made from the Funds page against a source fund. */

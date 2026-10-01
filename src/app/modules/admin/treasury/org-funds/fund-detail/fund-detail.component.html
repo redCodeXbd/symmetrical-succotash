@@ -1,4 +1,4 @@
-<treasury-slide-over [heading]="fund.name" [subheading]="fund.company + ' · ' + fund.type + ' fund'" (closed)="closed.emit()">
+<treasury-slide-over [heading]="fund.name" [subheading]="fund.company + ' · ' + fund.category" (closed)="closed.emit()">
     <div class="flex items-center gap-3">
         <span class="rounded-full px-3 py-1 text-sm font-medium" [class]="statusClasses[org.status(fund)]">
             {{ statusLabels[org.status(fund)] }}
@@ -30,6 +30,7 @@
             <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Expected incoming</dt><dd>{{ fund.currency }} {{ incomingTotal | number: '1.0-0' }}</dd></div>
             <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Scheduled outgoing</dt><dd>{{ fund.currency }} {{ outgoingTotal | number: '1.0-0' }}</dd></div>
             <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Minimum balance</dt><dd>{{ fund.currency }} {{ fund.minBalance | number: '1.0-0' }}</dd></div>
+            <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Category</dt><dd>{{ fund.category }}</dd></div>
             <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Branch</dt><dd>{{ fund.branch }}</dd></div>
             <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Department</dt><dd>{{ fund.department }}</dd></div>
         </dl>

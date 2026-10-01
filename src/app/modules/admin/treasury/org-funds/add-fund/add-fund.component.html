@@ -1,0 +1,102 @@
+<treasury-slide-over
+    heading="Add fund"
+    subheading="Create a fund and place it in a category. Payments are given from a category."
+    (closed)="closed.emit()"
+>
+    <form id="add-fund-form" class="flex flex-col" [formGroup]="form" (ngSubmit)="submit()">
+        <mat-form-field class="w-full">
+            <mat-label>Fund name</mat-label>
+            <input matInput formControlName="name" />
+            <mat-error>Fund name is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+            <mat-label>Category</mat-label>
+            <mat-select formControlName="category">
+                @for (c of org.categories(); track c) {
+                    <mat-option [value]="c">{{ c }}</mat-option>
+                }
+                <mat-option [value]="newCategory">+ New category</mat-option>
+            </mat-select>
+            <mat-error>Choose a category</mat-error>
+        </mat-form-field>
+        @if (creatingCategory) {
+            <mat-form-field class="w-full">
+                <mat-label>New category name</mat-label>
+                <input matInput formControlName="newCategoryName" />
+                <mat-error>Enter a category name</mat-error>
+            </mat-form-field>
+        }
+
+        <mat-form-field class="w-full">
+            <mat-label>Company</mat-label>
+            <mat-select formControlName="company">
+                @for (c of companies; track c) {
+                    <mat-option [value]="c">{{ c }}</mat-option>
+                }
+            </mat-select>
+            <mat-error>Choose a company</mat-error>
+        </mat-form-field>
+
+        <div class="grid grid-cols-2 gap-4">
+            <mat-form-field>
+                <mat-label>Branch</mat-label>
+                <input matInput formControlName="branch" list="add-fund-branches" />
+                <datalist id="add-fund-branches">
+                    @for (b of branches; track b) {
+                        <option [value]="b"></option>
+                    }
+                </datalist>
+                <mat-error>Required</mat-error>
+            </mat-form-field>
+            <mat-form-field>
+                <mat-label>Department</mat-label>
+                <input matInput formControlName="department" list="add-fund-departments" />
+                <datalist id="add-fund-departments">
+                    @for (d of departments; track d) {
+                        <option [value]="d"></option>
+                    }
+                </datalist>
+                <mat-error>Required</mat-error>
+            </mat-form-field>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <mat-form-field>
+                <mat-label>Fund type</mat-label>
+                <mat-select formControlName="type">
+                    @for (t of types; track t) {
+                        <mat-option [value]="t">{{ t }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+            <mat-form-field>
+                <mat-label>Currency</mat-label>
+                <mat-select formControlName="currency">
+                    @for (c of currencies; track c) {
+                        <mat-option [value]="c">{{ c }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <mat-form-field>
+                <mat-label>Opening balance</mat-label>
+                <input matInput type="number" min="0" step="0.01" formControlName="openingBalance" />
+                <mat-error>Enter zero or more</mat-error>
+            </mat-form-field>
+            <mat-form-field>
+                <mat-label>Minimum balance</mat-label>
+                <input matInput type="number" min="0" step="0.01" formControlName="minBalance" />
+                <mat-hint>Low-balance alert below this</mat-hint>
+                <mat-error>Enter zero or more</mat-error>
+            </mat-form-field>
+        </div>
+    </form>
+
+    <ng-container footer>
+        <button mat-stroked-button type="button" (click)="closed.emit()">Cancel</button>
+        <button mat-flat-button color="primary" type="submit" form="add-fund-form">Add fund</button>
+    </ng-container>
+</treasury-slide-over>

@@ -47,7 +47,7 @@ export class FundsService {
         this._org
             .funds()
             .filter((f) => f.active && f.currency === CURRENCY)
-            .map((f) => ({ id: f.id, name: f.name, currency: f.currency, balance: this._org.available(f) }))
+            .map((f) => ({ id: f.id, name: f.name, category: f.category, currency: f.currency, balance: this._org.available(f) }))
     );
     readonly requestById = computed(
         () => new Map(this._requests().map((r) => [r.id, r]))
@@ -149,8 +149,11 @@ export class FundsService {
         if (!request || !['approved', 'partially_paid'].includes(request.status)) {
             return 'Payments can only be recorded against approved requests.';
         }
-        if (!fund) {
-            return 'Select a source fund.';
+        if (!input.category) {
+            return 'Select a fund category.';
+        }
+        if (!fund || fund.category !== input.category) {
+            return 'Select a source fund from the chosen category.';
         }
         if (!(input.amount > 0)) {
             return 'Enter a payment amount above zero.';

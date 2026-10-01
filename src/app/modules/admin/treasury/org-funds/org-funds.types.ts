@@ -8,6 +8,8 @@ export interface OrgFund {
     company: string;
     branch: string;
     department: string;
+    /** Spending category. Payments on the Funds page are given from a fund in a chosen category. */
+    category: string;
     type: FundType;
     currency: string;
     balance: number;
@@ -67,3 +69,24 @@ export const MOVEMENT_LABELS: Record<MovementType, string> = {
     transfer_out: 'Transfer out',
     adjustment: 'Adjustment',
 };
+
+export interface NewFundInput {
+    name: string;
+    category: string;
+    company: string;
+    branch: string;
+    department: string;
+    type: FundType;
+    currency: string;
+    openingBalance: number;
+    minBalance: number;
+}
+
+export const DEFAULT_CATEGORIES: string[] = [
+    'Operations',
+    'Project',
+    'Procurement',
+    'Payroll',
+    'Travel & Transport',
+    'Petty cash',
+];
