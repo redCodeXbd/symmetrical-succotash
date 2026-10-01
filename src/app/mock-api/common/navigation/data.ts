@@ -74,6 +74,20 @@ export const defaultNavigation: FuseNavigationItem[] = [
         type : 'basic',
         icon : 'heroicons_outline:truck',
         link : '/vendors'
+    },
+    {
+        id   : 'projects',
+        title: 'Projects',
+        type : 'basic',
+        icon : 'heroicons_outline:briefcase',
+        link : '/projects'
+    },
+    {
+        id   : 'store',
+        title: 'Store',
+        type : 'basic',
+        icon : 'heroicons_outline:archive-box',
+        link : '/store'
     }
 ];
 export const compactNavigation: FuseNavigationItem[] = [

@@ -1,0 +1,87 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div class="text-secondary text-md">Projects</div>
+                <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Projects</h1>
+                <div class="text-secondary mt-0.5 text-lg">Contracts, budgets, costing and profit, worked out from expenses, purchases and store issues.</div>
+            </div>
+            <div class="flex flex-wrap items-center gap-4">
+                <treasury-user-switch></treasury-user-switch>
+                @if (access.can('projects.add')) {
+                    <treasury-add-button label="New project" (pressed)="formOpen.set(true)"></treasury-add-button>
+                }
+            </div>
+        </div>
+
+        <div class="mt-8 grid grid-cols-2 gap-4" [class]="access.can('projects.view_cost') ? 'lg:grid-cols-4' : 'lg:grid-cols-3'">
+            <div class="stat-tile" style="--tile: var(--fuse-primary-rgb)"><div class="stat-head"><span class="stat-label">Active projects</span></div><div class="stat-value">{{ activeCount() }}</div><div class="stat-sub">of {{ service.projects().length }} projects</div></div>
+            <div class="stat-tile" style="--tile: var(--fuse-primary-rgb)"><div class="stat-head"><span class="stat-label">Contract value</span></div><div class="stat-value"><span class="stat-cur">BDT</span>{{ contractTotal() | number: '1.0-0' }}</div><div class="stat-sub">What clients pay</div></div>
+            <div class="stat-tile" style="--tile: var(--fuse-accent-rgb)"><div class="stat-head"><span class="stat-label">Budget</span></div><div class="stat-value"><span class="stat-cur">BDT</span>{{ budgetTotal() | number: '1.0-0' }}</div><div class="stat-sub">What we plan to spend</div></div>
+            @if (access.can('projects.view_cost')) {
+                <div class="stat-tile" style="--tile: var(--fuse-accent-rgb)"><div class="stat-head"><span class="stat-label">Profit to date</span></div><div class="stat-value"><span class="stat-cur">BDT</span>{{ profitTotal() | number: '1.0-0' }}</div><div class="stat-sub">Earned minus cost</div></div>
+            }
+        </div>
+
+        <div class="mt-6 rounded-2xl bg-card shadow">
+            <div class="flex flex-wrap items-center gap-3 border-b p-4">
+                <input type="search" class="h-11 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" placeholder="Search by name, client, manager or location..." aria-label="Search projects" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+                <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Status" [ngModel]="status()" (ngModelChange)="status.set($event)">
+                    <option value="all">All statuses</option>
+                    @for (s of statuses; track s) { <option [value]="s">{{ statusLabels[s] }}</option> }
+                </select>
+                <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Type" [ngModel]="type()" (ngModelChange)="type.set($event)">
+                    <option value="all">All types</option>
+                    @for (t of types; track t.id) { <option [value]="t.id">{{ t.label }}</option> }
+                </select>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="app-table w-full">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="text-left font-medium">Project</th>
+                            <th scope="col" class="text-left font-medium">Client</th>
+                            <th scope="col" class="text-left font-medium">Type</th>
+                            <th scope="col" class="text-left font-medium">Manager</th>
+                            <th scope="col" class="text-left font-medium">Status</th>
+                            <th scope="col" class="text-right font-medium">Contract</th>
+                            @if (access.can('projects.view_cost')) {
+                                <th scope="col" class="text-right font-medium">Cost</th>
+                                <th scope="col" class="text-right font-medium">Profit</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (p of list(); track p.id) {
+                            <tr class="cursor-pointer" (click)="open(p.id)">
+                                <td>
+                                    <button type="button" class="text-left font-medium text-primary hover:underline" (click)="open(p.id); $event.stopPropagation()">{{ p.name }}</button>
+                                    <div class="text-secondary text-sm">{{ p.id }} · {{ p.location || p.branch }}</div>
+                                </td>
+                                <td>{{ clientName(p.clientId) }}</td>
+                                <td>{{ typeLabels[p.type] }}</td>
+                                <td>{{ p.manager }}</td>
+                                <td>
+                                    <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="statusClasses[p.status]">{{ statusLabels[p.status] }}</span>
+                                    <div class="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-gray-200" role="progressbar" [attr.aria-valuenow]="p.progress" aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="p.name + ' progress'"><div class="h-full rounded-full bg-primary" [style.width.%]="p.progress"></div></div>
+                                </td>
+                                <td class="text-right">{{ p.contractValue | number: '1.0-0' }}</td>
+                                @if (access.can('projects.view_cost')) {
+                                    <td class="text-right">{{ service.costing(p.id).total | number: '1.0-0' }}</td>
+                                    <td class="text-right font-medium" [class]="service.costing(p.id).profitToDate < 0 ? 'text-red-600' : ''">{{ service.costing(p.id).profitToDate | number: '1.0-0' }}</td>
+                                }
+                            </tr>
+                        } @empty {
+                            <tr><td colspan="8" class="text-secondary py-10 text-center">{{ service.projects().length === 0 ? 'No projects are assigned to you yet.' : 'No projects match.' }}</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-secondary border-t px-4 py-3 text-sm">{{ list().length }} {{ list().length === 1 ? 'project' : 'projects' }} · amounts in BDT</div>
+        </div>
+    </div>
+</div>
+
+@if (formOpen()) {
+    <projects-form (saved)="saved($event)" (cancelled)="formOpen.set(false)"></projects-form>
+}

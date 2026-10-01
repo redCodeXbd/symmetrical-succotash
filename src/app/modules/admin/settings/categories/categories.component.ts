@@ -1,3 +1,4 @@
+import { StoreService } from '../../store/store.service';
 import { AccessService } from 'app/core/access/access.service';
 import { Component, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -40,9 +41,10 @@ export class CategoriesSettingsComponent {
         public categories: CategoryService,
         public access: AccessService,
         org: OrgFundsService,
-        funds: FundsService
+        funds: FundsService,
+        store: StoreService
     ) {
-        const [orgGroup, requestGroup] = CATEGORY_GROUPS;
+        const [orgGroup, requestGroup, storeGroup] = CATEGORY_GROUPS;
         this.sections = [
             {
                 group: orgGroup,
@@ -57,6 +59,13 @@ export class CategoriesSettingsComponent {
                 nounPlural: 'requests',
                 usage: (name) => funds.requests().filter((r) => r.category === name).length,
                 rename: (from, to) => funds.renameRequestCategory(from, to),
+            },
+            {
+                group: storeGroup,
+                noun: 'product',
+                nounPlural: 'products',
+                usage: (name) => store.categoryUsage(name),
+                rename: (from, to) => store.renameCategory(from, to),
             },
         ];
         for (const s of this.sections) {

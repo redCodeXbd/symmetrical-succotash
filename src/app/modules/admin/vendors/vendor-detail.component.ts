@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DateTime } from 'luxon';
 import { AccessService } from 'app/core/access/access.service';
+import { ProjectsService } from '../projects/projects.service';
 import { SlideOverComponent } from '../treasury/shared/slide-over/slide-over.component';
 import { UserSwitchComponent } from '../treasury/shared/user-switch/user-switch.component';
 import { VendorFormComponent } from './vendor-form.component';
@@ -59,6 +60,7 @@ export class VendorDetailComponent {
     poOpen = false;
     poLines = [this._blankLine()];
     poNote = '';
+    poProjectId = '';
     invoiceOpen = false;
     invoiceDraft = this._blankInvoice();
     paymentOpen = false;
@@ -71,6 +73,7 @@ export class VendorDetailComponent {
     constructor(
         public service: VendorsService,
         public access: AccessService,
+        public projects: ProjectsService,
         route: ActivatedRoute,
         private _router: Router
     ) {
@@ -173,12 +176,13 @@ export class VendorDetailComponent {
 
     createOrder(): void {
         const lines = this.poLines.map((l) => ({ name: l.name, qty: Number(l.qty), unit: l.unit, price: Number(l.price) || 0 }));
-        const error = this.service.addOrder(this.id, lines, this.poNote);
+        const error = this.service.addOrder(this.id, lines, this.poNote, this.poProjectId || null);
         this._report(error, 'Purchase order sent to the vendor.');
         if (!error) {
             this.poOpen = false;
             this.poLines = [this._blankLine()];
             this.poNote = '';
+            this.poProjectId = '';
         }
     }
 
@@ -225,6 +229,7 @@ export class VendorDetailComponent {
             note: d.note,
             image: d.image,
             imageName: d.imageName,
+            projectId: d.projectId || null,
         });
         this._report(error, 'Invoice submitted. It will be reviewed shortly.');
         if (!error) {
@@ -305,7 +310,7 @@ export class VendorDetailComponent {
     private _blankInvoice() {
         return {
             number: '', poId: '', date: DateTime.now().toISODate(), dueDate: DateTime.now().plus({ days: 30 }).toISODate(),
-            amount: null as number | null, note: '', image: null as string | null, imageName: null as string | null,
+            amount: null as number | null, note: '', image: null as string | null, imageName: null as string | null, projectId: '',
         };
     }
 

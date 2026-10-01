@@ -122,6 +122,31 @@ export const FEATURES: FeatureDef[] = [
         ],
     },
     {
+        id: 'projects',
+        title: 'Projects',
+        permissions: [
+            { key: 'view', label: 'View', description: "Open Projects. Without \"View all\", a client sees their own and a manager sees the ones they manage" },
+            { key: 'view_all', label: 'View all', description: 'See every project' },
+            { key: 'add', label: 'Add', description: 'Create projects' },
+            { key: 'edit', label: 'Edit', description: 'Edit projects, change progress and post updates' },
+            { key: 'delete', label: 'Delete', description: 'Delete projects without costs' },
+            { key: 'view_cost', label: 'View costing and profit', description: 'See budget use, costs and profit' },
+        ],
+    },
+    {
+        id: 'store',
+        title: 'Store',
+        permissions: [
+            { key: 'view', label: 'View', description: 'Open Store and see stock and the catalogue' },
+            { key: 'catalog', label: 'Manage catalogue', description: 'Add stores and products, edit product details' },
+            { key: 'receive', label: 'Receive stock', description: 'Receive items from expenses, vendor orders or by hand' },
+            { key: 'issue', label: 'Issue stock', description: 'Take items out for a project or office use' },
+            { key: 'transfer', label: 'Transfer', description: 'Move items between stores' },
+            { key: 'adjust', label: 'Adjust counts', description: 'Correct stock after a physical count' },
+            { key: 'cost', label: 'View cost', description: 'See unit costs and stock value' },
+        ],
+    },
+    {
         id: 'notifications',
         title: 'Notifications',
         permissions: [

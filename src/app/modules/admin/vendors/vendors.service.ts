@@ -108,6 +108,32 @@ export class VendorsService {
         return events.sort((a, b) => b.at.localeCompare(a.at));
     }
 
+    /** Every purchase order, whoever asks. Other features (store, projects) read these; they apply their own permissions. */
+    allOrders(): PurchaseOrder[] {
+        return this._orders();
+    }
+
+    /**
+     * Approved invoices that are a cost of the project, as cost lines. An invoice belongs to a project directly
+     * or through its purchase order. Orders whose goods went into a store (`stocked`) are skipped: that cost
+     * arrives when the stock is issued to the project.
+     */
+    projectInvoiceCosts(projectId: string, stocked: Set<string>): { date: string; source: 'purchase'; ref: string; label: string; amount: number }[] {
+        return this._invoices()
+            .filter((i) => {
+                const po = this._orders().find((o) => o.id === i.poId);
+                const forProject = i.projectId === projectId || (!i.projectId && po?.projectId === projectId);
+                return i.status === 'approved' && forProject && !(po && stocked.has(po.id));
+            })
+            .map((i) => ({
+                date: i.date,
+                source: 'purchase' as const,
+                ref: i.number,
+                label: `${this._vendors().find((v) => v.id === i.vendorId)?.name ?? i.vendorId} invoice`,
+                amount: i.amount,
+            }));
+    }
+
     // -----------------------------------------------------------------------------------------------------
     // @ Vendors
     // -----------------------------------------------------------------------------------------------------
@@ -186,7 +212,7 @@ export class VendorsService {
     // @ Purchase orders
     // -----------------------------------------------------------------------------------------------------
 
-    addOrder(vendorId: string, lines: PurchaseOrderLine[], note: string): string | null {
+    addOrder(vendorId: string, lines: PurchaseOrderLine[], note: string, projectId: string | null = null): string | null {
         if (!this._access.can('vendors.create_po')) {
             return 'You do not have permission to create purchase orders.';
         }
@@ -208,6 +234,7 @@ export class VendorsService {
             status: 'open',
             note: note.trim(),
             by: this._access.user().name,
+            projectId,
         };
         order.number = `PO-${DateTime.now().year}-${order.id.slice(3)}`;
         this._orders.update((list) => [order, ...list]);
@@ -232,7 +259,7 @@ export class VendorsService {
 
     submitInvoice(
         vendorId: string,
-        input: { number: string; poId: string | null; date: string; dueDate: string; amount: number; note: string; image: string | null; imageName: string | null }
+        input: { number: string; poId: string | null; date: string; dueDate: string; amount: number; note: string; image: string | null; imageName: string | null; projectId?: string | null }
     ): string | null {
         if (!this.canSubmitInvoice(vendorId)) {
             return 'You cannot submit invoices for this vendor.';
@@ -255,6 +282,7 @@ export class VendorsService {
             status: 'submitted',
             by: this._access.user().name,
             decisionNote: '',
+            projectId: this._access.can('vendors.edit') ? (input.projectId ?? null) : null,
         };
         this._invoices.update((list) => [invoice, ...list]);
         return null;
@@ -399,11 +427,11 @@ export class VendorsService {
     private _seedOrders(): PurchaseOrder[] {
         return [
             {
-                id: 'PO-7001', vendorId: 'V-1001', number: 'PO-2026-7001', date: this._daysAgo(30), status: 'received', note: 'Site cables and trays', by: 'Sara Khan',
+                id: 'PO-7001', vendorId: 'V-1001', number: 'PO-2026-7001', date: this._daysAgo(30), status: 'received', note: 'Site cables and trays', by: 'Sara Khan', projectId: 'P-2001',
                 lines: [{ name: 'GI cable tray 300 mm', qty: 40, unit: 'pcs', price: 4200 }, { name: 'Copper lug 120 sq mm', qty: 200, unit: 'pcs', price: 185 }], total: 40 * 4200 + 200 * 185,
             },
             {
-                id: 'PO-7002', vendorId: 'V-1001', number: 'PO-2026-7002', date: this._daysAgo(6), status: 'open', note: '', by: 'Sara Khan',
+                id: 'PO-7002', vendorId: 'V-1001', number: 'PO-2026-7002', date: this._daysAgo(6), status: 'open', note: '', by: 'Sara Khan', projectId: 'P-2001',
                 lines: [{ name: 'Panel enclosure 800x600', qty: 4, unit: 'pcs', price: 38500 }], total: 4 * 38500,
             },
         ];
@@ -412,6 +440,7 @@ export class VendorsService {
     private _seedInvoices(): VendorInvoice[] {
         const i = (id: string, vendorId: string, poId: string | null, number: string, days: number, amount: number, status: VendorInvoice['status'], by: string, note = ''): VendorInvoice => ({
             id, vendorId, poId, number, date: this._daysAgo(days), dueDate: this._daysAgo(days - 30), amount, status, note, image: null, imageName: null, by, decisionNote: '',
+            projectId: id === 'INV-9003' ? 'P-2001' : null,
         });
         return [
             i('INV-9001', 'V-1001', 'PO-7001', 'ST-2210', 26, 205000, 'approved', 'Jahid Hasan'),

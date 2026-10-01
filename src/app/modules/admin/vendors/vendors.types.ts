@@ -61,6 +61,8 @@ export interface PurchaseOrder {
     status: PoStatus;
     note: string;
     by: string;
+    /** The project this order is bought for, if any. */
+    projectId: string | null;
 }
 
 export type InvoiceStatus = 'submitted' | 'approved' | 'rejected';
@@ -80,6 +82,8 @@ export interface VendorInvoice {
     imageName: string | null;
     by: string;
     decisionNote: string;
+    /** The project this invoice is a cost of. Defaults to the project of its purchase order. */
+    projectId: string | null;
 }
 
 export interface VendorPayment {

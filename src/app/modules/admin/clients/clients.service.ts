@@ -1,14 +1,8 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { DateTime } from 'luxon';
 import { AccessService } from 'app/core/access/access.service';
-import {
-    Client,
-    ClientDocument,
-    ClientInput,
-    DocumentInput,
-    Project,
-    ProjectStatus,
-} from './clients.types';
+import { ProjectsService } from '../projects/projects.service';
+import { Client, ClientDocument, ClientInput, DocumentInput } from './clients.types';
 
 /**
  * In-memory store for Clients, their projects and documents. Replace the methods with API calls once
@@ -18,10 +12,12 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ClientsService {
     private _clients = signal<Client[]>(this._seedClients());
-    private _projects = signal<Project[]>(this._seedProjects());
     private _documents = signal<ClientDocument[]>(this._seedDocuments());
 
-    constructor(private _access: AccessService) {}
+    constructor(
+        private _access: AccessService,
+        private _projects: ProjectsService
+    ) {}
 
     /** Clients the acting user may open. */
     readonly clients = computed(() => {
@@ -33,15 +29,15 @@ export class ClientsService {
         return all.filter((c) => c.id === own);
     });
 
-    readonly projects = computed(() => this._visible(this._projects()));
     readonly documents = computed(() => this._visible(this._documents()));
 
     client(id: string): Client | null {
         return this.clients().find((c) => c.id === id) ?? null;
     }
 
-    projectsOf(clientId: string): Project[] {
-        return this.projects().filter((p) => p.clientId === clientId);
+    /** Projects of a client the acting user may see. They are kept in the Projects feature. */
+    projectsOf(clientId: string) {
+        return this._projects.projectsOf(clientId);
     }
 
     documentsOf(clientId: string): ClientDocument[] {
@@ -91,7 +87,7 @@ export class ClientsService {
         if (!this._access.can('clients.delete')) {
             return 'You do not have permission to delete clients.';
         }
-        if (this._projects().some((p) => p.clientId === id)) {
+        if (this._projects.projectsOf(id).length > 0) {
             return 'Delete or move this client\'s projects first.';
         }
         if (this._documents().some((d) => d.clientId === id)) {
@@ -99,50 +95,6 @@ export class ClientsService {
         }
         this.usersOf(id).forEach((u) => this._access.setUserClient(u.id, null));
         this._clients.update((list) => list.filter((c) => c.id !== id));
-        return null;
-    }
-
-    // -----------------------------------------------------------------------------------------------------
-    // @ Projects
-    // -----------------------------------------------------------------------------------------------------
-
-    addProject(clientId: string, input: Omit<Project, 'id' | 'clientId' | 'updates' | 'progress'>): string | null {
-        if (!this._access.can('clients.add')) {
-            return 'You do not have permission to add projects.';
-        }
-        if (!input.name.trim()) {
-            return 'Enter the project name.';
-        }
-        const project: Project = {
-            ...input,
-            name: input.name.trim(),
-            id: this._nextId('P-', this._projects().map((p) => p.id), 2001),
-            clientId,
-            progress: 0,
-            updates: [],
-        };
-        this._projects.update((list) => [project, ...list]);
-        return null;
-    }
-
-    setProjectStatus(id: string, status: ProjectStatus, progress: number): string | null {
-        if (!this._access.can('clients.edit')) {
-            return 'You do not have permission to change projects.';
-        }
-        const value = Math.min(100, Math.max(0, Math.round(progress)));
-        this._projects.update((list) => list.map((p) => (p.id === id ? { ...p, status, progress: status === 'delivered' ? 100 : value } : p)));
-        return null;
-    }
-
-    addUpdate(projectId: string, text: string): string | null {
-        if (!this._access.can('clients.edit')) {
-            return 'You do not have permission to post updates.';
-        }
-        if (!text.trim()) {
-            return 'Write the update first.';
-        }
-        const update = { id: `U-${Date.now()}`, at: DateTime.now().toISO(), by: this._access.user().name, text: text.trim() };
-        this._projects.update((list) => list.map((p) => (p.id === projectId ? { ...p, updates: [update, ...p.updates] } : p)));
         return null;
     }
 
@@ -253,36 +205,6 @@ export class ClientsService {
                 phone: '+880 1911-000333', address: 'Savar EPZ', city: 'Savar', country: 'Bangladesh',
                 taxId: 'BIN 000777888-0303', industry: 'Textile', website: '', status: 'inactive',
                 notes: 'On hold until next quarter.', createdAt: this._daysAgo(60),
-            },
-        ];
-    }
-
-    private _seedProjects(): Project[] {
-        const u = (id: string, days: number, by: string, text: string) => ({ id, at: this._daysAgo(days), by, text });
-        return [
-            {
-                id: 'P-2001', clientId: 'C-1001', name: 'Substation panel upgrade', workOrder: 'WO-004-26-100051', status: 'in_progress',
-                progress: 65, startDate: this._daysAgo(40), dueDate: this._daysAgo(-20), manager: 'Sara Khan',
-                updates: [
-                    u('U-3', 1, 'Sara Khan', 'Main panel installed. Cable termination starts tomorrow.'),
-                    u('U-2', 8, 'Sara Khan', 'Materials received at site and checked.'),
-                    u('U-1', 21, 'Brian Hughes', 'Site survey completed and design approved.'),
-                ],
-            },
-            {
-                id: 'P-2002', clientId: 'C-1001', name: 'Annual maintenance contract', workOrder: 'WO-003-26-100052', status: 'planning',
-                progress: 10, startDate: this._daysAgo(5), dueDate: this._daysAgo(-120), manager: 'Sara Khan',
-                updates: [u('U-4', 4, 'Sara Khan', 'Visit schedule shared for approval.')],
-            },
-            {
-                id: 'P-2003', clientId: 'C-1002', name: 'Generator installation', workOrder: 'WO-002-26-100053', status: 'in_progress',
-                progress: 40, startDate: this._daysAgo(25), dueDate: this._daysAgo(-35), manager: 'Brian Hughes',
-                updates: [u('U-5', 2, 'Brian Hughes', 'Foundation work finished. Generator delivery booked for next week.')],
-            },
-            {
-                id: 'P-2004', clientId: 'C-1002', name: 'Control room wiring', workOrder: '', status: 'delivered',
-                progress: 100, startDate: this._daysAgo(90), dueDate: this._daysAgo(30), manager: 'Brian Hughes',
-                updates: [u('U-6', 30, 'Brian Hughes', 'Handed over and signed off by the client.')],
             },
         ];
     }

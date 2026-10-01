@@ -72,11 +72,6 @@ export class ClientDetailComponent {
         )
     );
 
-    // Project forms
-    newProjectOpen = false;
-    projectDraft = this._blankProject();
-    updateText: Record<string, string> = {};
-
     // Document form
     docFormOpen = false;
     docDraft = this._blankDoc();
@@ -151,35 +146,6 @@ export class ClientDetailComponent {
             this._report(error, null);
         } else {
             this._router.navigate(['/clients']);
-        }
-    }
-
-    // -----------------------------------------------------------------------------------------------------
-    // @ Projects
-    // -----------------------------------------------------------------------------------------------------
-
-    addProject(): void {
-        const d = this.projectDraft;
-        const error = this.service.addProject(this._id(), {
-            name: d.name, workOrder: d.workOrder.trim(), status: d.status, manager: d.manager.trim(),
-            startDate: DateTime.fromISO(d.startDate).toISO(), dueDate: DateTime.fromISO(d.dueDate).toISO(),
-        });
-        this._report(error, 'Project added.');
-        if (!error) {
-            this.newProjectOpen = false;
-            this.projectDraft = this._blankProject();
-        }
-    }
-
-    changeStatus(p: Project, status: ProjectStatus, progress: number): void {
-        this._report(this.service.setProjectStatus(p.id, status, progress), 'Project updated.');
-    }
-
-    postUpdate(p: Project): void {
-        const error = this.service.addUpdate(p.id, this.updateText[p.id] ?? '');
-        this._report(error, 'Update posted. The client can see it now.');
-        if (!error) {
-            this.updateText[p.id] = '';
         }
     }
 
@@ -348,10 +314,6 @@ export class ClientDetailComponent {
 
     private _report(error: string | null, success: string | null): void {
         this.message.set(error ? { text: error, ok: false } : success ? { text: success, ok: true } : null);
-    }
-
-    private _blankProject() {
-        return { name: '', workOrder: '', status: 'planning' as ProjectStatus, manager: this.access.user().name, startDate: DateTime.now().toISODate(), dueDate: DateTime.now().plus({ days: 30 }).toISODate() };
     }
 
     private _blankDoc() {

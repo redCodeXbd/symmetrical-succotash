@@ -20,28 +20,7 @@ export interface Client {
 
 export type ClientInput = Omit<Client, 'id' | 'createdAt'>;
 
-export type ProjectStatus = 'planning' | 'in_progress' | 'on_hold' | 'delivered';
-
-export interface ProjectUpdate {
-    id: string;
-    at: string;
-    by: string;
-    text: string;
-}
-
-export interface Project {
-    id: string;
-    clientId: string;
-    name: string;
-    workOrder: string;
-    status: ProjectStatus;
-    /** 0 to 100. */
-    progress: number;
-    startDate: string;
-    dueDate: string;
-    manager: string;
-    updates: ProjectUpdate[];
-}
+export { Project, ProjectStatus, ProjectUpdate, PROJECT_STATUS_CLASSES, PROJECT_STATUS_LABELS } from '../projects/projects.types';
 
 export type DocumentType = 'requirement' | 'purchase_order' | 'work_order' | 'bill' | 'delivery_challan';
 
@@ -64,20 +43,6 @@ export interface ClientDocument {
 }
 
 export type DocumentInput = Omit<ClientDocument, 'id' | 'createdAt' | 'by' | 'from' | 'clientId'>;
-
-export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
-    planning: 'Planning',
-    in_progress: 'In progress',
-    on_hold: 'On hold',
-    delivered: 'Delivered',
-};
-
-export const PROJECT_STATUS_CLASSES: Record<ProjectStatus, string> = {
-    planning: 'bg-slate-200 text-slate-700',
-    in_progress: 'bg-blue-100 text-blue-800',
-    on_hold: 'bg-amber-100 text-amber-800',
-    delivered: 'bg-green-100 text-green-800',
-};
 
 export const DOCUMENT_TYPES: { id: DocumentType; label: string; plural: string; hasAmount: boolean }[] = [
     { id: 'requirement', label: 'Requirement', plural: 'Requirements', hasAmount: false },

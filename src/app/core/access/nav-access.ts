@@ -8,6 +8,8 @@ export const NAV_PERMISSIONS: Record<string, string> = {
     'treasury.transactions': 'transactions.view',
     clients: 'clients.view',
     vendors: 'vendors.view',
+    projects: 'projects.view',
+    store: 'store.view',
     'settings.theme': 'theme.view',
     'settings.categories': 'categories.view',
     'settings.roles': 'roles.view',

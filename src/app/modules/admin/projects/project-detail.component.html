@@ -1,0 +1,221 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        @if (!project()) {
+            <div class="rounded-2xl bg-card p-10 text-center shadow">
+                <div class="text-2xl font-semibold">Project not available</div>
+                <div class="text-secondary mt-2">It does not exist, or your login cannot open it.</div>
+                <a mat-flat-button color="primary" class="mt-6" routerLink="/projects">Back to projects</a>
+                <div class="mt-6 flex justify-center"><treasury-user-switch></treasury-user-switch></div>
+            </div>
+        } @else {
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="min-w-0">
+                    <div class="text-secondary text-md"><a routerLink="/projects" class="hover:underline">Projects</a> / {{ project()!.id }}</div>
+                    <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">{{ project()!.name }}</h1>
+                    <div class="mt-1 flex flex-wrap items-center gap-2 text-lg">
+                        <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="statusClasses[project()!.status]">{{ statusLabels[project()!.status] }}</span>
+                        <span class="rounded-full bg-primary/15 px-2.5 py-0.5 text-sm font-medium text-primary">{{ typeLabels[project()!.type] }}</span>
+                        <span class="text-secondary">{{ clientName(project()!.clientId) }}</span>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <treasury-user-switch></treasury-user-switch>
+                    @if (access.can('projects.edit')) {
+                        <button mat-stroked-button type="button" (click)="editing.set(true)">Edit project</button>
+                    }
+                    @if (access.can('projects.delete')) {
+                        @if (confirmDelete()) {
+                            <span class="text-sm">Delete this project?</span>
+                            <button mat-flat-button color="warn" type="button" (click)="deleteProject()">Delete</button>
+                            <button mat-stroked-button type="button" (click)="confirmDelete.set(false)">Cancel</button>
+                        } @else {
+                            <button mat-stroked-button color="warn" type="button" (click)="confirmDelete.set(true)">Delete</button>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="mt-5 flex items-center gap-3">
+                <div class="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-200" role="progressbar" [attr.aria-valuenow]="project()!.progress" aria-valuemin="0" aria-valuemax="100" aria-label="Project progress"><div class="h-full rounded-full bg-primary" [style.width.%]="project()!.progress"></div></div>
+                <span class="w-12 text-right font-medium">{{ project()!.progress }}%</span>
+            </div>
+
+            <div class="mt-6 rounded-2xl bg-card shadow">
+                <div class="flex overflow-x-auto border-b px-4" role="tablist">
+                    @for (t of tabs; track t.id) {
+                        <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="tab() === t.id ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="tab() === t.id" (click)="setTab(t.id)">{{ t.label }}</button>
+                    }
+                </div>
+
+                @if (message(); as m) {
+                    <div class="mx-6 mt-5 rounded-lg p-3 text-md" [class]="m.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'" [attr.role]="m.ok ? 'status' : 'alert'">{{ m.text }}</div>
+                }
+
+                <!-- ============ Overview ============ -->
+                @if (tab() === 'overview') {
+                    <div class="grid grid-cols-1 gap-8 p-6 lg:grid-cols-2">
+                        <dl class="divide-y">
+                            @for (row of [
+                                ['Client', clientName(project()!.clientId)],
+                                ['Project manager', project()!.manager],
+                                ['Company branch', project()!.branch],
+                                ['Location', project()!.location],
+                                ['Work order', project()!.workOrder],
+                                ['Start', (project()!.startDate | date: 'dd MMM y')],
+                                ['Due', (project()!.dueDate | date: 'dd MMM y')],
+                                ['Description', project()!.description]
+                            ]; track row[0]) {
+                                <div class="flex justify-between gap-6 py-3"><dt class="text-secondary">{{ row[0] }}</dt><dd class="text-right">{{ row[1] || '-' }}</dd></div>
+                            }
+                            <div class="flex justify-between gap-6 py-3">
+                                <dt class="text-secondary">Vendors</dt>
+                                <dd class="text-right">
+                                    @for (v of project()!.vendorIds; track v) { <div>{{ vendorName(v) }}</div> } @empty { - }
+                                </dd>
+                            </div>
+                        </dl>
+                        <div class="flex flex-col gap-4">
+                            <div class="rounded-xl border p-4">
+                                <div class="text-sm font-medium uppercase tracking-wide text-secondary">Money</div>
+                                <div class="mt-3 grid grid-cols-2 gap-3">
+                                    <div><div class="text-secondary text-sm">Contract value</div><div class="text-xl font-semibold">BDT {{ project()!.contractValue | number: '1.0-0' }}</div></div>
+                                    <div><div class="text-secondary text-sm">Budget</div><div class="text-xl font-semibold">BDT {{ project()!.budget | number: '1.0-0' }}</div></div>
+                                </div>
+                                <div class="mt-4 border-t pt-3 text-md">
+                                    @if (project()!.paymentTerm === 'advance') {
+                                        <div><strong>Advance</strong>: {{ project()!.advancePercent }}% = BDT {{ advanceDue | number: '1.0-0' }}</div>
+                                        <div class="text-secondary">Received BDT {{ project()!.advanceReceived | number: '1.0-0' }}{{ project()!.advanceReceived >= advanceDue ? ' (complete)' : ' (' + ((advanceDue - project()!.advanceReceived) | number: '1.0-0') + ' still to receive)' }}</div>
+                                        @if (access.can('projects.edit')) {
+                                            <div class="mt-2 flex gap-2">
+                                                <input type="number" min="0" class="h-10 w-44 rounded-lg border bg-transparent px-3 text-md" placeholder="Advance received" aria-label="Advance received" [(ngModel)]="advance" />
+                                                <button mat-stroked-button type="button" (click)="saveAdvance()">Save</button>
+                                            </div>
+                                        }
+                                    } @else {
+                                        <div><strong>Credit</strong>: client pays {{ project()!.creditDays }} days after delivery</div>
+                                    }
+                                </div>
+                            </div>
+                            @if (access.can('projects.edit')) {
+                                <div class="rounded-xl border p-4">
+                                    <div class="text-sm font-medium uppercase tracking-wide text-secondary">Progress</div>
+                                    <div class="mt-3 flex flex-wrap items-center gap-3">
+                                        <select class="h-10 rounded-lg border bg-transparent px-3 text-md" aria-label="Status" [ngModel]="project()!.status" (ngModelChange)="changeStatus($event, project()!.progress)">
+                                            @for (s of statuses; track s) { <option [value]="s">{{ statusLabels[s] }}</option> }
+                                        </select>
+                                        <input type="range" min="0" max="100" step="5" class="w-44" aria-label="Progress" [ngModel]="project()!.progress" (change)="changeStatus(project()!.status, +$any($event.target).value)" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- ============ Costing and profit ============ -->
+                @if (tab() === 'costing' && access.can('projects.view_cost')) {
+                    <div class="p-6">
+                        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                            <div class="stat-tile" style="--tile: var(--fuse-primary-rgb)"><div class="stat-head"><span class="stat-label">Cost to date</span></div><div class="stat-value"><span class="stat-cur">BDT</span>{{ costing().total | number: '1.0-0' }}</div><div class="stat-sub">{{ costing().budgetUsed }}% of budget</div></div>
+                            <div class="stat-tile" style="--tile: var(--fuse-primary-rgb)"><div class="stat-head"><span class="stat-label">Earned so far</span></div><div class="stat-value"><span class="stat-cur">BDT</span>{{ costing().earned | number: '1.0-0' }}</div><div class="stat-sub">Contract x {{ project()!.progress }}% progress</div></div>
+                            <div class="stat-tile" style="--tile: var(--fuse-accent-rgb)"><div class="stat-head"><span class="stat-label">Profit to date</span></div><div class="stat-value" [class]="costing().profitToDate < 0 ? 'text-red-600' : ''"><span class="stat-cur">BDT</span>{{ costing().profitToDate | number: '1.0-0' }}</div><div class="stat-sub">Earned minus cost</div></div>
+                            <div class="stat-tile" style="--tile: var(--fuse-accent-rgb)"><div class="stat-head"><span class="stat-label">Projected profit</span></div><div class="stat-value" [class]="costing().projectedProfit < 0 ? 'text-red-600' : ''"><span class="stat-cur">BDT</span>{{ costing().projectedProfit | number: '1.0-0' }}</div><div class="stat-sub">Contract minus budget or cost</div></div>
+                        </div>
+
+                        <div class="mt-6">
+                            <div class="flex items-center justify-between text-sm"><span class="font-medium">Budget used</span><span>{{ costing().total | number: '1.0-0' }} of {{ project()!.budget | number: '1.0-0' }}</span></div>
+                            <div class="mt-2 h-3 overflow-hidden rounded-full bg-gray-200" role="progressbar" [attr.aria-valuenow]="costing().budgetUsed" aria-valuemin="0" aria-valuemax="100" aria-label="Budget used">
+                                <div class="h-full rounded-full" [class]="costing().budgetUsed > 100 ? 'bg-red-500' : costing().budgetUsed > 80 ? 'bg-amber-500' : 'bg-primary'" [style.width.%]="costing().budgetUsed > 100 ? 100 : costing().budgetUsed"></div>
+                            </div>
+                            <div class="text-secondary mt-3 text-sm font-medium">Where the cost comes from</div>
+                            <div class="mt-2 flex h-3 overflow-hidden rounded-full bg-gray-200" aria-hidden="true">
+                                <div class="bg-sky-500" [style.width.%]="share(costing().expense)"></div>
+                                <div class="bg-violet-500" [style.width.%]="share(costing().purchase)"></div>
+                                <div class="bg-amber-500" [style.width.%]="share(costing().store)"></div>
+                            </div>
+                            <div class="mt-2 flex flex-wrap gap-4 text-sm">
+                                <span><span class="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-sky-500"></span>Expenses BDT {{ costing().expense | number: '1.0-0' }}</span>
+                                <span><span class="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-violet-500"></span>Vendor purchases BDT {{ costing().purchase | number: '1.0-0' }}</span>
+                                <span><span class="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-amber-500"></span>Store issues BDT {{ costing().store | number: '1.0-0' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex flex-wrap items-center gap-2" role="group" aria-label="Filter by source">
+                            <button type="button" class="fund-chip" [class.fund-chip-on]="sourceFilter() === 'all'" (click)="sourceFilter.set('all')">All ({{ costing().lines.length }})</button>
+                            @for (s of sources; track s) { <button type="button" class="fund-chip" [class.fund-chip-on]="sourceFilter() === s" (click)="sourceFilter.set(s)">{{ sourceLabels[s] }}</button> }
+                        </div>
+                        <div class="mt-4 overflow-x-auto">
+                            <table class="app-table w-full">
+                                <thead><tr><th scope="col" class="text-left font-medium">Date</th><th scope="col" class="text-left font-medium">Source</th><th scope="col" class="text-left font-medium">Reference</th><th scope="col" class="text-left font-medium">Detail</th><th scope="col" class="text-right font-medium">Amount (BDT)</th></tr></thead>
+                                <tbody>
+                                    @for (l of shownLines(); track $index) {
+                                        <tr><td>{{ l.date | date: 'dd MMM y' }}</td><td>{{ sourceLabels[l.source] }}</td><td>{{ l.ref }}</td><td>{{ l.label }}</td><td class="text-right">{{ l.amount | number: '1.0-0' }}</td></tr>
+                                    } @empty {
+                                        <tr><td colspan="5" class="text-secondary py-8 text-center">No costs recorded yet.</td></tr>
+                                    }
+                                </tbody>
+                                <tfoot><tr><td colspan="4" class="font-medium">Total</td><td class="text-right font-semibold">{{ costing().total | number: '1.0-0' }}</td></tr></tfoot>
+                            </table>
+                        </div>
+                        <p class="text-secondary mt-4 text-sm">Costs come automatically: paid expenses that name work order {{ project()!.workOrder || '(none set)' }}, approved vendor invoices linked to this project, and stock issued from a store. Goods bought into a store count when they are issued, so nothing is counted twice.</p>
+                    </div>
+                }
+
+                <!-- ============ Store ============ -->
+                @if (tab() === 'store' && access.can('store.view')) {
+                    <div class="p-6">
+                        @for (s of projectStores(); track s.id) {
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div><div class="text-lg font-semibold">{{ s.name }}</div><div class="text-secondary text-sm">{{ s.location }}</div></div>
+                                <a mat-stroked-button routerLink="/store">Open store</a>
+                            </div>
+                            <table class="app-table mt-3 w-full">
+                                <thead><tr><th scope="col" class="text-left font-medium">Item</th><th scope="col" class="text-right font-medium">In stock</th>@if (access.can('store.cost')) { <th scope="col" class="text-right font-medium">Value (BDT)</th> }</tr></thead>
+                                <tbody>
+                                    @for (r of store.stock(s.id); track r.product.id) {
+                                        @if (r.qty > 0) { <tr><td>{{ r.product.name }}</td><td class="text-right">{{ r.qty }} {{ r.product.unit }}</td>@if (access.can('store.cost')) { <td class="text-right">{{ r.value | number: '1.0-0' }}</td> }</tr> }
+                                    }
+                                </tbody>
+                            </table>
+                        } @empty {
+                            <p class="text-secondary text-md">This project has no store of its own yet. Add one in Store.</p>
+                        }
+                        <div class="mt-6 text-sm font-medium uppercase tracking-wide text-secondary">Issued to this project</div>
+                        <table class="app-table mt-2 w-full">
+                            <thead><tr><th scope="col" class="text-left font-medium">Date</th><th scope="col" class="text-left font-medium">Item</th><th scope="col" class="text-left font-medium">From</th><th scope="col" class="text-right font-medium">Qty</th>@if (access.can('store.cost')) { <th scope="col" class="text-right font-medium">Cost (BDT)</th> }</tr></thead>
+                            <tbody>
+                                @for (m of issued(); track m.id) {
+                                    <tr><td>{{ m.date | date: 'dd MMM y' }}</td><td>{{ store.productName(m.productId) }}</td><td>{{ store.storeName(m.storeId) }}</td><td class="text-right">{{ m.qty }}</td>@if (access.can('store.cost')) { <td class="text-right">{{ m.qty * m.unitCost | number: '1.0-0' }}</td> }</tr>
+                                } @empty {
+                                    <tr><td colspan="5" class="text-secondary py-6 text-center">Nothing issued yet.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+                <!-- ============ Updates ============ -->
+                @if (tab() === 'updates') {
+                    <div class="p-6">
+                        @if (access.can('projects.edit')) {
+                            <div class="mb-5 flex gap-3">
+                                <input class="h-11 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" placeholder="Post an update the client can see..." aria-label="New update" [(ngModel)]="updateText" (keydown.enter)="postUpdate()" />
+                                <button mat-flat-button color="primary" type="button" (click)="postUpdate()">Post</button>
+                            </div>
+                        }
+                        <ol class="flex flex-col gap-4">
+                            @for (u of project()!.updates; track u.id) {
+                                <li class="flex gap-3"><span class="mt-1.5 h-2.5 w-2.5 flex-none rounded-full bg-primary"></span><div class="text-md">{{ u.text }}<div class="text-secondary text-sm">{{ u.by }} · {{ u.at | date: 'dd MMM y, h:mm a' }}</div></div></li>
+                            } @empty {
+                                <li class="text-secondary py-4 text-center">No updates yet.</li>
+                            }
+                        </ol>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@if (editing() && project()) {
+    <projects-form [project]="project()" (saved)="saved()" (cancelled)="editing.set(false)"></projects-form>
+}

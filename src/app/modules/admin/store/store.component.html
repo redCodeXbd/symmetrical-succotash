@@ -1,0 +1,319 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div class="text-secondary text-md">Store</div>
+                <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Store</h1>
+                <div class="text-secondary mt-0.5 text-lg">Office and project stores, the product catalogue and every stock movement.</div>
+            </div>
+            <div class="flex flex-wrap items-center gap-4">
+                <treasury-user-switch></treasury-user-switch>
+                @if (access.can('store.catalog')) {
+                    <treasury-add-button label="New product" (pressed)="open('product')"></treasury-add-button>
+                }
+            </div>
+        </div>
+
+        <!-- Store picker -->
+        <div class="mt-8 flex flex-wrap items-center gap-3" role="group" aria-label="Choose a store">
+            @for (s of service.stores(); track s.id) {
+                <button type="button" class="rounded-xl border px-4 py-3 text-left" [class]="storeId() === s.id ? 'border-primary bg-primary/10' : 'bg-card hover:bg-hover'" [attr.aria-pressed]="storeId() === s.id" (click)="chooseStore(s.id)">
+                    <div class="font-semibold">{{ s.name }}</div>
+                    <div class="text-secondary text-sm">{{ s.type === 'office' ? 'Office store' : 'Project store' }}{{ s.projectId ? ' · ' + projects.name(s.projectId) : '' }}</div>
+                </button>
+            }
+            @if (access.can('store.catalog')) {
+                <button type="button" class="h-12 rounded-xl border border-dashed px-4 font-medium text-primary hover:bg-hover" (click)="open('store')">Add a store</button>
+            }
+        </div>
+
+        <div class="mt-6 grid grid-cols-2 gap-4" [class]="access.can('store.cost') ? 'lg:grid-cols-4' : 'lg:grid-cols-3'">
+            <div class="stat-tile" style="--tile: var(--fuse-primary-rgb)"><div class="stat-head"><span class="stat-label">Items in stock</span></div><div class="stat-value">{{ itemCount() }}</div><div class="stat-sub">{{ selected()?.name }}</div></div>
+            @if (access.can('store.cost')) {
+                <div class="stat-tile" style="--tile: var(--fuse-primary-rgb)"><div class="stat-head"><span class="stat-label">Stock value</span></div><div class="stat-value"><span class="stat-cur">BDT</span>{{ service.totalValue(storeId()) | number: '1.0-0' }}</div><div class="stat-sub">At average cost</div></div>
+            }
+            <div class="stat-tile" style="--tile: var(--fuse-accent-rgb)"><div class="stat-head"><span class="stat-label">Low stock</span></div><div class="stat-value" [class]="lowCount() > 0 ? 'text-red-600' : ''">{{ lowCount() }}</div><div class="stat-sub">Below the minimum</div></div>
+            <div class="stat-tile" style="--tile: var(--fuse-accent-rgb)"><div class="stat-head"><span class="stat-label">Catalogue</span></div><div class="stat-value">{{ service.products().length }}</div><div class="stat-sub">Products</div></div>
+        </div>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+            @if (access.can('store.receive')) { <button mat-flat-button color="primary" type="button" (click)="open('receive')">Receive stock</button> }
+            @if (access.can('store.issue')) { <button mat-stroked-button type="button" (click)="open('issue')">Issue stock</button> }
+            @if (access.can('store.transfer')) { <button mat-stroked-button type="button" (click)="open('transfer')">Transfer</button> }
+            @if (access.can('store.adjust')) { <button mat-stroked-button type="button" (click)="open('count')">Stock count</button> }
+        </div>
+
+        <div class="mt-6 rounded-2xl bg-card shadow">
+            <div class="flex overflow-x-auto border-b px-4" role="tablist">
+                @for (t of [{ id: 'stock', label: 'Stock' }, { id: 'catalogue', label: 'Catalogue' }, { id: 'movements', label: 'Movements' }, { id: 'purchases', label: 'Purchases' }]; track t.id) {
+                    <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="tab() === t.id ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="tab() === t.id" (click)="setTab($any(t.id))">{{ t.label }}</button>
+                }
+            </div>
+
+            @if (message(); as m) {
+                <div class="mx-6 mt-5 rounded-lg p-3 text-md" [class]="m.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'" [attr.role]="m.ok ? 'status' : 'alert'">{{ m.text }}</div>
+            }
+
+            @if (tab() === 'stock' || tab() === 'catalogue') {
+                <div class="flex flex-wrap items-center gap-3 border-b p-4">
+                    <input type="search" class="h-11 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" placeholder="Search by name or SKU..." aria-label="Search products" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+                    <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Kind" [ngModel]="kindFilter()" (ngModelChange)="kindFilter.set($event)">
+                        <option value="all">All kinds</option>
+                        @for (k of kinds; track k) { <option [value]="k">{{ kindLabels[k] }}</option> }
+                    </select>
+                    <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Category" [ngModel]="categoryFilter()" (ngModelChange)="categoryFilter.set($event)">
+                        <option value="all">All categories</option>
+                        @for (c of service.categories(); track c) { <option [value]="c">{{ c }}</option> }
+                    </select>
+                </div>
+            }
+
+            <!-- ============ Stock ============ -->
+            @if (tab() === 'stock') {
+                <div class="overflow-x-auto">
+                    <table class="app-table w-full">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-left font-medium">Product</th>
+                                <th scope="col" class="text-left font-medium">Kind</th>
+                                <th scope="col" class="text-right font-medium">In stock</th>
+                                @if (access.can('store.cost')) {
+                                    <th scope="col" class="text-right font-medium">Avg cost</th>
+                                    <th scope="col" class="text-right font-medium">Value (BDT)</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (r of shownStock(); track r.product.id) {
+                                <tr>
+                                    <td class="font-medium">{{ r.product.name }}<div class="text-secondary text-sm">{{ r.product.sku }} · {{ r.product.category }}</div></td>
+                                    <td><span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="kindClasses[r.product.kind]">{{ kindLabels[r.product.kind] }}</span></td>
+                                    <td class="text-right" [class]="r.low ? 'font-semibold text-red-600' : ''">{{ r.qty }} {{ r.product.unit }}@if (r.low) { <div class="text-xs">Low (min {{ r.product.minStock }})</div> }</td>
+                                    @if (access.can('store.cost')) {
+                                        <td class="text-right">{{ r.avgCost | number: '1.0-2' }}</td>
+                                        <td class="text-right">{{ r.value | number: '1.0-0' }}</td>
+                                    }
+                                </tr>
+                            } @empty {
+                                <tr><td colspan="5" class="text-secondary py-10 text-center">Nothing in this store yet. Use "Receive stock" or transfer items in.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <!-- ============ Catalogue ============ -->
+            @if (tab() === 'catalogue') {
+                <div class="overflow-x-auto">
+                    <table class="app-table w-full">
+                        <thead><tr><th scope="col" class="text-left font-medium">Product</th><th scope="col" class="text-left font-medium">Category</th><th scope="col" class="text-left font-medium">Kind</th><th scope="col" class="text-left font-medium">Details</th><th scope="col" class="text-right font-medium">Min stock</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+                        <tbody>
+                            @for (p of shownProducts(); track p.id) {
+                                <tr>
+                                    <td class="font-medium">{{ p.name }}<div class="text-secondary text-sm">{{ p.sku }} · per {{ p.unit }}</div></td>
+                                    <td>{{ p.category }}</td>
+                                    <td><span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="kindClasses[p.kind]">{{ kindLabels[p.kind] }}</span></td>
+                                    <td class="text-secondary max-w-xs text-sm">{{ p.description || '-' }}</td>
+                                    <td class="text-right">{{ p.minStock }}</td>
+                                    <td class="text-right">@if (access.can('store.catalog')) { <button type="button" class="font-medium text-primary hover:underline" (click)="open('product', p)">Edit</button> }</td>
+                                </tr>
+                            } @empty {
+                                <tr><td colspan="6" class="text-secondary py-10 text-center">No products match.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <!-- ============ Movements ============ -->
+            @if (tab() === 'movements') {
+                <div class="overflow-x-auto">
+                    <table class="app-table w-full">
+                        <thead><tr><th scope="col" class="text-left font-medium">Date</th><th scope="col" class="text-left font-medium">Movement</th><th scope="col" class="text-left font-medium">Product</th><th scope="col" class="text-right font-medium">Qty</th>@if (access.can('store.cost')) { <th scope="col" class="text-right font-medium">Unit cost</th> }<th scope="col" class="text-left font-medium">Details</th></tr></thead>
+                        <tbody>
+                            @for (m of movements(); track m.id) {
+                                <tr>
+                                    <td>{{ m.date | date: 'dd MMM y' }}<div class="text-secondary text-sm">{{ m.id }}</div></td>
+                                    <td>{{ moveLabels[m.type] }}</td>
+                                    <td>{{ service.productName(m.productId) }}</td>
+                                    <td class="text-right font-medium" [class]="incoming.includes(m.type) ? 'text-green-700' : 'text-red-600'">{{ incoming.includes(m.type) ? '+' : '-' }}{{ m.qty }}</td>
+                                    @if (access.can('store.cost')) { <td class="text-right">{{ m.unitCost | number: '1.0-2' }}</td> }
+                                    <td class="text-secondary text-sm">
+                                        @if (m.ref) { {{ m.source === 'expense' ? 'Expense' : 'Order' }} {{ m.ref }} · }
+                                        @if (m.projectId) { Project {{ projects.name(m.projectId) }} · }
+                                        @if (m.counterStoreId) { {{ m.type === 'transfer_out' ? 'To' : 'From' }} {{ service.storeName(m.counterStoreId) }} · }
+                                        {{ m.note }} {{ m.by }}
+                                    </td>
+                                </tr>
+                            } @empty {
+                                <tr><td colspan="6" class="text-secondary py-10 text-center">No movements yet.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <!-- ============ Purchases (from expenses and vendor orders) ============ -->
+            @if (tab() === 'purchases') {
+                <p class="text-secondary px-6 pt-5 text-md">Items bought with an expense or a vendor purchase order and received into a store. Their cost reaches a project when the items are issued to it.</p>
+                <div class="overflow-x-auto">
+                    <table class="app-table mt-3 w-full">
+                        <thead><tr><th scope="col" class="text-left font-medium">Date</th><th scope="col" class="text-left font-medium">From</th><th scope="col" class="text-left font-medium">Store</th><th scope="col" class="text-left font-medium">Product</th><th scope="col" class="text-right font-medium">Qty</th>@if (access.can('store.cost')) { <th scope="col" class="text-right font-medium">Amount (BDT)</th> }</tr></thead>
+                        <tbody>
+                            @for (m of purchases(); track m.id) {
+                                <tr>
+                                    <td>{{ m.date | date: 'dd MMM y' }}</td>
+                                    <td>{{ m.source === 'expense' ? 'Expense' : 'Purchase order' }} {{ m.ref }}</td>
+                                    <td>{{ service.storeName(m.storeId) }}</td>
+                                    <td>{{ service.productName(m.productId) }}</td>
+                                    <td class="text-right">{{ m.qty }}</td>
+                                    @if (access.can('store.cost')) { <td class="text-right">{{ m.qty * m.unitCost | number: '1.0-0' }}</td> }
+                                </tr>
+                            } @empty {
+                                <tr><td colspan="6" class="text-secondary py-10 text-center">Nothing received from expenses or orders yet.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ================= Action drawer ================= -->
+@if (action()) {
+    <treasury-slide-over [heading]="heading" [subheading]="action() === 'product' || action() === 'store' ? '' : (selected()?.name ?? '')" (closed)="close()">
+        <form id="store-form" class="flex flex-col gap-4" (ngSubmit)="submit()">
+            @switch (action()) {
+                @case ('receive') {
+                    <fieldset>
+                        <legend class="text-sm font-medium">Where do the items come from?</legend>
+                        <div class="mt-2 grid grid-cols-3 gap-2">
+                            @for (o of [{ id: 'manual', label: 'By hand' }, { id: 'expense', label: 'Expense' }, { id: 'purchase', label: 'Vendor order' }]; track o.id) {
+                                <label class="flex cursor-pointer items-center justify-center rounded-lg border p-2 text-md" [class]="receiveSource === o.id ? 'border-primary bg-primary/10' : ''"><input type="radio" class="sr-only" name="src" [value]="o.id" [(ngModel)]="receiveSource" (ngModelChange)="onSourceChange()" />{{ o.label }}</label>
+                            }
+                        </div>
+                    </fieldset>
+                    @if (receiveSource !== 'manual') {
+                        <label class="block">
+                            <span class="text-sm font-medium">{{ receiveSource === 'expense' ? 'Expense these items were bought with' : 'Purchase order' }}</span>
+                            <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ref" [(ngModel)]="receiveRef" (ngModelChange)="onRefChange()">
+                                <option value="">Choose...</option>
+                                @for (o of receiveOptions; track o.id) { <option [value]="o.id">{{ o.label }}</option> }
+                            </select>
+                        </label>
+                    }
+                    <datalist id="store-products">@for (p of service.products(); track p.id) { <option [value]="p.name"></option> }</datalist>
+                    @for (l of receiveLines; track $index) {
+                        <div class="grid grid-cols-12 items-center gap-2">
+                            <select class="col-span-12 h-11 rounded-lg border bg-transparent px-2 text-md sm:col-span-6" [attr.aria-label]="'Product ' + ($index + 1)" [name]="'rp-' + $index" [(ngModel)]="l.productId">
+                                <option value="">Product...</option>
+                                @for (p of service.products(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                            </select>
+                            <input type="number" min="1" class="col-span-4 h-11 rounded-lg border bg-transparent px-2 text-md sm:col-span-2" placeholder="Qty" [attr.aria-label]="'Quantity ' + ($index + 1)" [name]="'rq-' + $index" [(ngModel)]="l.qty" />
+                            <input type="number" min="0" class="col-span-5 h-11 rounded-lg border bg-transparent px-2 text-md sm:col-span-3" placeholder="Unit cost" [attr.aria-label]="'Unit cost ' + ($index + 1)" [name]="'rc-' + $index" [(ngModel)]="l.unitCost" />
+                            <button type="button" class="col-span-3 text-red-600 hover:underline sm:col-span-1" (click)="removeLine($index)" [attr.aria-label]="'Remove line ' + ($index + 1)">x</button>
+                        </div>
+                    }
+                    <button type="button" class="text-left font-medium text-primary hover:underline" (click)="addLine()">Add another item</button>
+                    <label class="block"><span class="text-sm font-medium">Date</span><input type="date" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="rdate" [(ngModel)]="receiveDate" /></label>
+                    <label class="block"><span class="text-sm font-medium">Note</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="rnote" [(ngModel)]="receiveNote" /></label>
+                    @if (access.can('store.cost')) { <div class="text-lg font-semibold">Total BDT {{ receiveTotal | number: '1.0-2' }}</div> }
+                }
+                @case ('issue') {
+                    <p class="text-secondary text-sm">Assets cannot be issued; move them with a transfer. Items issued to a project are charged to its costing.</p>
+                    <label class="block"><span class="text-sm font-medium">Product</span>
+                        <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ip" [(ngModel)]="moveProductId">
+                            <option value="">Choose...</option>
+                            @for (p of issuableProducts; track p.id) { <option [value]="p.id">{{ p.name }} ({{ service.qtyIn(storeId(), p.id) }} {{ p.unit }})</option> }
+                        </select>
+                    </label>
+                    <label class="block"><span class="text-sm font-medium">Quantity{{ moveProductId ? ' (max ' + moveStock + ')' : '' }}</span><input type="number" min="1" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="iq" [(ngModel)]="moveQty" /></label>
+                    <label class="block"><span class="text-sm font-medium">Charge to project</span>
+                        <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ipr" [(ngModel)]="moveProjectId">
+                            <option value="">Office use (no project)</option>
+                            @for (p of projects.projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                        </select>
+                    </label>
+                    <label class="block"><span class="text-sm font-medium">Note</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="in" [(ngModel)]="moveNote" /></label>
+                }
+                @case ('transfer') {
+                    <label class="block"><span class="text-sm font-medium">Product</span>
+                        <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="tp" [(ngModel)]="moveProductId">
+                            <option value="">Choose...</option>
+                            @for (p of movableProducts; track p.id) { <option [value]="p.id">{{ p.name }} ({{ service.qtyIn(storeId(), p.id) }} {{ p.unit }})</option> }
+                        </select>
+                    </label>
+                    <label class="block"><span class="text-sm font-medium">Quantity{{ moveProductId ? ' (max ' + moveStock + ')' : '' }}</span><input type="number" min="1" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="tq" [(ngModel)]="moveQty" /></label>
+                    <label class="block"><span class="text-sm font-medium">Move to</span>
+                        <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="tt" [(ngModel)]="moveToStore">
+                            <option value="">Choose a store...</option>
+                            @for (s of otherStores; track s.id) { <option [value]="s.id">{{ s.name }}</option> }
+                        </select>
+                    </label>
+                    <label class="block"><span class="text-sm font-medium">Note</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="tn" [(ngModel)]="moveNote" /></label>
+                }
+                @case ('count') {
+                    <label class="block"><span class="text-sm font-medium">Product</span>
+                        <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="cp" [(ngModel)]="moveProductId">
+                            <option value="">Choose...</option>
+                            @for (r of stock(); track r.product.id) { <option [value]="r.product.id">{{ r.product.name }} (system {{ r.qty }} {{ r.product.unit }})</option> }
+                        </select>
+                    </label>
+                    <label class="block"><span class="text-sm font-medium">Counted quantity</span><input type="number" min="0" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="cq" [(ngModel)]="countQty" /></label>
+                    <label class="block"><span class="text-sm font-medium">Why does it differ? *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="cn" [(ngModel)]="moveNote" /></label>
+                }
+                @case ('product') {
+                    <label class="block"><span class="text-sm font-medium">Name *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="pn" [(ngModel)]="productForm.name" /></label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="block"><span class="text-sm font-medium">SKU</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ps" [(ngModel)]="productForm.sku" /></label>
+                        <label class="block"><span class="text-sm font-medium">Unit</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="pu" [(ngModel)]="productForm.unit" /></label>
+                    </div>
+                    <label class="block"><span class="text-sm font-medium">Category *</span>
+                        <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="pc" [(ngModel)]="productForm.category">
+                            <option value="">Choose...</option>
+                            @for (c of service.categories(); track c) { <option [value]="c">{{ c }}</option> }
+                        </select>
+                        <span class="text-secondary mt-1 block text-xs">Categories are managed in Configuration > Categories.</span>
+                    </label>
+                    <fieldset>
+                        <legend class="text-sm font-medium">Kind</legend>
+                        <div class="mt-2 flex flex-col gap-2">
+                            @for (k of kinds; track k) {
+                                <label class="flex cursor-pointer items-start gap-3 rounded-lg border p-3" [class]="productForm.kind === k ? 'border-primary bg-primary/10' : ''"><input type="radio" class="mt-1" name="pk" [value]="k" [(ngModel)]="productForm.kind" /><span><span class="font-medium">{{ kindLabels[k] }}</span><span class="text-secondary block text-sm">{{ kindHelp[k] }}</span></span></label>
+                            }
+                        </div>
+                    </fieldset>
+                    <label class="block"><span class="text-sm font-medium">Details</span><textarea class="mt-1 w-full rounded-lg border bg-transparent px-3 py-2 text-md" rows="3" name="pd" [(ngModel)]="productForm.description"></textarea></label>
+                    <label class="block"><span class="text-sm font-medium">Minimum stock</span><input type="number" min="0" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="pm" [(ngModel)]="productForm.minStock" /></label>
+                }
+                @case ('store') {
+                    <label class="block"><span class="text-sm font-medium">Store name *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="sn" [(ngModel)]="storeForm.name" /></label>
+                    <fieldset>
+                        <legend class="text-sm font-medium">Type</legend>
+                        <div class="mt-2 grid grid-cols-2 gap-2">
+                            <label class="flex cursor-pointer items-center gap-2 rounded-lg border p-3" [class]="storeForm.type === 'office' ? 'border-primary bg-primary/10' : ''"><input type="radio" name="st" value="office" [(ngModel)]="storeForm.type" />Office store</label>
+                            <label class="flex cursor-pointer items-center gap-2 rounded-lg border p-3" [class]="storeForm.type === 'project' ? 'border-primary bg-primary/10' : ''"><input type="radio" name="st" value="project" [(ngModel)]="storeForm.type" />Project store</label>
+                        </div>
+                    </fieldset>
+                    @if (storeForm.type === 'project') {
+                        <label class="block"><span class="text-sm font-medium">Project *</span>
+                            <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="sp" [(ngModel)]="storeForm.projectId">
+                                <option value="">Choose a project...</option>
+                                @for (p of projects.projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                            </select>
+                        </label>
+                    }
+                    <label class="block"><span class="text-sm font-medium">Location</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="sl" [(ngModel)]="storeForm.location" /></label>
+                }
+            }
+            @if (error) {
+                <div class="rounded-lg bg-red-50 p-3 text-md text-red-800" role="alert">{{ error }}</div>
+            }
+        </form>
+        <ng-container footer>
+            <button mat-stroked-button type="button" (click)="close()">Cancel</button>
+            <button mat-flat-button color="primary" type="submit" form="store-form">Save</button>
+        </ng-container>
+    </treasury-slide-over>
+}

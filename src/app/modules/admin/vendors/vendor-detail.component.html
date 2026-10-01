@@ -130,6 +130,10 @@
                                         </div>
                                     }
                                     <button type="button" class="mt-3 font-medium text-primary hover:underline" (click)="addLine()">Add item</button>
+                                    <select class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="Project this order is for" name="po-project" [(ngModel)]="poProjectId">
+                                        <option value="">Not for a specific project</option>
+                                        @for (p of projects.projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                                    </select>
                                     <textarea class="mt-3 w-full rounded-lg border bg-transparent px-3 py-2 text-md" rows="2" placeholder="Note to the vendor (optional)" aria-label="Note" name="po-note" [(ngModel)]="poNote"></textarea>
                                     <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
                                         <div class="text-lg font-semibold">Total BDT {{ orderTotal | number: '1.0-2' }}</div>
@@ -188,6 +192,12 @@
                                         <select class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-2" aria-label="Purchase order" name="i-po" [(ngModel)]="invoiceDraft.poId">
                                             <option value="">Not linked to a purchase order</option>
                                             @for (o of service.ordersOf(id); track o.id) { <option [value]="o.id">{{ o.number }} (BDT {{ o.total | number: '1.0-0' }})</option> }
+                                        </select>
+                                    }
+                                    @if (access.can('vendors.edit')) {
+                                        <select class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-2" aria-label="Project this invoice is a cost of" name="i-project" [(ngModel)]="invoiceDraft.projectId">
+                                            <option value="">Project of the purchase order, if any</option>
+                                            @for (p of projects.projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
                                         </select>
                                     }
                                     <label class="text-sm">Invoice date<input type="date" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="i-date" [(ngModel)]="invoiceDraft.date" /></label>
