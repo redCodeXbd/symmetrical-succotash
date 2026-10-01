@@ -36,6 +36,18 @@ export const defaultNavigation: FuseNavigationItem[] = [
         ]
     },
     {
+        id      : 'users',
+        title   : 'Users',
+        type    : 'collapsable',
+        icon    : 'heroicons_outline:users',
+        children: [
+            { id: 'users.employees', title: 'Employees', type: 'basic', link: '/users/employees' },
+            { id: 'users.admins', title: 'Admins', type: 'basic', link: '/users/admins' },
+            { id: 'users.vendors', title: 'Vendors', type: 'basic', link: '/users/vendors' },
+            { id: 'users.clients', title: 'Clients', type: 'basic', link: '/users/clients' }
+        ]
+    },
+    {
         id      : 'treasury',
         title   : 'Treasury',
         type    : 'collapsable',

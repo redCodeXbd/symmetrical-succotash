@@ -148,6 +148,18 @@ export const FEATURES: FeatureDef[] = [
         ],
     },
     {
+        id: 'users',
+        title: 'Users',
+        permissions: [
+            { key: 'view', label: 'View', description: 'Open Users: employees, admins, vendor and client logins' },
+            { key: 'add', label: 'Add', description: 'Add employees and logins' },
+            { key: 'edit', label: 'Edit', description: 'Edit people and switch them active or inactive' },
+            { key: 'delete', label: 'Delete', description: 'Delete users' },
+            { key: 'view_salary', label: 'View salary', description: 'See salary details and financial records' },
+            { key: 'promote', label: 'Promote', description: 'Promote employees and change their salary structure' },
+        ],
+    },
+    {
         id: 'notifications',
         title: 'Notifications',
         permissions: [
@@ -180,6 +192,8 @@ export interface AppUser {
     vendorId?: string | null;
     /** Profile details the person keeps up to date themselves. */
     phone?: string;
+    /** Inactive people cannot be used to sign in. Missing means active. */
+    active?: boolean;
     title?: string;
     about?: string;
 }

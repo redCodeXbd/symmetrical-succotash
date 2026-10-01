@@ -24,7 +24,8 @@ const SEED_ROLES: Role[] = [
             'clients.view', 'clients.view_all',
             'vendors.view', 'vendors.view_all', 'vendors.approve_invoice', 'vendors.pay',
             'projects.view', 'projects.view_all', 'projects.view_cost',
-            'store.view', 'store.receive', 'store.cost'
+            'store.view', 'store.receive', 'store.cost',
+            'users.view', 'users.view_salary'
         ),
     },
     {
@@ -40,7 +41,8 @@ const SEED_ROLES: Role[] = [
             'clients.view', 'clients.view_all', 'clients.add', 'clients.edit', 'clients.assign_user', 'clients.share',
             'vendors.view', 'vendors.view_all', 'vendors.add', 'vendors.edit', 'vendors.assign_user', 'vendors.create_po', 'vendors.approve_invoice',
             'projects.view', 'projects.view_all', 'projects.add', 'projects.edit', 'projects.view_cost',
-            'store.view', 'store.catalog', 'store.receive', 'store.issue', 'store.transfer', 'store.adjust', 'store.cost'
+            'store.view', 'store.catalog', 'store.receive', 'store.issue', 'store.transfer', 'store.adjust', 'store.cost',
+            'users.view'
         ),
     },
     {
@@ -55,7 +57,8 @@ const SEED_ROLES: Role[] = [
             'clients.view', 'clients.view_all', 'clients.add', 'clients.edit',
             'vendors.view', 'vendors.view_all', 'vendors.add', 'vendors.edit', 'vendors.create_po',
             'projects.view', 'projects.view_all', 'projects.add', 'projects.edit',
-            'store.view', 'store.catalog', 'store.receive'
+            'store.view', 'store.catalog', 'store.receive',
+            'users.view', 'users.add', 'users.edit'
         ),
     },
     {
@@ -85,16 +88,16 @@ const SEED_ROLES: Role[] = [
 ];
 
 const SEED_USERS: AppUser[] = [
-    { id: 'u-brian', name: 'Brian Hughes', email: 'hughes.brian@company.com', roleIds: ['admin', 'employee'] },
-    { id: 'u-nadia', name: 'Nadia Rahman', email: 'nadia.rahman@company.com', roleIds: ['accountant'] },
-    { id: 'u-sara', name: 'Sara Khan', email: 'sara.khan@company.com', roleIds: ['manager'] },
-    { id: 'u-imran', name: 'Imran Hossain', email: 'imran.hossain@company.com', roleIds: ['data-entry'] },
-    { id: 'u-mehedi', name: 'Mehedi Hasan', email: 'mehedi.hasan@company.com', roleIds: ['employee'] },
-    { id: 'u-rahim', name: 'Rahim Ahmed', email: 'rahim.ahmed@company.com', roleIds: ['employee', 'data-entry'] },
-    { id: 'u-karim', name: 'Karim Chowdhury', email: 'karim@bengalsteel.example', roleIds: ['client'], clientId: 'C-1001' },
-    { id: 'u-farhana', name: 'Farhana Islam', email: 'farhana@deltapower.example', roleIds: ['client'], clientId: 'C-1002' },
-    { id: 'u-jahid', name: 'Jahid Hasan', email: 'jahid@steelcraft.example', roleIds: ['vendor'], vendorId: 'V-1001' },
-    { id: 'u-tania', name: 'Tania Akter', email: 'tania@safeguard.example', roleIds: ['vendor'], vendorId: 'V-1002' },
+    { id: 'u-brian', phone: '01711000001', name: 'Brian Hughes', email: 'hughes.brian@company.com', roleIds: ['admin', 'employee'] },
+    { id: 'u-nadia', phone: '01711000002', name: 'Nadia Rahman', email: 'nadia.rahman@company.com', roleIds: ['accountant'] },
+    { id: 'u-sara', phone: '01711000003', name: 'Sara Khan', email: 'sara.khan@company.com', roleIds: ['manager'] },
+    { id: 'u-imran', phone: '01711000004', name: 'Imran Hossain', email: 'imran.hossain@company.com', roleIds: ['data-entry'] },
+    { id: 'u-mehedi', phone: '01711000005', name: 'Mehedi Hasan', email: 'mehedi.hasan@company.com', roleIds: ['employee'] },
+    { id: 'u-rahim', phone: '01711000006', name: 'Rahim Ahmed', email: 'rahim.ahmed@company.com', roleIds: ['employee', 'data-entry'] },
+    { id: 'u-karim', phone: '01711000007', name: 'Karim Chowdhury', email: 'karim@bengalsteel.example', roleIds: ['client'], clientId: 'C-1001' },
+    { id: 'u-farhana', phone: '01711000008', name: 'Farhana Islam', email: 'farhana@deltapower.example', roleIds: ['client'], clientId: 'C-1002' },
+    { id: 'u-jahid', phone: '01711000009', name: 'Jahid Hasan', email: 'jahid@steelcraft.example', roleIds: ['vendor'], vendorId: 'V-1001' },
+    { id: 'u-tania', phone: '01711000010', name: 'Tania Akter', email: 'tania@safeguard.example', roleIds: ['vendor'], vendorId: 'V-1002' },
 ];
 
 /** Small requests need one approver; larger ones climb the tree. */
@@ -268,6 +271,58 @@ export class AccessService {
         return null;
     }
 
+    /** Someone active must always keep a role that can assign roles. */
+    private _wouldLockOut(users: AppUser[]): boolean {
+        return !users.some(
+            (u) => u.active !== false && this.roles().some((r) => u.roleIds.includes(r.id) && this.permissionsOf(r).includes('roles.assign'))
+        );
+    }
+
+    /** Edits who a person is. Returns an error message, or null on success. */
+    updateUser(id: string, patch: { name?: string; email?: string; phone?: string; active?: boolean }): string | null {
+        const user = this.users().find((u) => u.id === id);
+        if (!user) {
+            return 'This user no longer exists.';
+        }
+        const name = (patch.name ?? user.name).trim();
+        const email = (patch.email ?? user.email).trim().toLowerCase();
+        if (!name) {
+            return 'Enter the name.';
+        }
+        if (!/^\S+@\S+\.\S+$/.test(email)) {
+            return 'Enter a valid email address.';
+        }
+        if (this.users().some((u) => u.id !== id && (u.email.toLowerCase() === email || u.name.toLowerCase() === name.toLowerCase()))) {
+            return 'Another user already has this name or email.';
+        }
+        const next = this.users().map((u) => (u.id === id ? { ...u, name, email, phone: (patch.phone ?? u.phone ?? '').trim(), active: patch.active ?? u.active } : u));
+        if (patch.active === false) {
+            if (id === this.userId()) {
+                return 'You cannot deactivate the user you are acting as.';
+            }
+            if (this._wouldLockOut(next)) {
+                return 'Someone active must keep a role that can assign roles.';
+            }
+        }
+        this.users.set(next);
+        this._save();
+        return null;
+    }
+
+    /** Removes a user. You cannot remove yourself or the last person who can assign roles. */
+    removeUser(id: string): string | null {
+        if (id === this.userId()) {
+            return 'You cannot delete the user you are acting as.';
+        }
+        const next = this.users().filter((u) => u.id !== id);
+        if (this._wouldLockOut(next)) {
+            return 'Someone active must keep a role that can assign roles.';
+        }
+        this.users.set(next);
+        this._save();
+        return null;
+    }
+
     /** Lets the signed-in person keep their own contact details up to date. */
     updateProfile(details: { phone: string; title: string; about: string }): void {
         const id = this.userId();
@@ -302,6 +357,7 @@ export class AccessService {
         }
         const next = this.users().map((u) => (u.id === userId ? { ...u, roleIds } : u));
         const canAssign = (u: AppUser) =>
+            u.active !== false &&
             this.roles().some((r) => u.roleIds.includes(r.id) && this.permissionsOf(r).includes('roles.assign'));
         if (!next.some(canAssign)) {
             return 'Someone must keep a role that can assign roles. This change would lock everyone out.';
@@ -427,7 +483,7 @@ export class AccessService {
             if (!seedRole || role.locked) {
                 return role;
             }
-            const add = ['clients', 'vendors', 'projects', 'store']
+            const add = ['clients', 'vendors', 'projects', 'store', 'users']
                 .filter((f) => !role.permissions.some((p) => p.startsWith(`${f}.`)))
                 .flatMap((f) => seedRole.permissions.filter((p) => p.startsWith(`${f}.`)));
             return add.length ? { ...role, permissions: [...role.permissions, ...add] } : role;

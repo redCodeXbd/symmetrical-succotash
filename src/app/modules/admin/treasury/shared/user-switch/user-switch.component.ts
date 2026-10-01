@@ -16,7 +16,9 @@ import { AccessService } from 'app/core/access/access.service';
                 (change)="access.actAs($any($event.target).value)"
             >
                 @for (u of access.users(); track u.id) {
+                    @if (u.active !== false) {
                     <option [value]="u.id" [selected]="u.id === access.userId()">{{ u.name }}</option>
+                    }
                 }
             </select>
             <span class="user-switch-roles">{{ roleNames() }}</span>
