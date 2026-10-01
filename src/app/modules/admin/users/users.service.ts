@@ -38,7 +38,7 @@ export class UsersService {
     ) {}
 
     /** Staff: everyone who is not a client or vendor login. */
-    readonly staff = () => this._access.users().filter((u) => !u.clientId && !u.vendorId);
+    readonly staff = () => this._access.users().filter((u) => !u.clientId && !u.vendorId && !u.customer);
 
     profile(userId: string): EmployeeProfile {
         const found = this._profiles().find((p) => p.userId === userId);

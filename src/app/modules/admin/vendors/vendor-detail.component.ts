@@ -278,7 +278,7 @@ export class VendorDetailComponent {
     // -----------------------------------------------------------------------------------------------------
 
     get freeUsers() {
-        return this.access.users().filter((u) => !u.vendorId && !u.clientId);
+        return this.access.users().filter((u) => !u.vendorId && !u.clientId && !u.customer);
     }
 
     linkUser(): void {

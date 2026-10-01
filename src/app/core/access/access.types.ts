@@ -190,6 +190,9 @@ export interface AppUser {
     clientId?: string | null;
     /** Set for a vendor user: they only see this vendor's orders, invoices and payments. */
     vendorId?: string | null;
+    /** A customer login: someone who buys from us. It belongs to no client or vendor company. */
+    customer?: boolean;
+    address?: string;
     /** Profile details the person keeps up to date themselves. */
     phone?: string;
     /** Inactive people cannot be used to sign in. Missing means active. */

@@ -44,7 +44,8 @@ export const defaultNavigation: FuseNavigationItem[] = [
             { id: 'users.employees', title: 'Employees', type: 'basic', link: '/users/employees' },
             { id: 'users.admins', title: 'Admins', type: 'basic', link: '/users/admins' },
             { id: 'users.vendors', title: 'Vendors', type: 'basic', link: '/users/vendors' },
-            { id: 'users.clients', title: 'Clients', type: 'basic', link: '/users/clients' }
+            { id: 'users.clients', title: 'Clients', type: 'basic', link: '/users/clients' },
+            { id: 'users.customers', title: 'Customers', type: 'basic', link: '/users/customers' }
         ]
     },
     {

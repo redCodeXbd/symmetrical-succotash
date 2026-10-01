@@ -44,7 +44,7 @@ export class ProjectFormComponent implements OnInit {
 
     /** Staff who can run a project: everyone except client and vendor logins. */
     get managers(): string[] {
-        return this.access.users().filter((u) => !u.clientId && !u.vendorId).map((u) => u.name);
+        return this.access.users().filter((u) => !u.clientId && !u.vendorId && !u.customer).map((u) => u.name);
     }
 
     ngOnInit(): void {
