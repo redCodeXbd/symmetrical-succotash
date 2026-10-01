@@ -61,6 +61,7 @@ export const appRoutes: Route[] = [
         },
         children: [
             {path: 'home', loadChildren: () => import('app/modules/landing/home/home.routes')},
+            {path: 'shared', loadChildren: () => import('app/modules/landing/shared-report/shared-report.routes')},
         ]
     },
 

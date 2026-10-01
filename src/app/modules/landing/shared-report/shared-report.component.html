@@ -1,0 +1,126 @@
+<div class="min-h-screen w-full bg-gray-50 px-4 py-10 text-gray-900">
+    <div class="mx-auto max-w-5xl">
+        <img src="images/logo/encore-logo.png" alt="Encore Engineering Ltd" class="mb-8 block w-44" />
+
+        @if (!record) {
+            <div class="rounded-2xl bg-white p-10 text-center shadow">
+                <div class="text-2xl font-semibold">This link is not available</div>
+                <div class="mt-2 text-gray-600">
+                    It may have expired, or it was created in a different browser. Links work only in the browser that
+                    created them until the app is connected to a server.
+                </div>
+            </div>
+        } @else {
+            <div class="rounded-2xl bg-white p-6 shadow sm:p-8">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h1 class="text-3xl font-bold tracking-tight">{{ record.doc.title }}</h1>
+                        @if (record.doc.subtitle) {
+                            <div class="mt-1 text-gray-600">{{ record.doc.subtitle }}</div>
+                        }
+                        @if (record.doc.kind === 'detail' && record.doc.badge) {
+                            <div class="mt-2 inline-block rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">{{ record.doc.badge }}</div>
+                        }
+                        <div class="mt-2 text-sm text-gray-500">
+                            Shared {{ record.createdAt | date: 'dd MMM y, h:mm a' }}
+                            @if (record.expiresAt) {
+                                · expires {{ record.expiresAt | date: 'dd MMM y, h:mm a' }}
+                            }
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        @for (f of formats; track f) {
+                            <button
+                                type="button"
+                                class="h-11 rounded-lg border border-gray-300 px-4 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
+                                [disabled]="busy"
+                                (click)="download(f)"
+                            >
+                                Download {{ labels[f] }}
+                            </button>
+                        }
+                    </div>
+                </div>
+                @if (error) {
+                    <div class="mt-3 text-sm text-red-600" role="alert">{{ error }}</div>
+                }
+
+                @if (record.doc.kind === 'table') {
+                    <div class="mt-6 overflow-x-auto">
+                        <table class="w-full min-w-[640px] text-left text-sm">
+                            <thead class="bg-gray-50 text-gray-600">
+                                <tr>
+                                    @for (c of record.doc.columns; track c.header) {
+                                        <th scope="col" class="px-3 py-2.5 font-medium" [class.text-right]="c.format === 'number'">{{ c.header }}</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                @for (row of record.doc.rows; track $index) {
+                                    <tr>
+                                        @for (cell of row; track $index; let i = $index) {
+                                            <td class="px-3 py-2.5" [class.text-right]="record.doc.columns[i].format === 'number'">
+                                                {{ record.doc.columns[i].format === 'number' ? (cell | number: '1.2-2') : cell }}
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                            @if (record.doc.footer) {
+                                <tfoot class="border-t-2 font-semibold">
+                                    <tr>
+                                        @for (cell of record.doc.footer; track $index; let i = $index) {
+                                            <td class="px-3 py-2.5" [class.text-right]="record.doc.columns[i].format === 'number'">
+                                                {{ record.doc.columns[i].format === 'number' && cell !== '' ? (cell | number: '1.2-2') : cell }}
+                                            </td>
+                                        }
+                                    </tr>
+                                </tfoot>
+                            }
+                        </table>
+                    </div>
+                } @else {
+                    @for (section of record.doc.sections; track $index) {
+                        <dl class="mt-6 divide-y text-sm">
+                            @for (row of section.rows; track row[0]) {
+                                <div class="flex justify-between gap-4 py-2.5">
+                                    <dt class="text-gray-600">{{ row[0] }}</dt>
+                                    <dd class="text-right">{{ row[1] }}</dd>
+                                </div>
+                            }
+                        </dl>
+                    }
+                    @for (t of record.doc.tables; track t.heading) {
+                        <div class="mt-8">
+                            <div class="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">{{ t.heading }}</div>
+                            @if (t.rows.length === 0) {
+                                <div class="text-sm text-gray-500">None</div>
+                            } @else {
+                                <div class="overflow-x-auto">
+                                    <table class="w-full min-w-[520px] text-left text-sm">
+                                        <thead class="bg-gray-50 text-gray-600">
+                                            <tr>
+                                                @for (c of t.columns; track c) {
+                                                    <th scope="col" class="px-3 py-2.5 font-medium">{{ c }}</th>
+                                                }
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y">
+                                            @for (row of t.rows; track $index) {
+                                                <tr>
+                                                    @for (cell of row; track $index) {
+                                                        <td class="px-3 py-2.5">{{ cell }}</td>
+                                                    }
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        }
+    </div>
+</div>

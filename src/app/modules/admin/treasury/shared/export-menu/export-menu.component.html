@@ -1,0 +1,25 @@
+<button
+    mat-stroked-button
+    type="button"
+    [matMenuTriggerFor]="menu"
+    [disabled]="disabled || busy !== null"
+    aria-label="Download or share"
+>
+    <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
+    <span class="ml-2">{{ busy ? 'Preparing...' : 'Download / Share' }}</span>
+</button>
+<mat-menu #menu="matMenu">
+    @for (f of formats; track f) {
+        <button mat-menu-item type="button" (click)="download(f)">
+            <mat-icon [svgIcon]="'heroicons_outline:document-arrow-down'"></mat-icon>
+            <span>Download {{ labels[f] }}</span>
+        </button>
+    }
+    <button mat-menu-item type="button" (click)="share()">
+        <mat-icon [svgIcon]="'heroicons_outline:link'"></mat-icon>
+        <span>Create share link...</span>
+    </button>
+</mat-menu>
+@if (error) {
+    <div class="mt-1 text-sm text-red-600" role="alert">{{ error }}</div>
+}

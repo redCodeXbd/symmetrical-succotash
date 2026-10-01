@@ -96,6 +96,13 @@
                     <option value="this_month">This month</option>
                     <option value="all">All time</option>
                 </select>
+                @if (tab() === 'transactions') {
+                    <treasury-export-menu
+                        [build]="transactionsDoc"
+                        [formats]="['xlsx', 'pdf']"
+                        [disabled]="transactions().length === 0"
+                    ></treasury-export-menu>
+                }
             </div>
 
             @if (tab() === 'requests') {

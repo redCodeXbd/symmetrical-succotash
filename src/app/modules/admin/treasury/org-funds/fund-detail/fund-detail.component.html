@@ -1,4 +1,6 @@
 <treasury-slide-over [heading]="fund.name" [subheading]="fund.company + ' · ' + fund.category" (closed)="closed.emit()">
+    <treasury-export-menu headerActions [build]="fundDoc" [formats]="['pdf', 'docx']"></treasury-export-menu>
+
     <div class="flex items-center gap-3">
         <span class="rounded-full px-3 py-1 text-sm font-medium" [class]="statusClasses[org.status(fund)]">
             {{ statusLabels[org.status(fund)] }}

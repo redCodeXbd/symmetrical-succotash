@@ -1,0 +1,61 @@
+<h2 mat-dialog-title>Create share link</h2>
+<mat-dialog-content class="!pt-2">
+    <div class="text-secondary text-md">{{ data.doc.title }}</div>
+
+    @if (!record) {
+        <fieldset class="mt-5">
+            <legend class="mb-2 text-sm font-medium">Shared as</legend>
+            <div class="flex flex-wrap gap-4">
+                @for (f of data.formats; track f) {
+                    <label class="flex items-center gap-2 text-md">
+                        <input type="radio" name="format" [value]="f" [(ngModel)]="format" />
+                        {{ labels[f] }}
+                    </label>
+                }
+            </div>
+        </fieldset>
+
+        <label class="mt-5 flex flex-col gap-1 text-sm font-medium">
+            Link expires after
+            <select class="h-11 rounded-lg border bg-card px-3 text-md font-normal" [(ngModel)]="days">
+                @for (e of expiries; track e.label) {
+                    <option [ngValue]="e.days">{{ e.label }}</option>
+                }
+            </select>
+        </label>
+    } @else {
+        <div class="mt-5">
+            <label for="share-url" class="mb-1 block text-sm font-medium">Share link</label>
+            <div class="flex gap-2">
+                <input
+                    id="share-url"
+                    readonly
+                    class="h-11 min-w-0 flex-auto rounded-lg border bg-transparent px-3 text-md"
+                    [value]="url"
+                    (focus)="$any($event.target).select()"
+                />
+                <button mat-flat-button color="primary" type="button" (click)="copy()">
+                    {{ copied ? 'Copied' : 'Copy' }}
+                </button>
+            </div>
+            <div class="text-secondary mt-2 text-sm">
+                {{ labels[record.format] }} ·
+                {{ record.expiresAt ? 'expires ' + (record.expiresAt | date: 'dd MMM y, h:mm a') : 'never expires' }}
+            </div>
+        </div>
+    }
+
+    <div class="mt-5 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+        Demo link: it opens only in this browser. Links will work for other people once the app is connected to a server.
+    </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end" class="!px-6 !pb-5">
+    @if (!record) {
+        <button mat-stroked-button type="button" mat-dialog-close>Cancel</button>
+        <button mat-flat-button color="primary" type="button" (click)="generate()">Generate link</button>
+    } @else {
+        <button mat-stroked-button type="button" (click)="reset()">New link</button>
+        <a mat-stroked-button [href]="url" target="_blank" rel="noopener">Open</a>
+        <button mat-flat-button color="primary" type="button" mat-dialog-close>Done</button>
+    }
+</mat-dialog-actions>

@@ -17,6 +17,8 @@ import {
     STATUS_CLASSES,
     STATUS_LABELS,
 } from '../funds.types';
+import { ExportMenuComponent } from '../../shared/export-menu/export-menu.component';
+import { ReportDoc } from '../../shared/report.types';
 import { SlideOverComponent } from '../../shared/slide-over/slide-over.component';
 
 type Mode = 'view' | 'approve' | 'reject' | 'pay';
@@ -35,6 +37,7 @@ type Mode = 'view' | 'approve' | 'reject' | 'pay';
         MatFormFieldModule,
         MatInputModule,
         MatSelectModule,
+        ExportMenuComponent,
         SlideOverComponent,
     ],
 })
@@ -106,6 +109,61 @@ export class RequestDetailComponent {
     onCategoryChange(): void {
         this.payForm.patchValue({ fundId: '' });
     }
+
+    /** The request as a printable record: fields, payments and timeline. */
+    detailDoc = (): ReportDoc => {
+        const r = this.request;
+        const money = (n: number) => `${r.currency} ${n.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+        const day = (iso: string) => DateTime.fromISO(iso).toFormat('dd MMM y');
+        const eventLabels = {
+            submitted: 'Request submitted',
+            edited: 'Request edited',
+            approved: 'Request approved',
+            rejected: 'Request rejected',
+            cancelled: 'Request cancelled',
+            payment: 'Payment recorded',
+        };
+        return {
+            kind: 'detail',
+            title: `Fund request ${r.id}`,
+            subtitle: r.purpose,
+            badge: this.labels[r.status],
+            sections: [
+                {
+                    rows: [
+                        ['Requested by', r.employee],
+                        ['Company', r.company],
+                        ['Department', `${r.department}, ${r.branch}`],
+                        ['Requested amount', money(r.amount)],
+                        ['Approved amount', r.approvedAmount === null ? 'Not approved yet' : money(r.approvedAmount)],
+                        ['Paid amount', money(r.paidAmount)],
+                        ['Remaining approved', money(this.remaining)],
+                        ['Needed by', day(r.neededBy)],
+                        ['Work order', r.workOrder || 'None'],
+                        ['Attachment', r.attachment || 'None'],
+                        ...(r.rejectionReason ? ([['Rejection reason', r.rejectionReason]] as [string, string][]) : []),
+                    ],
+                },
+            ],
+            tables: [
+                {
+                    heading: 'Payments',
+                    columns: ['Transaction', 'Date', 'Method', 'Fund', 'Amount'],
+                    rows: this.payments.map((t) => [t.id, day(t.date), t.method, this.fundName(t.fundId), money(t.amount)]),
+                },
+                {
+                    heading: 'Timeline',
+                    columns: ['When', 'Event', 'By', 'Note'],
+                    rows: r.events.map((e) => [
+                        DateTime.fromISO(e.at).toFormat('dd MMM y, h:mm a'),
+                        eventLabels[e.type],
+                        e.by,
+                        e.note ?? '',
+                    ]),
+                },
+            ],
+        };
+    };
 
     fundName(id: string): string {
         const fund = this.org.funds().find((f) => f.id === id);

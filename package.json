@@ -27,7 +27,10 @@
         "@ngneat/transloco": "6.0.4",
         "apexcharts": "3.49.1",
         "crypto-js": "4.2.0",
+        "docx": "^9.8.1",
         "highlight.js": "11.9.0",
+        "jspdf": "^4.2.1",
+        "jspdf-autotable": "^5.0.8",
         "lodash-es": "4.17.21",
         "luxon": "3.4.4",
         "ng-apexcharts": "1.10.0",
@@ -36,6 +39,7 @@
         "quill": "2.0.2",
         "rxjs": "7.8.1",
         "tslib": "2.6.2",
+        "write-excel-file": "^4.1.1",
         "zone.js": "0.14.6"
     },
     "devDependencies": {
@@ -50,6 +54,7 @@
         "@types/lodash": "4.17.4",
         "@types/lodash-es": "4.17.12",
         "@types/luxon": "3.4.2",
+        "@types/node": "20.11.25",
         "autoprefixer": "10.4.19",
         "chroma-js": "2.4.2",
         "jasmine-core": "5.1.2",

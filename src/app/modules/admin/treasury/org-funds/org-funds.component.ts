@@ -6,6 +6,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { DateTime } from 'luxon';
 import { FundsService } from '../funds/funds.service';
+import { ExportMenuComponent } from '../shared/export-menu/export-menu.component';
+import { ReportDoc } from '../shared/report.types';
 import { AddFundComponent } from './add-fund/add-fund.component';
 import { FundDetailComponent } from './fund-detail/fund-detail.component';
 import { OrgFundsService } from './org-funds.service';
@@ -31,7 +33,7 @@ export interface Alert {
     templateUrl: './org-funds.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatIconModule, NgApexchartsModule, FundDetailComponent, AddFundComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatIconModule, NgApexchartsModule, FundDetailComponent, AddFundComponent, ExportMenuComponent],
 })
 export class OrgFundsComponent {
     readonly statusLabels = STATUS_LABELS;
@@ -180,6 +182,46 @@ export class OrgFundsComponent {
     ) {}
 
     fmtAxis = (n: number): string => this._n(n);
+
+    /** Activity for the selected funds and period (not just the 8 rows shown on screen). */
+    activityDoc = (): ReportDoc => {
+        const start = this._rangeStart();
+        const funds = new Map(this.org.funds().map((f) => [f.id, f]));
+        const movements = this.org
+            .movements()
+            .filter((m) => this.fundIds().has(m.fundId) && DateTime.fromISO(m.date) >= start)
+            .sort((a, b) => b.date.localeCompare(a.date));
+        const signed = (m: FundMovement) => (m.direction === 'in' ? m.amount : -m.amount);
+        return {
+            kind: 'table',
+            title: 'Fund activity',
+            subtitle: `${this.company() === 'all' ? 'All companies' : this.company()} · ${this.currency()} · from ${start.toFormat('dd MMM y')}`,
+            columns: [
+                { header: 'Date' },
+                { header: 'Company' },
+                { header: 'Fund' },
+                { header: 'Category' },
+                { header: 'Type' },
+                { header: 'Reference' },
+                { header: 'Recorded by' },
+                { header: `Amount (${this.currency()})`, format: 'number' },
+            ],
+            rows: movements.map((m) => {
+                const f = funds.get(m.fundId);
+                return [
+                    DateTime.fromISO(m.date).toFormat('dd MMM y'),
+                    f?.company ?? '',
+                    f?.name ?? '',
+                    f?.category ?? '',
+                    MOVEMENT_LABELS[m.type],
+                    m.reference,
+                    m.by,
+                    signed(m),
+                ];
+            }),
+            footer: ['Net movement', '', '', '', '', '', '', movements.reduce((sum, m) => sum + signed(m), 0)],
+        };
+    };
 
     onFundAdded(fund: OrgFund): void {
         this.addOpen.set(false);
