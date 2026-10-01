@@ -25,6 +25,7 @@
     <!-- Details -->
     <dl class="mt-6 divide-y text-md">
         <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Requested by</dt><dd>{{ request.employee }}</dd></div>
+        <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Category</dt><dd>{{ request.category }}</dd></div>
         <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Company</dt><dd>{{ request.company }}</dd></div>
         <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Needed by</dt><dd>{{ request.neededBy | date: 'dd MMM y' }}</dd></div>
         <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Work order</dt><dd>{{ request.workOrder || 'None' }}</dd></div>

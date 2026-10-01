@@ -77,6 +77,7 @@ export const appRoutes: Route[] = [
         },
         children: [
             {path: 'example', loadChildren: () => import('app/modules/admin/example/example.routes')},
+            {path: 'settings/categories', canActivate: [roleGuard(['admin'])], loadChildren: () => import('app/modules/admin/settings/categories/categories.routes')},
             {path: 'settings/theme', canActivate: [roleGuard(['admin'])], loadChildren: () => import('app/modules/admin/settings/theme/theme.routes')},
             {path: 'treasury/organization-funds', canActivate: [roleGuard(['accountant', 'admin'])], loadChildren: () => import('app/modules/admin/treasury/org-funds/org-funds.routes')},
             {path: 'treasury/transactions', loadChildren: () => import('app/modules/admin/treasury/transactions/transactions.routes')},

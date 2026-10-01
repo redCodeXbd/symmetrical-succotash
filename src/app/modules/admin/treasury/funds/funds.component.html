@@ -178,6 +178,7 @@
                                         <th scope="col" class="font-medium">Employee</th>
                                     }
                                     <th scope="col" class="font-medium">Purpose</th>
+                                    <th scope="col" class="font-medium">Category</th>
                                     <th scope="col" class="text-right font-medium">Amount</th>
                                     <th scope="col" class="text-right font-medium">Paid</th>
                                     <th scope="col" class="font-medium">Status</th>
@@ -195,6 +196,7 @@
                                             <td>{{ r.employee }}</td>
                                         }
                                         <td>{{ r.purpose }}</td>
+                                        <td class="text-secondary">{{ r.category }}</td>
                                         <td class="whitespace-nowrap text-right">{{ r.currency }} {{ r.amount | number: '1.0-2' }}</td>
                                         <td class="whitespace-nowrap text-right">{{ r.currency }} {{ r.paidAmount | number: '1.0-2' }}</td>
                                         <td>

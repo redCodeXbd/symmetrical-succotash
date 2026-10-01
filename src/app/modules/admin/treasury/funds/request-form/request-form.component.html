@@ -15,6 +15,16 @@
         </mat-form-field>
 
         <mat-form-field class="w-full">
+            <mat-label>Category</mat-label>
+            <mat-select formControlName="category">
+                @for (c of categories.names('fund-requests'); track c) {
+                    <mat-option [value]="c">{{ c }}</mat-option>
+                }
+            </mat-select>
+            <mat-error>Choose what the money is for</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
             <mat-label>Purpose</mat-label>
             <textarea
                 matInput

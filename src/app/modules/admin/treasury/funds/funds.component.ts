@@ -1,5 +1,7 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal, ViewEncapsulation } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -170,8 +172,17 @@ export class FundsComponent {
 
     constructor(
         public funds: FundsService,
-        public roles: RoleService
-    ) {}
+        public roles: RoleService,
+        route: ActivatedRoute
+    ) {
+        // A notification links here with ?request=FR-1024 to open that request.
+        route.queryParamMap.pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe((params) => {
+            const id = params.get('request');
+            if (id) {
+                this.selectedId.set(id);
+            }
+        });
+    }
 
     setTab(tab: Tab): void {
         this.tab.set(tab);
