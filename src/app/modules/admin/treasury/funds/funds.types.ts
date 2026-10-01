@@ -35,6 +35,8 @@ export interface FundRequest {
     branch: string;
     department: string;
     purpose: string;
+    /** What the money is for. The list is managed in Settings > Categories. */
+    category: string;
     amount: number;
     currency: string;
     neededBy: string;
@@ -114,6 +116,7 @@ export interface SourceFund {
 
 export interface FundRequestInput {
     purpose: string;
+    category: string;
     amount: number;
     neededBy: string;
     workOrder: string | null;

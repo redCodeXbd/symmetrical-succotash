@@ -80,11 +80,3 @@ export interface NewFundInput {
     minBalance: number;
 }
 
-export const DEFAULT_CATEGORIES: string[] = [
-    'Operations',
-    'Project',
-    'Procurement',
-    'Payroll',
-    'Travel & Transport',
-    'Petty cash',
-];

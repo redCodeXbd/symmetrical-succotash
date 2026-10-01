@@ -1,7 +1,7 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { CategoryService } from 'app/core/categories/categories.service';
 import { DateTime } from 'luxon';
 import {
-    DEFAULT_CATEGORIES,
     ExpectedIncoming,
     FundMovement,
     FundStatus,
@@ -23,6 +23,7 @@ export class OrgFundsService {
     readonly userBranch = 'Head Office';
     readonly userDepartment = 'Accounts';
 
+    private _cats = inject(CategoryService);
     private _funds = signal<OrgFund[]>([
         { id: 'F-01', name: 'Head Office Cash Fund', company: ENCORE, branch: 'Head Office', department: 'Accounts', category: 'Operations', type: 'Cash', currency: 'BDT', balance: 150000, reserved: 0, minBalance: 50000, active: true },
         { id: 'F-02', name: 'Operating Bank Fund', company: ENCORE, branch: 'Head Office', department: 'Accounts', category: 'Operations', type: 'Bank', currency: 'BDT', balance: 800000, reserved: 50000, minBalance: 200000, active: true },
@@ -33,13 +34,13 @@ export class OrgFundsService {
         { id: 'F-07', name: 'Trading Cash Fund', company: TRADING, branch: 'Head Office', department: 'Sales', category: 'Petty cash', type: 'Cash', currency: 'BDT', balance: 65000, reserved: 0, minBalance: 30000, active: true },
         { id: 'F-08', name: 'Legacy Site Fund', company: ENCORE, branch: 'Dhaka Site', department: 'Operations', category: 'Project', type: 'Project', currency: 'BDT', balance: 0, reserved: 0, minBalance: 0, active: false },
     ]);
-    private _categories = signal<string[]>([...DEFAULT_CATEGORIES]);
     private _movements = signal<FundMovement[]>(this._seedMovements());
     private _incoming = signal<ExpectedIncoming[]>(this._seedIncoming());
     private _outgoing = signal<ScheduledOutgoing[]>(this._seedOutgoing());
 
     readonly funds = this._funds.asReadonly();
-    readonly categories = this._categories.asReadonly();
+    /** Category names, managed in Settings > Categories. */
+    readonly categories = computed(() => this._cats.names('org-funds'));
     readonly movements = this._movements.asReadonly();
     readonly expectedIncoming = this._incoming.asReadonly();
     readonly scheduledOutgoing = this._outgoing.asReadonly();
@@ -56,16 +57,17 @@ export class OrgFundsService {
     }
 
     addCategory(name: string): void {
-        const clean = name.trim();
-        if (clean && !this._categories().some((c) => c.toLowerCase() === clean.toLowerCase())) {
-            this._categories.update((list) => [...list, clean]);
-        }
+        this._cats.ensure('org-funds', name);
+    }
+
+    /** Funds follow a category when it is renamed in Settings. */
+    renameCategory(from: string, to: string): void {
+        this._funds.update((list) => list.map((f) => (f.category === from ? { ...f, category: to } : f)));
     }
 
     /** Creates a fund. A new category name is added to the category list. */
     addFund(input: NewFundInput, by: string): OrgFund {
-        this.addCategory(input.category);
-        const category = this._categories().find((c) => c.toLowerCase() === input.category.trim().toLowerCase());
+        const category = this._cats.ensure('org-funds', input.category);
         const max = this._funds().reduce((m, f) => Math.max(m, Number(f.id.slice(2)) || 0), 0);
         const fund: OrgFund = {
             id: `F-${String(max + 1).padStart(2, '0')}`,

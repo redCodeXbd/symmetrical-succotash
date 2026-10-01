@@ -61,6 +61,11 @@ export class FundsService {
         () => new Map(this._requests().map((r) => [r.id, r]))
     );
 
+    /** Requests follow a category when it is renamed in Settings. */
+    renameRequestCategory(from: string, to: string): void {
+        this._requests.update((list) => list.map((r) => (r.category === from ? { ...r, category: to } : r)));
+    }
+
     /** Category of the fund a payment was taken from. */
     fundCategory(fundId: string): string {
         return this._org.funds().find((f) => f.id === fundId)?.category ?? 'Other';
@@ -411,7 +416,7 @@ export class FundsService {
         });
         return [
             {
-                ...base, id: 'FR-1015', employee: 'Brian Hughes', purpose: 'Site cables',
+                ...base, id: 'FR-1015', employee: 'Brian Hughes', purpose: 'Site cables', category: 'Materials & supplies',
                 amount: 10000, neededBy: this._daysAgo(7), workOrder: 'WO-004-26-100051',
                 status: 'partially_paid', approvedAmount: 10000, paidAmount: 4000,
                 submittedAt: this._daysAgo(8),
@@ -422,26 +427,26 @@ export class FundsService {
                 ],
             },
             {
-                ...base, id: 'FR-1024', employee: 'Brian Hughes', purpose: 'Site visit & transport',
+                ...base, id: 'FR-1024', employee: 'Brian Hughes', purpose: 'Site visit & transport', category: 'Travel & transport',
                 amount: 7500, neededBy: this._daysAgo(-3), workOrder: 'WO-004-26-100051',
                 status: 'pending', approvedAmount: null, paidAmount: 0,
                 submittedAt: this._daysAgo(0), events: [sub(0, 'Brian Hughes')],
             },
             {
-                ...base, id: 'FR-1023', employee: 'Brian Hughes', purpose: 'Office supplies',
+                ...base, id: 'FR-1023', employee: 'Brian Hughes', purpose: 'Office supplies', category: 'Office',
                 amount: 5000, neededBy: this._daysAgo(-5), workOrder: null,
                 status: 'pending', approvedAmount: null, paidAmount: 0,
                 submittedAt: this._daysAgo(1), events: [sub(1, 'Brian Hughes')],
             },
             {
-                ...base, id: 'FR-1022', employee: 'Brian Hughes', purpose: 'Project materials',
+                ...base, id: 'FR-1022', employee: 'Brian Hughes', purpose: 'Project materials', category: 'Materials & supplies',
                 amount: 8000, neededBy: this._daysAgo(-2), workOrder: 'WO-002-26-100053',
                 status: 'approved', approvedAmount: 8000, paidAmount: 0,
                 submittedAt: this._daysAgo(2),
                 events: [sub(2, 'Brian Hughes'), ev('approved', 1, 'Accounts', 'Approved BDT 8,000')],
             },
             {
-                ...base, id: 'FR-1021', employee: 'Brian Hughes', purpose: 'Client meeting expenses',
+                ...base, id: 'FR-1021', employee: 'Brian Hughes', purpose: 'Client meeting expenses', category: 'Meals & entertainment',
                 amount: 6000, neededBy: this._daysAgo(2), workOrder: null,
                 status: 'paid', approvedAmount: 6000, paidAmount: 6000,
                 submittedAt: this._daysAgo(4),
@@ -452,7 +457,7 @@ export class FundsService {
                 ],
             },
             {
-                ...base, id: 'FR-1020', employee: 'Brian Hughes', purpose: 'Workshop tools',
+                ...base, id: 'FR-1020', employee: 'Brian Hughes', purpose: 'Workshop tools', category: 'Materials & supplies',
                 amount: 10000, neededBy: this._daysAgo(5), workOrder: 'WO-003-26-100052',
                 status: 'paid', approvedAmount: 10000, paidAmount: 10000,
                 submittedAt: this._daysAgo(7),
@@ -463,7 +468,7 @@ export class FundsService {
                 ],
             },
             {
-                ...base, id: 'FR-1019', employee: 'Brian Hughes', purpose: 'Courier and packaging',
+                ...base, id: 'FR-1019', employee: 'Brian Hughes', purpose: 'Courier and packaging', category: 'Office',
                 amount: 8000, neededBy: this._daysAgo(8), workOrder: null,
                 status: 'paid', approvedAmount: 8000, paidAmount: 8000,
                 submittedAt: this._daysAgo(9),
@@ -474,7 +479,7 @@ export class FundsService {
                 ],
             },
             {
-                ...base, id: 'FR-1018', employee: 'Brian Hughes', purpose: 'Printer repair',
+                ...base, id: 'FR-1018', employee: 'Brian Hughes', purpose: 'Printer repair', category: 'Office',
                 amount: 4500, neededBy: this._daysAgo(10), workOrder: null,
                 status: 'rejected', approvedAmount: null, paidAmount: 0,
                 rejectionReason: 'Covered by the existing maintenance contract.',
@@ -486,13 +491,13 @@ export class FundsService {
             },
             {
                 ...base, id: 'FR-1017', employee: 'Mehedi Hasan', branch: 'Dhaka Site', department: 'Operations',
-                purpose: 'Cable and lugs for site work', amount: 15000, neededBy: this._daysAgo(-1),
+                purpose: 'Cable and lugs for site work', category: 'Materials & supplies', amount: 15000, neededBy: this._daysAgo(-1),
                 workOrder: 'WO-004-26-100051', status: 'pending', approvedAmount: null, paidAmount: 0,
                 submittedAt: this._daysAgo(0), events: [sub(0, 'Mehedi Hasan')],
             },
             {
                 ...base, id: 'FR-1016', employee: 'Rahim Ahmed', branch: 'Head Office', department: 'Sales',
-                purpose: 'Client visit travel', amount: 12000, neededBy: this._daysAgo(-2),
+                purpose: 'Client visit travel', category: 'Travel & transport', amount: 12000, neededBy: this._daysAgo(-2),
                 workOrder: null, status: 'partially_paid', approvedAmount: 12000, paidAmount: 5000,
                 submittedAt: this._daysAgo(3),
                 events: [

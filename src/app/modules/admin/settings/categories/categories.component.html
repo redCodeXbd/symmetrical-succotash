@@ -1,0 +1,117 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <div>
+            <div class="text-secondary text-md">Settings / Categories</div>
+            <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Categories</h1>
+            <div class="text-secondary mt-0.5 text-lg">
+                Create, rename and delete the categories each feature uses. Admin only.
+            </div>
+        </div>
+
+        <div class="mt-8 flex flex-col gap-6">
+            @for (section of sections; track section.group.id) {
+                <section class="rounded-2xl bg-card shadow" [attr.aria-labelledby]="'cat-title-' + section.group.id">
+                    <div class="p-6 pb-4">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h2 [id]="'cat-title-' + section.group.id" class="text-xl font-semibold">{{ section.group.title }}</h2>
+                            <span class="rounded-full bg-primary/15 px-2.5 py-0.5 text-sm font-medium text-primary">
+                                {{ categories.list(section.group.id).length }}
+                            </span>
+                        </div>
+                        <p class="text-secondary mt-1 text-md">{{ section.group.description }}</p>
+
+                        <!-- Add -->
+                        <form class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-6" (ngSubmit)="add(section)">
+                            <input
+                                type="text"
+                                maxlength="40"
+                                class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-2"
+                                placeholder="New category name"
+                                [attr.aria-label]="'New ' + section.group.title + ' category name'"
+                                [name]="'name-' + section.group.id"
+                                [(ngModel)]="drafts[section.group.id].name"
+                            />
+                            <input
+                                type="text"
+                                class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-3"
+                                placeholder="Description (optional)"
+                                [attr.aria-label]="'Description for the new category'"
+                                [name]="'desc-' + section.group.id"
+                                [(ngModel)]="drafts[section.group.id].description"
+                            />
+                            <button mat-flat-button color="primary" type="submit" class="fuse-mat-button-large">Add category</button>
+                        </form>
+                        @if (errors[section.group.id]) {
+                            <div class="mt-2 text-sm text-red-600" role="alert">{{ errors[section.group.id] }}</div>
+                        }
+                    </div>
+
+                    <!-- List -->
+                    @if (categories.list(section.group.id).length === 0) {
+                        <div class="text-secondary border-t px-6 py-10 text-center text-md">No categories yet. Add the first one above.</div>
+                    } @else {
+                        <div class="overflow-x-auto border-t">
+                            <table class="app-table min-w-[640px] text-md">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Description</th>
+                                        <th scope="col">Used by</th>
+                                        <th scope="col"><span class="sr-only">Actions</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (c of categories.list(section.group.id); track c.id) {
+                                        <tr>
+                                            @if (isEditing(section.group.id, c.id)) {
+                                                <td>
+                                                    <input type="text" maxlength="40" class="h-10 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="Category name" [(ngModel)]="editing!.name" [name]="'en-' + c.id" (keydown.enter)="saveEdit(section)" />
+                                                </td>
+                                                <td>
+                                                    <input type="text" class="h-10 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="Category description" [(ngModel)]="editing!.description" [name]="'ed-' + c.id" (keydown.enter)="saveEdit(section)" />
+                                                </td>
+                                                <td>{{ usageText(section, c.name) }}</td>
+                                                <td class="whitespace-nowrap text-right">
+                                                    <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="saveEdit(section)">Save</button>
+                                                    <button type="button" class="text-secondary hover:underline" (click)="cancelEdit()">Cancel</button>
+                                                    @if (editError) {
+                                                        <div class="mt-1 text-xs text-red-600" role="alert">{{ editError }}</div>
+                                                    }
+                                                </td>
+                                            } @else {
+                                                <td class="font-medium">{{ c.name }}</td>
+                                                <td class="text-secondary">{{ c.description || '-' }}</td>
+                                                <td>{{ usageText(section, c.name) }}</td>
+                                                <td class="whitespace-nowrap text-right">
+                                                    @if (isDeleting(section.group.id, c.id)) {
+                                                        <span class="mr-3 text-sm">Delete "{{ c.name }}"?</span>
+                                                        <button type="button" class="mr-4 font-medium text-red-600 hover:underline" (click)="remove(section, c)">Delete</button>
+                                                        <button type="button" class="text-secondary hover:underline" (click)="deleting = null">Cancel</button>
+                                                    } @else {
+                                                        <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="startEdit(section, c)">Edit</button>
+                                                        @if (section.usage(c.name) > 0) {
+                                                            <span class="text-secondary text-sm" [attr.title]="'Move or change the ' + section.nounPlural + ' using it first'">In use</span>
+                                                        } @else {
+                                                            <button type="button" class="font-medium text-red-600 hover:underline" (click)="deleting = { groupId: section.group.id, id: c.id }">Delete</button>
+                                                        }
+                                                    }
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-secondary border-t px-6 py-3 text-sm">
+                            Renaming updates every record that uses the category. A category that is in use cannot be deleted.
+                        </div>
+                    }
+                </section>
+            }
+
+            <div class="text-secondary rounded-2xl border border-dashed p-6 text-md">
+                More features will get their own section here as they gain categories, such as Sales, Purchases and Expenses.
+            </div>
+        </div>
+    </div>
+</div>

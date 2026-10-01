@@ -6,6 +6,7 @@ export const NAV_ACCESS: Record<string, AppRole[]> = {
     'treasury.organization-funds': ['accountant', 'admin'],
     settings: ['admin'],
     'settings.theme': ['admin'],
+    'settings.categories': ['admin'],
 };
 
 /** Returns the menu a role is allowed to see; a parent with no visible children disappears. */

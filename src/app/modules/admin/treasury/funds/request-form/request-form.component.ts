@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { DateTime } from 'luxon';
+import { CategoryService } from 'app/core/categories/categories.service';
 import { FundsService } from '../funds.service';
 import { FundRequest } from '../funds.types';
 import { SlideOverComponent } from '../../shared/slide-over/slide-over.component';
@@ -33,6 +34,7 @@ export class RequestFormComponent implements OnInit {
 
     form = this._fb.group({
         amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
+        category: ['', Validators.required],
         purpose: ['', [Validators.required, Validators.maxLength(200)]],
         neededBy: [null as DateTime | null, Validators.required],
         workOrder: [null as string | null],
@@ -42,7 +44,8 @@ export class RequestFormComponent implements OnInit {
 
     constructor(
         private _fb: FormBuilder,
-        public funds: FundsService
+        public funds: FundsService,
+        public categories: CategoryService
     ) {}
 
     ngOnInit(): void {
@@ -50,6 +53,7 @@ export class RequestFormComponent implements OnInit {
             this.form.patchValue({
                 amount: this.request.amount,
                 purpose: this.request.purpose,
+                category: this.request.category,
                 neededBy: DateTime.fromISO(this.request.neededBy),
                 workOrder: this.request.workOrder,
             });
@@ -71,6 +75,7 @@ export class RequestFormComponent implements OnInit {
         const input = {
             amount: Number(v.amount),
             purpose: v.purpose.trim(),
+            category: v.category,
             neededBy: v.neededBy.toISO(),
             workOrder: v.workOrder || null,
             attachment: this.attachment,
