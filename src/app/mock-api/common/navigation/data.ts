@@ -3,6 +3,13 @@ import { FuseNavigationItem } from '@fuse/components/navigation';
 
 export const defaultNavigation: FuseNavigationItem[] = [
     {
+        id   : 'dashboard',
+        title: 'Dashboard',
+        type : 'basic',
+        icon : 'heroicons_outline:chart-pie',
+        link : '/dashboard'
+    },
+    {
         id      : 'settings',
         title   : 'Configuration',
         type    : 'collapsable',
@@ -27,13 +34,6 @@ export const defaultNavigation: FuseNavigationItem[] = [
                 link : '/settings/roles'
             }
         ]
-    },
-    {
-        id   : 'dashboard',
-        title: 'Dashboard',
-        type : 'basic',
-        icon : 'heroicons_outline:chart-pie',
-        link : '/dashboard'
     },
     {
         id      : 'treasury',
