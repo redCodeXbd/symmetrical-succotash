@@ -4,7 +4,8 @@ export type FundRequestStatus =
     | 'partially_paid'
     | 'paid'
     | 'rejected'
-    | 'cancelled';
+    | 'cancelled'
+    | 'closed';
 
 export type FundRole = 'employee' | 'accounts';
 
@@ -14,7 +15,11 @@ export type FundEventType =
     | 'approved'
     | 'rejected'
     | 'cancelled'
-    | 'payment';
+    | 'payment'
+    | 'closed'
+    | 'return_requested'
+    | 'return_received'
+    | 'return_rejected';
 
 export interface FundRequestEvent {
     type: FundEventType;
@@ -38,6 +43,10 @@ export interface FundRequest {
     status: FundRequestStatus;
     approvedAmount: number | null;
     paidAmount: number;
+    /** Money the employee gave back, once Accounts confirmed receipt. */
+    returnedAmount: number;
+    /** Approved money that was never paid because the request was closed early. */
+    closedAmount: number | null;
     rejectionReason: string | null;
     submittedAt: string;
     events: FundRequestEvent[];
@@ -54,6 +63,46 @@ export interface FundTransaction {
     fundId: string;
     recordedBy: string;
 }
+
+export type FundReturnStatus = 'pending' | 'received' | 'rejected';
+
+/** Money an employee gives back to the organization. It counts once Accounts or Admin confirm receipt. */
+export interface FundReturn {
+    id: string;
+    requestId: string;
+    employee: string;
+    amount: number;
+    currency: string;
+    method: string;
+    reference: string;
+    note: string;
+    status: FundReturnStatus;
+    createdAt: string;
+    decidedAt: string | null;
+    decidedBy: string | null;
+    /** Fund that received the money. */
+    fundId: string | null;
+    rejectionReason: string | null;
+}
+
+export interface ReturnInput {
+    amount: number;
+    method: string;
+    reference: string;
+    note: string;
+}
+
+export const RETURN_STATUS_LABELS: Record<FundReturnStatus, string> = {
+    pending: 'Awaiting confirmation',
+    received: 'Received',
+    rejected: 'Rejected',
+};
+
+export const RETURN_STATUS_CLASSES: Record<FundReturnStatus, string> = {
+    pending: 'bg-amber-100 text-amber-800',
+    received: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800',
+};
 
 export interface SourceFund {
     id: string;
@@ -87,6 +136,7 @@ export const STATUS_LABELS: Record<FundRequestStatus, string> = {
     paid: 'Paid',
     rejected: 'Rejected',
     cancelled: 'Cancelled',
+    closed: 'Closed',
 };
 
 export const PAYMENT_METHODS: string[] = [
@@ -103,4 +153,31 @@ export const STATUS_CLASSES: Record<FundRequestStatus, string> = {
     paid: 'bg-green-100 text-green-800',
     rejected: 'bg-red-100 text-red-800',
     cancelled: 'bg-gray-200 text-gray-700',
+    closed: 'bg-slate-200 text-slate-700',
+};
+
+export const EVENT_LABELS: Record<FundEventType, string> = {
+    submitted: 'Request submitted',
+    edited: 'Request edited',
+    approved: 'Request approved',
+    rejected: 'Request rejected',
+    cancelled: 'Request cancelled',
+    payment: 'Payment recorded',
+    closed: 'Request closed',
+    return_requested: 'Return requested',
+    return_received: 'Return received',
+    return_rejected: 'Return rejected',
+};
+
+export const EVENT_CLASSES: Record<FundEventType, string> = {
+    submitted: 'bg-amber-100 text-amber-800',
+    edited: 'bg-gray-200 text-gray-700',
+    approved: 'bg-blue-100 text-blue-800',
+    rejected: 'bg-red-100 text-red-800',
+    cancelled: 'bg-gray-200 text-gray-700',
+    payment: 'bg-green-100 text-green-800',
+    closed: 'bg-slate-200 text-slate-700',
+    return_requested: 'bg-amber-100 text-amber-800',
+    return_received: 'bg-green-100 text-green-800',
+    return_rejected: 'bg-red-100 text-red-800',
 };

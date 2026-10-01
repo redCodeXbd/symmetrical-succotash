@@ -1,0 +1,356 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <!-- Header -->
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div class="text-secondary text-md">Treasury / Transactions</div>
+                <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Transactions</h1>
+                <div class="text-secondary mt-0.5 text-lg">
+                    {{ roles.canSeeAll() ? 'Every fund payment and action, in one place.' : 'Your fund payments and the actions taken on your requests.' }}
+                </div>
+            </div>
+            <treasury-role-switch></treasury-role-switch>
+        </div>
+
+        <!-- Summary tiles -->
+        <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+            <div class="stat-tile col-span-2 sm:col-span-1" style="--tile: var(--fuse-primary-rgb)">
+                <div class="stat-head">
+                    <span class="stat-label">Total paid</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:banknotes'"></mat-icon></span>
+                </div>
+                <div class="stat-value"><span class="stat-cur">{{ funds.currency }}</span>{{ totalPaid() | number: '1.0-2' }}</div>
+                <div class="stat-sub">{{ rangeLabel() }}</div>
+            </div>
+            <div class="stat-tile" style="--tile: 22, 163, 74">
+                <div class="stat-head">
+                    <span class="stat-label">Transactions</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon></span>
+                </div>
+                <div class="stat-value">{{ payments().length }}</div>
+                <div class="stat-sub">Payments recorded</div>
+            </div>
+            <div class="stat-tile" style="--tile: var(--fuse-accent-rgb)">
+                <div class="stat-head">
+                    <span class="stat-label">Actions</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:clock'"></mat-icon></span>
+                </div>
+                <div class="stat-value">{{ actions().length }}</div>
+                <div class="stat-sub">Submitted, approved, paid...</div>
+            </div>
+        </div>
+
+        <!-- Date range -->
+        <section class="fund-filter-panel mt-6" aria-label="Date range">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-secondary">
+                    <span class="inline-block h-2 w-2 rounded-full bg-primary"></span>Date range
+                </div>
+                <div class="text-secondary text-sm">{{ scopeLabel() }}</div>
+            </div>
+            <div class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap">
+                @for (p of presets; track p.id) {
+                    <button type="button" class="fund-chip flex-none" [class.fund-chip-on]="preset() === p.id" [attr.aria-pressed]="preset() === p.id" (click)="setPreset(p.id)">{{ p.label }}</button>
+                }
+            </div>
+            @if (preset() === 'custom') {
+                <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:max-w-md">
+                    <label class="flex flex-col gap-1 text-sm text-secondary">
+                        From
+                        <input type="date" class="h-11 rounded-lg border bg-transparent px-3 text-md text-default" [ngModel]="from()" (ngModelChange)="from.set($event)" [max]="to()" />
+                    </label>
+                    <label class="flex flex-col gap-1 text-sm text-secondary">
+                        To
+                        <input type="date" class="h-11 rounded-lg border bg-transparent px-3 text-md text-default" [ngModel]="to()" (ngModelChange)="to.set($event)" [min]="from()" />
+                    </label>
+                </div>
+                @if (rangeError(); as err) {
+                    <div class="mt-2 text-sm text-red-600" role="alert">{{ err }}</div>
+                }
+            }
+        </section>
+
+        <!-- Tabs, filters and table -->
+        <div class="mt-6 overflow-hidden rounded-2xl bg-card shadow">
+            <div class="flex overflow-x-auto border-b px-4" role="tablist">
+                <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="activeTab() === 'payments' ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="activeTab() === 'payments'" (click)="setTab('payments')">
+                    Transactions
+                </button>
+                <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="activeTab() === 'returns' ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="activeTab() === 'returns'" (click)="setTab('returns')">
+                    Returns
+                </button>
+                <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="activeTab() === 'actions' ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="activeTab() === 'actions'" (click)="setTab('actions')">
+                    Actions
+                </button>
+                @if (roles.isAdmin()) {
+                    <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="activeTab() === 'movements' ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="activeTab() === 'movements'" (click)="setTab('movements')">
+                        Treasury movements
+                    </button>
+                }
+            </div>
+
+            <div class="flex flex-wrap gap-3 p-4">
+                <input
+                    type="search"
+                    class="h-11 min-w-48 flex-auto rounded-lg border bg-transparent px-3 text-md"
+                    placeholder="Search..."
+                    aria-label="Search"
+                    [ngModel]="search()"
+                    (ngModelChange)="search.set($event)"
+                />
+                @if (roles.canSeeAll() && activeTab() !== 'movements') {
+                    <select class="h-11 rounded-lg border bg-card px-3 text-md" aria-label="Filter by employee" [ngModel]="employee()" (ngModelChange)="employee.set($event)">
+                        <option value="all">All employees</option>
+                        @for (e of employees(); track e) {
+                            <option [value]="e">{{ e }}</option>
+                        }
+                    </select>
+                }
+                <select class="h-11 rounded-lg border bg-card px-3 text-md" aria-label="Filter" [ngModel]="kind()" (ngModelChange)="kind.set($event)">
+                    @switch (activeTab()) {
+                        @case ('payments') {
+                            <option value="all">All methods</option>
+                            @for (m of methods; track m) {
+                                <option [value]="m">{{ m }}</option>
+                            }
+                        }
+                        @case ('returns') {
+                            <option value="all">All statuses</option>
+                            @for (st of returnStatuses; track st) {
+                                <option [value]="st">{{ returnLabels[$any(st)] }}</option>
+                            }
+                        }
+                        @case ('actions') {
+                            <option value="all">All actions</option>
+                            @for (a of actionTypes; track a) {
+                                <option [value]="a">{{ actionLabels[a] }}</option>
+                            }
+                        }
+                        @default {
+                            <option value="all">All types</option>
+                            @for (m of movementTypes; track m) {
+                                <option [value]="m">{{ movementLabels[$any(m)] }}</option>
+                            }
+                        }
+                    }
+                </select>
+                <treasury-export-menu
+                    [build]="doc"
+                    [formats]="['xlsx', 'pdf']"
+                    [disabled]="!!rangeError() || (activeTab() === 'payments' ? payments().length : activeTab() === 'returns' ? returns().length : activeTab() === 'actions' ? actions().length : movements().length) === 0"
+                ></treasury-export-menu>
+            </div>
+
+            <!-- Transactions -->
+            @if (activeTab() === 'payments') {
+                @if (payments().length === 0) {
+                    <div class="px-6 py-16 text-center">
+                        <div class="text-xl font-semibold">No transactions in this period</div>
+                        <div class="text-secondary mt-1 text-md">Try a wider date range. Only recorded payments appear here.</div>
+                    </div>
+                } @else {
+                    <div class="overflow-x-auto">
+                        <table class="app-table min-w-[880px] text-md">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Transaction / Date</th>
+                                    <th scope="col">Request</th>
+                                    @if (roles.canSeeAll()) {
+                                        <th scope="col">Employee</th>
+                                    }
+                                    <th scope="col">Fund</th>
+                                    <th scope="col">Method</th>
+                                    <th scope="col">Reference</th>
+                                    <th scope="col" class="text-right">Amount</th>
+                                    <th scope="col"><span class="sr-only">Action</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (p of payments(); track p.t.id) {
+                                    <tr>
+                                        <td>
+                                            <div class="font-medium">{{ p.t.id }}</div>
+                                            <div class="text-secondary text-sm">{{ p.t.date | date: 'dd MMM y' }}</div>
+                                        </td>
+                                        <td>
+                                            <div>{{ p.r.id }}</div>
+                                            <div class="text-secondary text-sm">{{ p.r.purpose }}</div>
+                                        </td>
+                                        @if (roles.canSeeAll()) {
+                                            <td>{{ p.r.employee }}</td>
+                                        }
+                                        <td>
+                                            <div>{{ p.fund?.name }}</div>
+                                            <div class="text-secondary text-sm">{{ p.fund?.category }}</div>
+                                        </td>
+                                        <td>{{ p.t.method }}</td>
+                                        <td>{{ p.t.reference || '-' }}</td>
+                                        <td class="whitespace-nowrap text-right">{{ p.t.currency }} {{ p.t.amount | number: '1.0-2' }}</td>
+                                        <td class="text-right"><button type="button" class="font-medium text-primary hover:underline" (click)="openRequest(p.r.id)">Details</button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+
+            <!-- Returns -->
+            @if (activeTab() === 'returns') {
+                @if (returns().length === 0) {
+                    <div class="px-6 py-16 text-center">
+                        <div class="text-xl font-semibold">No returns in this period</div>
+                        <div class="text-secondary mt-1 text-md">Money employees give back appears here once it is requested.</div>
+                    </div>
+                } @else {
+                    <div class="overflow-x-auto">
+                        <table class="app-table min-w-[880px] text-md">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Return / Date</th>
+                                    <th scope="col">Request</th>
+                                    @if (roles.canSeeAll()) {
+                                        <th scope="col">Employee</th>
+                                    }
+                                    <th scope="col">Method</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Received into</th>
+                                    <th scope="col" class="text-right">Amount</th>
+                                    <th scope="col"><span class="sr-only">Action</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (t of returns(); track t.x.id) {
+                                    <tr>
+                                        <td>
+                                            <div class="font-medium">{{ t.x.id }}</div>
+                                            <div class="text-secondary text-sm">{{ t.x.createdAt | date: 'dd MMM y' }}</div>
+                                        </td>
+                                        <td>
+                                            <div>{{ t.r.id }}</div>
+                                            <div class="text-secondary text-sm">{{ t.r.purpose }}</div>
+                                        </td>
+                                        @if (roles.canSeeAll()) {
+                                            <td>{{ t.r.employee }}</td>
+                                        }
+                                        <td>{{ t.x.method }}</td>
+                                        <td><span class="whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-medium" [class]="returnClasses[t.x.status]">{{ returnLabels[t.x.status] }}</span></td>
+                                        <td>{{ t.fund?.name || '-' }}</td>
+                                        <td class="whitespace-nowrap text-right">{{ t.x.currency }} {{ t.x.amount | number: '1.0-2' }}</td>
+                                        <td class="text-right"><button type="button" class="font-medium text-primary hover:underline" (click)="openRequest(t.r.id)">Details</button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+
+            <!-- Actions -->
+            @if (activeTab() === 'actions') {
+                @if (actions().length === 0) {
+                    <div class="px-6 py-16 text-center">
+                        <div class="text-xl font-semibold">No actions in this period</div>
+                        <div class="text-secondary mt-1 text-md">Try a wider date range.</div>
+                    </div>
+                } @else {
+                    <div class="overflow-x-auto">
+                        <table class="app-table min-w-[880px] text-md">
+                            <thead>
+                                <tr>
+                                    <th scope="col">When</th>
+                                    <th scope="col">Action</th>
+                                    <th scope="col">Request</th>
+                                    @if (roles.canSeeAll()) {
+                                        <th scope="col">Employee</th>
+                                    }
+                                    <th scope="col">By</th>
+                                    <th scope="col">Note</th>
+                                    <th scope="col"><span class="sr-only">Details</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (a of actions(); track $index) {
+                                    <tr>
+                                        <td class="whitespace-nowrap">{{ a.e.at | date: 'dd MMM y, h:mm a' }}</td>
+                                        <td><span class="whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-medium" [class]="actionClasses[a.e.type]">{{ actionLabels[a.e.type] }}</span></td>
+                                        <td>
+                                            <div>{{ a.r.id }}</div>
+                                            <div class="text-secondary text-sm">{{ a.r.purpose }}</div>
+                                        </td>
+                                        @if (roles.canSeeAll()) {
+                                            <td>{{ a.r.employee }}</td>
+                                        }
+                                        <td>{{ a.e.by }}</td>
+                                        <td class="text-secondary">{{ a.e.note || '-' }}</td>
+                                        <td class="text-right"><button type="button" class="font-medium text-primary hover:underline" (click)="openRequest(a.r.id)">Details</button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+
+            <!-- Treasury movements (admin) -->
+            @if (activeTab() === 'movements') {
+                @if (movements().length === 0) {
+                    <div class="px-6 py-16 text-center">
+                        <div class="text-xl font-semibold">No movements in this period</div>
+                        <div class="text-secondary mt-1 text-md">Deposits, transfers and disbursements across all funds appear here.</div>
+                    </div>
+                } @else {
+                    <div class="overflow-x-auto">
+                        <table class="app-table min-w-[960px] text-md">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Fund</th>
+                                    <th scope="col">Company</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Reference</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col">Recorded by</th>
+                                    <th scope="col" class="text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (x of movements(); track x.m.id) {
+                                    <tr>
+                                        <td class="whitespace-nowrap">{{ x.m.date | date: 'dd MMM y' }}</td>
+                                        <td>
+                                            <div>{{ x.fund?.name }}</div>
+                                            <div class="text-secondary text-sm">{{ x.fund?.category }}</div>
+                                        </td>
+                                        <td>{{ x.fund?.company }}</td>
+                                        <td>{{ movementLabels[x.m.type] }}</td>
+                                        <td>{{ x.m.reference }}</td>
+                                        <td class="text-secondary">{{ x.m.description }}</td>
+                                        <td>{{ x.m.by }}</td>
+                                        <td class="whitespace-nowrap text-right" [class]="x.m.direction === 'in' ? 'text-green-700' : ''">
+                                            {{ x.m.direction === 'in' ? '+' : '-' }}{{ x.fund?.currency }} {{ x.m.amount | number: '1.0-2' }}
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+
+            <div class="text-secondary border-t px-6 py-3 text-sm">
+                @switch (activeTab()) {
+                    @case ('payments') { {{ payments().length }} {{ payments().length === 1 ? 'transaction' : 'transactions' }} }
+                    @case ('returns') { {{ returns().length }} {{ returns().length === 1 ? 'return' : 'returns' }} }
+                    @case ('actions') { {{ actions().length }} {{ actions().length === 1 ? 'action' : 'actions' }} }
+                    @default { {{ movements().length }} {{ movements().length === 1 ? 'movement' : 'movements' }} }
+                }
+                · {{ rangeLabel() }}
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (selected(); as request) {
+    <funds-request-detail [request]="request" [role]="role()" (closed)="selectedId.set(null)" (edit)="goToFunds()"></funds-request-detail>
+}

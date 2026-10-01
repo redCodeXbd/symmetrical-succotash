@@ -6,7 +6,7 @@
     class="dark app-sidebar print:hidden"
     [mode]="isScreenSmall ? 'over' : 'side'"
     [name]="'mainNavigation'"
-    [navigation]="navigation.default"
+    [navigation]="menu()"
     [opened]="!isScreenSmall"
 >
     <!-- Navigation header hook -->

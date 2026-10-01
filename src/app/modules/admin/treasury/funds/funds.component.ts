@@ -2,9 +2,10 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { DateTime } from 'luxon';
+import { RoleService } from 'app/core/role/role.service';
+import { RoleSwitchComponent } from '../shared/role-switch/role-switch.component';
 import { FundsService } from './funds.service';
 import { FundRequest, FundRequestStatus, FundRole, STATUS_CLASSES, STATUS_LABELS } from './funds.types';
 import { AddButtonComponent } from '../shared/add-button/add-button.component';
@@ -26,9 +27,9 @@ type Range = 'this_month' | 'last_30' | 'all';
         DecimalPipe,
         FormsModule,
         MatButtonModule,
-        MatButtonToggleModule,
         MatIconModule,
         ExportMenuComponent,
+        RoleSwitchComponent,
         RequestDetailComponent,
         RequestFormComponent,
         AddButtonComponent,
@@ -40,7 +41,7 @@ export class FundsComponent {
     readonly statuses = Object.keys(STATUS_LABELS) as FundRequestStatus[];
 
     /** Preview switch between the two audiences; real permissions will drive this later. */
-    role = signal<FundRole>('employee');
+    role = computed<FundRole>(() => (this.roles.canSeeAll() ? 'accounts' : 'employee'));
     tab = signal<Tab>('requests');
     search = signal('');
     status = signal<'all' | FundRequestStatus>('all');
@@ -102,12 +103,75 @@ export class FundsComponent {
     );
     receivedTotal = computed(() => this._sum(this.receivedThisMonth().map((t) => t.amount)));
 
-    constructor(public funds: FundsService) {}
+    // -----------------------------------------------------------------------------------------------------
+    // @ Employee wallet: money this employee has received from funds
+    // -----------------------------------------------------------------------------------------------------
 
-    setRole(role: FundRole): void {
-        this.role.set(role);
-        this.selectedId.set(null);
+    private _ownPayments = computed(() => {
+        const ids = new Set(
+            this.funds
+                .requests()
+                .filter((r) => r.employee === this.funds.currentEmployee)
+                .map((r) => r.id)
+        );
+        return this.funds.transactions().filter((t) => ids.has(t.requestId));
+    });
+
+    walletTotal = computed(() => this._sum(this._ownPayments().map((t) => t.amount)));
+    /** Money the employee gave back that Accounts or Admin confirmed. */
+    walletReturned = computed(() =>
+        this._sum(
+            this.funds
+                .requests()
+                .filter((r) => r.employee === this.funds.currentEmployee)
+                .map((r) => r.returnedAmount)
+        )
+    );
+    walletHolding = computed(() => this.walletTotal() - this.walletReturned());
+    walletCount = computed(() => this._ownPayments().length);
+    walletLast = computed(
+        () => [...this._ownPayments()].sort((a, b) => b.date.localeCompare(a.date))[0] ?? null
+    );
+
+    /** Where the money came from, by fund category. */
+    walletCategories = computed(() => {
+        const totals = new Map<string, number>();
+        for (const t of this._ownPayments()) {
+            const name = this.funds.fundCategory(t.fundId);
+            totals.set(name, (totals.get(name) ?? 0) + t.amount);
+        }
+        return [...totals].map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total);
+    });
+
+    /** Received per month for the last six months, with bar heights relative to the biggest month. */
+    walletMonths = computed(() => {
+        const months = Array.from({ length: 6 }, (_, i) => DateTime.now().startOf('month').minus({ months: 5 - i }));
+        const totals = months.map((m) =>
+            this._sum(
+                this._ownPayments()
+                    .filter((t) => DateTime.fromISO(t.date).hasSame(m, 'month'))
+                    .map((t) => t.amount)
+            )
+        );
+        const max = Math.max(...totals, 1);
+        return months.map((m, i) => ({
+            label: m.toFormat('LLL'),
+            total: totals[i],
+            pct: Math.round((totals[i] / max) * 100),
+        }));
+    });
+
+    /** Plain-text version of the chart for screen readers. */
+    walletSummary(): string {
+        return this.walletMonths()
+            .map((m) => `${m.label} ${this._sum([m.total]).toLocaleString('en-US')}`)
+            .join(', ');
     }
+
+    constructor(
+        public funds: FundsService,
+        public roles: RoleService
+    ) {}
 
     setTab(tab: Tab): void {
         this.tab.set(tab);

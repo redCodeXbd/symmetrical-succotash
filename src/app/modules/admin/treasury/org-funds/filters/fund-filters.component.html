@@ -1,6 +1,6 @@
 <!-- One set of chip groups, used by the wide panel and by the phone sheet -->
 <ng-template #groups let-inSheet="inSheet">
-    <div class="grid gap-5" [class]="inSheet ? 'grid-cols-1' : 'lg:grid-cols-2 xl:grid-cols-4'">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <fieldset class="min-w-0">
             <legend class="fund-filter-label">Company</legend>
             <div class="mt-2 flex flex-wrap gap-2">
@@ -31,7 +31,7 @@
             </div>
         </fieldset>
 
-        <div class="grid min-w-0 gap-5" [class]="inSheet ? 'grid-cols-1' : 'sm:grid-cols-2 lg:col-span-2 xl:col-span-1 xl:grid-cols-1'">
+        <div class="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:col-span-2">
             <fieldset class="min-w-0">
                 <legend class="fund-filter-label">Date range</legend>
                 <div class="fund-segment mt-2" role="group">
@@ -52,44 +52,32 @@
     </div>
 </ng-template>
 
-<!-- Wide screens: full panel -->
-<section class="fund-filter-panel hidden lg:block" aria-label="Filters">
-    <div class="mb-4 flex items-center justify-between">
-        <div class="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-secondary">
-            <span class="inline-block h-2 w-2 rounded-full bg-primary"></span>
-            Filters
-            @if (active.length) {
-                <span class="rounded-full bg-primary/15 px-2 py-0.5 text-primary">{{ active.length }} on</span>
-            }
-        </div>
+<!-- Compact filter bar: one row on desktop, wraps on phones -->
+<section class="flex flex-wrap items-center gap-x-3 gap-y-2 lg:flex-nowrap" aria-label="Filters">
+    <button type="button" class="fund-filter-open" aria-haspopup="dialog" [attr.aria-expanded]="sheetOpen" (click)="sheetOpen = true">
+        <mat-icon class="icon-size-5" [svgIcon]="'heroicons_outline:adjustments-horizontal'"></mat-icon>
+        More filters
         @if (active.length) {
-            <button type="button" class="text-md font-medium text-primary hover:underline" (click)="reset()">Reset all</button>
+            <span class="fund-filter-count">{{ active.length }}</span>
+        }
+    </button>
+
+    <div class="fund-segment fund-segment-sm min-w-0 flex-auto lg:flex-none" role="group" aria-label="Date range">
+        @for (r of ranges; track r.value) {
+            <button type="button" [class.fund-segment-on]="value.range === r.value" [attr.aria-pressed]="value.range === r.value" (click)="set('range', r.value)">{{ r.short }}</button>
         }
     </div>
-    <ng-container *ngTemplateOutlet="groups; context: { inSheet: false }"></ng-container>
-</section>
 
-<!-- Phones and tablets: compact bar -->
-<section class="lg:hidden" aria-label="Filters">
-    <div class="flex items-center gap-3">
-        <button type="button" class="fund-filter-open" aria-haspopup="dialog" [attr.aria-expanded]="sheetOpen" (click)="sheetOpen = true">
-            <mat-icon class="icon-size-5" [svgIcon]="'heroicons_outline:adjustments-horizontal'"></mat-icon>
-            Filters
-            @if (active.length) {
-                <span class="fund-filter-count">{{ active.length }}</span>
-            }
-        </button>
-        <div class="fund-segment flex-auto" role="group" aria-label="Date range">
-            @for (r of ranges; track r.value) {
-                <button type="button" [class.fund-segment-on]="value.range === r.value" [attr.aria-pressed]="value.range === r.value" (click)="set('range', r.value)">{{ r.short }}</button>
-            }
-        </div>
+    <div class="fund-segment fund-segment-sm hidden lg:inline-flex" role="group" aria-label="Currency">
+        @for (c of currencies; track c) {
+            <button type="button" [class.fund-segment-on]="value.currency === c" [attr.aria-pressed]="value.currency === c" (click)="set('currency', c)">{{ c }}</button>
+        }
     </div>
 
     @if (active.length) {
-        <div class="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div class="-mx-1 flex min-w-0 basis-full gap-2 overflow-x-auto px-1 py-1 lg:basis-auto lg:flex-auto">
             @for (a of active; track a.key) {
-                <button type="button" class="fund-chip fund-chip-on flex-none !h-9 gap-1.5" [attr.aria-label]="'Remove filter ' + a.label" (click)="clear(a.key)">
+                <button type="button" class="fund-chip fund-chip-on fund-chip-sm flex-none gap-1.5" [attr.aria-label]="'Remove filter ' + a.label" (click)="clear(a.key)">
                     {{ a.label }}
                     <mat-icon class="icon-size-4" [svgIcon]="'heroicons_mini:x-mark'"></mat-icon>
                 </button>
@@ -101,12 +89,12 @@
 
 <!-- Phone bottom sheet -->
 @if (sheetOpen) {
-    <div class="fixed inset-0 z-[999] flex items-end lg:hidden">
+    <div class="fixed inset-0 z-[999] flex items-end lg:items-center lg:justify-center lg:p-6">
         <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" (click)="sheetOpen = false"></div>
-        <div class="fund-sheet relative flex max-h-[88vh] w-full flex-col" role="dialog" aria-modal="true" aria-label="Filters">
-            <div class="mx-auto mt-3 h-1.5 w-12 rounded-full bg-primary/40" aria-hidden="true"></div>
+        <div class="fund-sheet relative flex max-h-[88vh] w-full flex-col lg:max-w-3xl" role="dialog" aria-modal="true" aria-label="Filters">
+            <div class="mx-auto mt-3 h-1.5 w-12 rounded-full bg-primary/40 lg:hidden" aria-hidden="true"></div>
             <div class="flex items-center justify-between px-5 pb-2 pt-3">
-                <div class="font-mono text-xs uppercase tracking-[0.18em] text-secondary">Filters</div>
+                <div class="font-mono text-xs uppercase tracking-[0.18em] text-secondary">All filters</div>
                 <button type="button" class="flex h-11 w-11 items-center justify-center rounded-full hover:bg-hover" aria-label="Close filters" (click)="sheetOpen = false">
                     <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
                 </button>

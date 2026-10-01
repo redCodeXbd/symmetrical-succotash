@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, computed, OnDestroy, OnInit, signal, ViewEncapsulation } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
@@ -8,6 +8,8 @@ import {
     FuseVerticalNavigationComponent,
 } from '@fuse/components/navigation';
 import { FuseMediaWatcherService } from '@fuse/services/media-watcher';
+import { filterNavigation } from 'app/core/role/nav-access';
+import { RoleService } from 'app/core/role/role.service';
 import { ThemeService } from 'app/core/theme/theme.service';
 import { NavigationService } from 'app/core/navigation/navigation.service';
 import { Navigation } from 'app/core/navigation/navigation.types';
@@ -39,6 +41,10 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
     navigation: Navigation;
     user: User;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
+    private _menu = signal<import('@fuse/components/navigation').FuseNavigationItem[]>([]);
+
+    /** The menu this role may see. */
+    menu = computed(() => filterNavigation(this._menu(), this.roles.role()));
 
     /**
      * Constructor
@@ -50,7 +56,8 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         private _userService: UserService,
         private _fuseMediaWatcherService: FuseMediaWatcherService,
         private _fuseNavigationService: FuseNavigationService,
-        public theme: ThemeService
+        public theme: ThemeService,
+        public roles: RoleService
     ) {}
 
     // -----------------------------------------------------------------------------------------------------
@@ -77,6 +84,7 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this._unsubscribeAll))
             .subscribe((navigation: Navigation) => {
                 this.navigation = navigation;
+                this._menu.set(navigation.default);
             });
 
         // Subscribe to the user service

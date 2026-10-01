@@ -359,6 +359,10 @@ body[data-sidebar-glow='on'] fuse-vertical-navigation.app-sidebar {
     .fund-chip {
         min-height: 2.75rem;
     }
+
+    .fund-filter-open {
+        min-height: 2.75rem;
+    }
 }
 
 .fund-segment {
@@ -417,6 +421,27 @@ body[data-sidebar-glow='on'] fuse-vertical-navigation.app-sidebar {
     background: rgb(var(--fuse-primary-rgb));
     color: rgb(var(--fuse-on-primary-rgb));
     font-size: 0.75rem;
+}
+
+.fund-segment-sm button {
+    min-height: 2rem;
+    padding: 0 0.85rem;
+}
+
+.fund-chip-sm {
+    min-height: 2rem !important;
+    padding: 0 0.75rem;
+}
+
+.fund-filter-open {
+    min-height: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+    .fund-sheet {
+        border-radius: 1.5rem !important;
+        border: 1px solid rgba(var(--fuse-primary-rgb), 0.35);
+    }
 }
 
 .fund-sheet {
@@ -779,4 +804,65 @@ body[data-table-style='grid'] .app-table {
     .stat-tile {
         padding: 1rem 1.1rem;
     }
+}
+
+/* ----------------------------------------------------------------------------------------------------- */
+/*  Employee wallet (Funds page)
+/* ----------------------------------------------------------------------------------------------------- */
+.wallet-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--tile), 0.35);
+    background: rgba(var(--tile), 0.1);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.wallet-chip-name {
+    font-weight: 600;
+}
+
+.wallet-bars {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+    height: 7.5rem;
+}
+
+.wallet-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.wallet-bar-amount {
+    min-height: 0.9rem;
+    font-size: 0.65rem;
+    color: rgb(var(--fuse-text-secondary-rgb));
+    white-space: nowrap;
+}
+
+.wallet-bar-fill {
+    display: block;
+    width: 100%;
+    max-width: 2.25rem;
+    border-radius: 0.5rem 0.5rem 0.25rem 0.25rem;
+    background: linear-gradient(180deg, rgb(var(--tile)), rgba(var(--tile), 0.55));
+    box-shadow: 0 0 14px -2px rgba(var(--tile), 0.55);
+
+    &.wallet-bar-empty {
+        background: rgba(var(--tile), 0.2);
+        box-shadow: none;
+    }
+}
+
+.wallet-bar-label {
+    font-size: 0.7rem;
+    color: rgb(var(--fuse-text-secondary-rgb));
 }
