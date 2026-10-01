@@ -83,6 +83,7 @@ export class OrgFundsComponent {
     current = computed(() => this._sum(this.activeFunds().map((f) => f.balance)));
     reserved = computed(() => this._sum(this.activeFunds().map((f) => f.reserved)));
     available = computed(() => this.current() - this.reserved());
+    availablePct = computed(() => (this.current() > 0 ? Math.round((this.available() / this.current()) * 100) : 0));
     incoming = computed(() =>
         this._sum(this.org.expectedIncoming().filter((i) => this.fundIds().has(i.fundId)).map((i) => i.amount))
     );

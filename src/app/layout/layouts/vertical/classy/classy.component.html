@@ -23,11 +23,6 @@
                     [alt]="theme.theme().companyName"
                 />
             </div>
-            <!-- Components -->
-            <div class="app-sidebar-actions ml-auto flex items-center gap-2">
-                <notifications></notifications>
-                <user [showAvatar]="true"></user>
-            </div>
         </div>
     </ng-container>
     <!-- Navigation footer hook: user card -->
@@ -59,8 +54,10 @@
             <mat-icon [svgIcon]="'heroicons_outline:bars-3'"></mat-icon>
         </button>
         <!-- Components -->
-        <div class="ml-auto flex items-center space-x-0.5 pl-2 sm:space-x-2">
+        <div class="app-header-actions ml-auto flex items-center gap-1 pl-2 sm:gap-2">
             <search [appearance]="'bar'"></search>
+            <notifications></notifications>
+            <user [showAvatar]="true"></user>
         </div>
     </div>
 
