@@ -13,7 +13,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { AccessService } from 'app/core/access/access.service';
 import { UserService } from 'app/core/user/user.service';
 import { User } from 'app/core/user/user.types';
 import { Subject, takeUntil } from 'rxjs';
@@ -31,6 +32,7 @@ import { Subject, takeUntil } from 'rxjs';
         MatIconModule,
         NgClass,
         MatDividerModule,
+        RouterLink,
     ],
 })
 export class UserComponent implements OnInit, OnDestroy {
@@ -49,7 +51,8 @@ export class UserComponent implements OnInit, OnDestroy {
     constructor(
         private _changeDetectorRef: ChangeDetectorRef,
         private _router: Router,
-        private _userService: UserService
+        private _userService: UserService,
+        public access: AccessService
     ) {}
 
     // -----------------------------------------------------------------------------------------------------
@@ -111,3 +114,4 @@ export class UserComponent implements OnInit, OnDestroy {
         this._router.navigate(['/sign-out']);
     }
 }
+

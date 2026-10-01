@@ -27,19 +27,22 @@
     </ng-container>
     <!-- Navigation footer hook: user card -->
     <ng-container fuseVerticalNavigationContentFooter>
-        <div class="app-sidebar-user">
+        <a class="app-sidebar-user" routerLink="/profile" aria-label="Open your profile">
             <div class="relative flex-none">
-                @if (user.avatar) {
+                @if (user.avatar && access.user().id === 'u-brian') {
                     <img class="h-11 w-11 rounded-full object-cover" [src]="user.avatar" alt="" />
                 } @else {
                     <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-base font-bold text-on-primary">
-                        {{ user.name?.charAt(0) }}
+                        {{ access.user().name.charAt(0) }}
                     </div>
                 }
                 <span class="app-sidebar-user-dot" aria-hidden="true"></span>
             </div>
-            <div class="min-w-0 flex-auto truncate text-base font-semibold">{{ user.name }}</div>
-        </div>
+            <div class="min-w-0 flex-auto">
+                <div class="truncate text-base font-semibold">{{ access.user().name }}</div>
+                <div class="truncate text-xs opacity-70">{{ roleSummary }}</div>
+            </div>
+        </a>
     </ng-container>
 </fuse-vertical-navigation>
 

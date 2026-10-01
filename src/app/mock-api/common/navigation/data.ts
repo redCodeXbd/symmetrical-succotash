@@ -60,6 +60,34 @@ export const defaultNavigation: FuseNavigationItem[] = [
                 link : '/treasury/transactions'
             }
         ]
+    },
+    {
+        id   : 'clients',
+        title: 'Clients',
+        type : 'basic',
+        icon : 'heroicons_outline:user-group',
+        link : '/clients'
+    },
+    {
+        id   : 'vendors',
+        title: 'Vendors',
+        type : 'basic',
+        icon : 'heroicons_outline:truck',
+        link : '/vendors'
+    },
+    {
+        id   : 'projects',
+        title: 'Projects',
+        type : 'basic',
+        icon : 'heroicons_outline:briefcase',
+        link : '/projects'
+    },
+    {
+        id   : 'store',
+        title: 'Store',
+        type : 'basic',
+        icon : 'heroicons_outline:archive-box',
+        link : '/store'
     }
 ];
 export const compactNavigation: FuseNavigationItem[] = [

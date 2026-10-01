@@ -92,6 +92,62 @@ export const FEATURES: FeatureDef[] = [
         ],
     },
     {
+        id: 'clients',
+        title: 'Clients',
+        permissions: [
+            { key: 'view', label: 'View', description: "Open Clients. Without \"View all\", only the user's own client is shown" },
+            { key: 'view_all', label: 'View all', description: 'See every client, project and document' },
+            { key: 'add', label: 'Add', description: 'Create clients and projects' },
+            { key: 'edit', label: 'Edit', description: 'Edit clients, post project updates and add company documents' },
+            { key: 'delete', label: 'Delete', description: 'Delete clients and documents' },
+            { key: 'assign_user', label: 'Assign user', description: 'Give a user login access to a client' },
+            { key: 'share', label: 'Share', description: 'Share documents and projects by link or email' },
+            { key: 'submit', label: 'Submit', description: 'Send requirements, purchase orders and other documents (client side)' },
+        ],
+    },
+    {
+        id: 'vendors',
+        title: 'Vendors',
+        permissions: [
+            { key: 'view', label: 'View', description: "Open Vendors. Without \"View all\", only the user's own vendor is shown" },
+            { key: 'view_all', label: 'View all', description: 'See every vendor, order, invoice and payment' },
+            { key: 'add', label: 'Add', description: 'Create vendors' },
+            { key: 'edit', label: 'Edit', description: 'Edit vendors and their product lists' },
+            { key: 'delete', label: 'Delete', description: 'Delete vendors' },
+            { key: 'assign_user', label: 'Assign user', description: 'Give a user login access to a vendor' },
+            { key: 'create_po', label: 'Create purchase orders', description: 'Send purchase orders to product vendors' },
+            { key: 'approve_invoice', label: 'Approve invoices', description: 'Approve or reject vendor invoices and answer due payment requests' },
+            { key: 'approve_any', label: 'Approve any step', description: 'Approve vendor invoices at any step of the approval tree' },
+            { key: 'pay', label: 'Record payments', description: 'Record payments made to vendors' },
+            { key: 'submit', label: 'Submit', description: 'Submit invoices and due payment requests, and keep own product list (vendor side)' },
+        ],
+    },
+    {
+        id: 'projects',
+        title: 'Projects',
+        permissions: [
+            { key: 'view', label: 'View', description: "Open Projects. Without \"View all\", a client sees their own and a manager sees the ones they manage" },
+            { key: 'view_all', label: 'View all', description: 'See every project' },
+            { key: 'add', label: 'Add', description: 'Create projects' },
+            { key: 'edit', label: 'Edit', description: 'Edit projects, change progress and post updates' },
+            { key: 'delete', label: 'Delete', description: 'Delete projects without costs' },
+            { key: 'view_cost', label: 'View costing and profit', description: 'See budget use, costs and profit' },
+        ],
+    },
+    {
+        id: 'store',
+        title: 'Store',
+        permissions: [
+            { key: 'view', label: 'View', description: 'Open Store and see stock and the catalogue' },
+            { key: 'catalog', label: 'Manage catalogue', description: 'Add stores and products, edit product details' },
+            { key: 'receive', label: 'Receive stock', description: 'Receive items from expenses, vendor orders or by hand' },
+            { key: 'issue', label: 'Issue stock', description: 'Take items out for a project or office use' },
+            { key: 'transfer', label: 'Transfer', description: 'Move items between stores' },
+            { key: 'adjust', label: 'Adjust counts', description: 'Correct stock after a physical count' },
+            { key: 'cost', label: 'View cost', description: 'See unit costs and stock value' },
+        ],
+    },
+    {
         id: 'notifications',
         title: 'Notifications',
         permissions: [
@@ -118,6 +174,14 @@ export interface AppUser {
     email: string;
     /** An employee can hold several roles; their permissions add together. */
     roleIds: string[];
+    /** Set for a client user: they only see this client's projects and documents. */
+    clientId?: string | null;
+    /** Set for a vendor user: they only see this vendor's orders, invoices and payments. */
+    vendorId?: string | null;
+    /** Profile details the person keeps up to date themselves. */
+    phone?: string;
+    title?: string;
+    about?: string;
 }
 
 /**

@@ -1,3 +1,4 @@
+import { RouterLink } from '@angular/router';
 import { Component, computed, OnDestroy, OnInit, signal, ViewEncapsulation } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -26,6 +27,7 @@ import { Subject, takeUntil } from 'rxjs';
     encapsulation: ViewEncapsulation.None,
     standalone: true,
     imports: [
+        RouterLink,
         FuseLoadingBarComponent,
         FuseVerticalNavigationComponent,
         NotificationsComponent,
@@ -42,6 +44,10 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
     user: User;
     private _unsubscribeAll: Subject<any> = new Subject<any>();
     private _menu = signal<import('@fuse/components/navigation').FuseNavigationItem[]>([]);
+
+    get roleSummary(): string {
+        return this.access.userRoles().map((r) => r.name).join(' + ');
+    }
 
     /** The menu this role may see. */
     menu = computed(() => filterNavigation(this._menu(), this.access));

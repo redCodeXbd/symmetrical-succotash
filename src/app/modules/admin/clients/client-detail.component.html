@@ -1,0 +1,278 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        @if (!client()) {
+            <div class="rounded-2xl bg-card p-10 text-center shadow">
+                <div class="text-2xl font-semibold">Client not available</div>
+                <div class="text-secondary mt-2">It does not exist, or your login cannot open it.</div>
+                <a mat-flat-button color="primary" class="mt-6" routerLink="/clients">Back to clients</a>
+                <div class="mt-6 flex justify-center"><treasury-user-switch></treasury-user-switch></div>
+            </div>
+        } @else {
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="min-w-0">
+                    <div class="text-secondary text-md">
+                        @if (access.can('clients.view_all')) {
+                            <a routerLink="/clients" class="hover:underline">Clients</a> /
+                        } @else {
+                            Client portal /
+                        }
+                        {{ client()!.id }}
+                    </div>
+                    <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">{{ client()!.name }}</h1>
+                    <div class="text-secondary mt-0.5 text-lg">{{ client()!.industry || 'Client' }} · {{ client()!.city }}{{ client()!.city && client()!.country ? ', ' : '' }}{{ client()!.country }}</div>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <treasury-user-switch></treasury-user-switch>
+                    @if (access.can('clients.edit')) {
+                        <button mat-stroked-button type="button" (click)="editing.set(true)">Edit client</button>
+                    }
+                    @if (access.can('clients.delete')) {
+                        @if (confirmDelete()) {
+                            <span class="text-sm">Delete this client?</span>
+                            <button mat-flat-button color="warn" type="button" (click)="deleteClient()">Delete</button>
+                            <button mat-stroked-button type="button" (click)="confirmDelete.set(false)">Cancel</button>
+                        } @else {
+                            <button mat-stroked-button color="warn" type="button" (click)="confirmDelete.set(true)">Delete</button>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="mt-8 rounded-2xl bg-card shadow">
+                <div class="flex overflow-x-auto border-b px-4" role="tablist">
+                    @for (t of tabs; track t.id) {
+                        <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="tab() === t.id ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="tab() === t.id" (click)="setTab(t.id)">{{ t.label }}</button>
+                    }
+                </div>
+
+                @if (message(); as m) {
+                    <div class="mx-6 mt-5 rounded-lg p-3 text-md" [class]="m.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'" [attr.role]="m.ok ? 'status' : 'alert'">{{ m.text }}</div>
+                }
+
+                <!-- ============ Overview ============ -->
+                @if (tab() === 'overview') {
+                    <div class="grid grid-cols-1 gap-8 p-6 lg:grid-cols-3">
+                        <dl class="divide-y lg:col-span-2">
+                            @for (row of [
+                                ['Contact person', client()!.contactPerson],
+                                ['Email', client()!.email],
+                                ['Phone', client()!.phone],
+                                ['Address', client()!.address],
+                                ['City', client()!.city],
+                                ['Country', client()!.country],
+                                ['Tax / BIN number', client()!.taxId],
+                                ['Website', client()!.website],
+                                ['Status', client()!.status === 'active' ? 'Active' : 'Inactive'],
+                                ['Notes', client()!.notes]
+                            ]; track row[0]) {
+                                <div class="flex justify-between gap-6 py-3"><dt class="text-secondary">{{ row[0] }}</dt><dd class="text-right">{{ row[1] || '-' }}</dd></div>
+                            }
+                        </dl>
+                        <div class="grid grid-cols-3 gap-3 lg:grid-cols-1">
+                            <div class="rounded-xl border p-4"><div class="text-secondary text-sm">Active projects</div><div class="mt-1 text-3xl font-semibold">{{ activeProjects() }}</div></div>
+                            <div class="rounded-xl border p-4"><div class="text-secondary text-sm">Documents</div><div class="mt-1 text-3xl font-semibold">{{ documents().length }}</div></div>
+                            <div class="rounded-xl border p-4"><div class="text-secondary text-sm">Portal users</div><div class="mt-1 text-3xl font-semibold">{{ linkedUsers().length }}</div></div>
+                        </div>
+                    </div>
+                }
+
+                <!-- ============ Projects ============ -->
+                @if (tab() === 'projects') {
+                    <div class="p-6">
+                        <p class="text-secondary mb-5 text-md">Projects are managed in the Projects page. They show here so the client can follow progress.</p>
+                        <div class="flex flex-col gap-6">
+                            @for (p of projects(); track p.id) {
+                                <section class="rounded-xl border p-5" [attr.aria-label]="p.name">
+                                    <div class="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <div class="text-xl font-semibold">{{ p.name }}</div>
+                                            <div class="text-secondary text-sm">{{ p.id }}{{ p.workOrder ? ' · ' + p.workOrder : '' }} · Manager {{ p.manager || '-' }}</div>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="statusClasses[p.status]">{{ statusLabels[p.status] }}</span>
+                                            @if (access.can('clients.share')) {
+                                                <button type="button" class="font-medium text-primary hover:underline" (click)="shareProject(p)">Share</button>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex items-center gap-3">
+                                        <div class="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-200" role="progressbar" [attr.aria-valuenow]="p.progress" aria-valuemin="0" aria-valuemax="100" [attr.aria-label]="p.name + ' progress'">
+                                            <div class="h-full rounded-full bg-primary" [style.width.%]="p.progress"></div>
+                                        </div>
+                                        <span class="w-12 text-right font-medium">{{ p.progress }}%</span>
+                                    </div>
+                                    <div class="text-secondary mt-2 text-sm">{{ p.startDate | date: 'dd MMM y' }} to {{ p.dueDate | date: 'dd MMM y' }}</div>
+
+                                    @if (access.can('projects.view')) {
+                                        <a class="mt-4 inline-block font-medium text-primary hover:underline" [routerLink]="['/projects', p.id]">Open project</a>
+                                    }
+
+                                    <div class="mt-5 text-sm font-medium uppercase tracking-wide text-secondary">Updates</div>
+                                    <ol class="mt-3 flex flex-col gap-3">
+                                        @for (u of p.updates; track u.id) {
+                                            <li class="flex gap-3">
+                                                <span class="mt-1.5 h-2.5 w-2.5 flex-none rounded-full bg-primary"></span>
+                                                <div class="text-md">{{ u.text }}<div class="text-secondary text-sm">{{ u.by }} · {{ u.at | date: 'dd MMM y, h:mm a' }}</div></div>
+                                            </li>
+                                        } @empty {
+                                            <li class="text-secondary text-md">No updates yet.</li>
+                                        }
+                                    </ol>
+                                </section>
+                            } @empty {
+                                <div class="text-secondary py-6 text-center">No projects yet.</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- ============ Documents ============ -->
+                @if (tab() === 'documents') {
+                    <div class="p-6">
+                        <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by type">
+                            <button type="button" class="fund-chip" [class.fund-chip-on]="docType() === 'all'" (click)="docType.set('all')">All ({{ documents().length }})</button>
+                            @for (t of docTypes; track t.id) {
+                                <button type="button" class="fund-chip" [class.fund-chip-on]="docType() === t.id" (click)="docType.set(t.id)">{{ t.plural }} ({{ countOf(t.id) }})</button>
+                            }
+                            <span class="flex-auto"></span>
+                            <select class="h-10 rounded-lg border bg-transparent px-3 text-md" aria-label="Project" [ngModel]="docProject()" (ngModelChange)="docProject.set($event)">
+                                <option value="all">All projects</option>
+                                @for (p of projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                            </select>
+                            @if (service.canAddDocument(client()!.id)) {
+                                <button mat-flat-button color="primary" type="button" (click)="docFormOpen = !docFormOpen">{{ docFormOpen ? 'Close form' : (service.isClientUser ? 'Send a document' : 'Add document') }}</button>
+                            }
+                        </div>
+
+                        @if (docFormOpen) {
+                            <form class="mt-5 grid grid-cols-1 gap-3 rounded-xl border p-4 sm:grid-cols-2" (ngSubmit)="addDocument()">
+                                <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Document type" name="d-type" [(ngModel)]="docDraft.type">
+                                    @for (t of docTypes; track t.id) { <option [value]="t.id">{{ t.label }}</option> }
+                                </select>
+                                <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Related project" name="d-project" [(ngModel)]="docDraft.projectId">
+                                    <option value="">No specific project</option>
+                                    @for (p of projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                                </select>
+                                <input class="h-11 rounded-lg border bg-transparent px-3 text-md" placeholder="Title *" aria-label="Title" name="d-title" [(ngModel)]="docDraft.title" />
+                                <input class="h-11 rounded-lg border bg-transparent px-3 text-md" placeholder="Reference / number" aria-label="Reference" name="d-ref" [(ngModel)]="docDraft.reference" />
+                                @if (amountOf(docDraft.type)) {
+                                    <input type="number" min="0" class="h-11 rounded-lg border bg-transparent px-3 text-md" placeholder="Amount (BDT)" aria-label="Amount" name="d-amount" [(ngModel)]="docDraft.amount" />
+                                }
+                                <input type="date" class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Date" name="d-date" [(ngModel)]="docDraft.date" />
+                                <input type="file" class="text-md sm:col-span-2" aria-label="Attach a file" (change)="pickFile($event)" />
+                                <textarea class="rounded-lg border bg-transparent px-3 py-2 text-md sm:col-span-2" rows="2" placeholder="Note (optional)" aria-label="Note" name="d-note" [(ngModel)]="docDraft.note"></textarea>
+                                <div class="flex justify-end sm:col-span-2"><button mat-flat-button color="primary" type="submit">Save document</button></div>
+                            </form>
+                        }
+
+                        <div class="mt-5 overflow-x-auto">
+                            <table class="app-table w-full">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="text-left font-medium">Document</th>
+                                        <th scope="col" class="text-left font-medium">Type</th>
+                                        <th scope="col" class="text-left font-medium">Project</th>
+                                        <th scope="col" class="text-right font-medium">Amount (BDT)</th>
+                                        <th scope="col" class="text-left font-medium">Date</th>
+                                        <th scope="col" class="text-left font-medium">From</th>
+                                        <th scope="col"><span class="sr-only">Actions</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (d of shownDocs(); track d.id) {
+                                        <tr>
+                                            <td>
+                                                <div class="font-medium">{{ d.title }}</div>
+                                                <div class="text-secondary text-sm">{{ d.reference || d.id }}{{ d.fileName ? ' · ' + d.fileName : '' }}</div>
+                                            </td>
+                                            <td>{{ docLabels[d.type] }}</td>
+                                            <td>{{ projectName(d.projectId) }}</td>
+                                            <td class="text-right">{{ d.amount === null ? '-' : (d.amount | number: '1.0-2') }}</td>
+                                            <td>{{ d.date | date: 'dd MMM y' }}</td>
+                                            <td>
+                                                <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="d.from === 'client' ? 'bg-sky-100 text-sky-800' : 'bg-gray-200 text-gray-700'">{{ d.from === 'client' ? 'Client' : 'Encore' }}</span>
+                                                <div class="text-secondary text-sm">{{ d.by }}</div>
+                                            </td>
+                                            <td class="whitespace-nowrap text-right">
+                                                @if (access.can('clients.share')) {
+                                                    <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="shareDocument(d)">Share</button>
+                                                }
+                                                @if (service.canDeleteDocument(d)) {
+                                                    <button type="button" class="font-medium text-red-600 hover:underline" (click)="deleteDocument(d)">Delete</button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    } @empty {
+                                        <tr><td colspan="7" class="text-secondary py-8 text-center">No documents here yet.</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+                <!-- ============ Portal access ============ -->
+                @if (tab() === 'access' && access.can('clients.assign_user')) {
+                    <div class="p-6">
+                        <p class="text-secondary text-md">A user linked to this client sees only this client's projects, updates and documents, and can send requirements, purchase orders and other documents.</p>
+                        <ul class="mt-5 flex flex-col divide-y">
+                            @for (u of linkedUsers(); track u.id) {
+                                <li class="flex items-center gap-3 py-3">
+                                    <div class="min-w-0 flex-1"><div class="font-medium">{{ u.name }}</div><div class="text-secondary text-sm">{{ u.email }}</div></div>
+                                    <button type="button" class="font-medium text-red-600 hover:underline" (click)="unlinkUser(u.id)">Remove access</button>
+                                </li>
+                            } @empty {
+                                <li class="text-secondary py-3 text-md">Nobody has access yet.</li>
+                            }
+                        </ul>
+                        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            <form class="rounded-xl border p-4" (ngSubmit)="linkUser()">
+                                <div class="font-medium">Give an existing user access</div>
+                                <select class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="User" name="link-user" [(ngModel)]="linkUserId">
+                                    <option value="">Choose a user...</option>
+                                    @for (u of freeUsers(); track u.id) { <option [value]="u.id">{{ u.name }} ({{ u.email }})</option> }
+                                </select>
+                                <button mat-flat-button color="primary" class="mt-3" type="submit">Give access</button>
+                            </form>
+                            <form class="rounded-xl border p-4" (ngSubmit)="createUser()">
+                                <div class="font-medium">Create a client login</div>
+                                <input class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" placeholder="Name" aria-label="Client user name" name="nu-name" [(ngModel)]="newUser.name" />
+                                <input type="email" class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" placeholder="Email" aria-label="Client user email" name="nu-email" [(ngModel)]="newUser.email" />
+                                <button mat-flat-button color="primary" class="mt-3" type="submit">Create login</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@if (editing() && client()) {
+    <clients-form [client]="client()" (saved)="saved()" (cancelled)="editing.set(false)"></clients-form>
+}
+
+@if (share(); as target) {
+    <treasury-slide-over heading="Share" [subheading]="target.title" (closed)="share.set(null)">
+        <p class="text-secondary text-md">Make a read-only link to this {{ target.subtitle ? 'item' : 'page' }}. Copy it, or send it by email.</p>
+        <label class="mt-5 block text-sm font-medium" for="share-days">Link works for</label>
+        <select id="share-days" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" [(ngModel)]="shareDays">
+            @for (e of expiries; track e.label) { <option [ngValue]="e.days">{{ e.label }}</option> }
+        </select>
+        <button mat-flat-button color="primary" class="mt-4" type="button" (click)="generateLink()">Create link</button>
+
+        @if (shareUrl) {
+            <div class="mt-6">
+                <div class="text-sm font-medium">Link</div>
+                <div class="mt-1 flex gap-2">
+                    <input class="h-11 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" readonly aria-label="Share link" [value]="shareUrl" (focus)="$any($event.target).select()" />
+                    <button mat-stroked-button type="button" (click)="copyLink()">{{ copied ? 'Copied' : 'Copy' }}</button>
+                </div>
+                <label class="mt-5 block text-sm font-medium" for="share-email">Send by email to</label>
+                <input id="share-email" type="email" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" placeholder="name@company.com" [(ngModel)]="shareEmail" />
+                <a mat-flat-button color="primary" class="mt-3" [href]="mailHref">Open in email app</a>
+                <p class="text-secondary mt-4 text-sm">Demo: the link opens only in this browser until the app is connected to a server.</p>
+            </div>
+        }
+    </treasury-slide-over>
+}

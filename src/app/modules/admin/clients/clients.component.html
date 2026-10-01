@@ -1,0 +1,71 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div class="text-secondary text-md">Clients</div>
+                <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Clients</h1>
+                <div class="text-secondary mt-0.5 text-lg">Client details, projects, documents and portal access.</div>
+            </div>
+            <div class="flex flex-wrap items-center gap-4">
+                <treasury-user-switch></treasury-user-switch>
+                @if (access.can('clients.add')) {
+                    <treasury-add-button label="New client" (pressed)="formOpen.set(true)"></treasury-add-button>
+                }
+            </div>
+        </div>
+
+        <div class="mt-8 rounded-2xl bg-card shadow">
+            <div class="flex flex-wrap items-center gap-3 border-b p-4">
+                <input type="search" class="h-11 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" placeholder="Search by name, contact, city or ID..." aria-label="Search clients" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+                <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Status" [ngModel]="status()" (ngModelChange)="status.set($event)">
+                    <option value="all">All statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="app-table w-full">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="text-left font-medium">Client</th>
+                            <th scope="col" class="text-left font-medium">Contact</th>
+                            <th scope="col" class="text-left font-medium">City</th>
+                            <th scope="col" class="text-right font-medium">Projects</th>
+                            <th scope="col" class="text-right font-medium">Documents</th>
+                            <th scope="col" class="text-right font-medium">Portal users</th>
+                            <th scope="col" class="text-left font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (c of list(); track c.id) {
+                            <tr class="cursor-pointer" (click)="open(c.id)">
+                                <td>
+                                    <button type="button" class="text-left font-medium text-primary hover:underline" (click)="open(c.id); $event.stopPropagation()">{{ c.name }}</button>
+                                    <div class="text-secondary text-sm">{{ c.id }}</div>
+                                </td>
+                                <td>
+                                    {{ c.contactPerson || '-' }}
+                                    <div class="text-secondary text-sm">{{ c.email }}</div>
+                                </td>
+                                <td>{{ c.city || '-' }}</td>
+                                <td class="text-right">{{ service.projectsOf(c.id).length }}</td>
+                                <td class="text-right">{{ service.documentsOf(c.id).length }}</td>
+                                <td class="text-right">{{ service.usersOf(c.id).length }}</td>
+                                <td>
+                                    <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="c.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'">{{ c.status === 'active' ? 'Active' : 'Inactive' }}</span>
+                                </td>
+                            </tr>
+                        } @empty {
+                            <tr><td colspan="7" class="text-secondary py-10 text-center">{{ service.clients().length === 0 ? 'No client is linked to your login yet.' : 'No clients match.' }}</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-secondary border-t px-4 py-3 text-sm">{{ list().length }} {{ list().length === 1 ? 'client' : 'clients' }}</div>
+        </div>
+    </div>
+</div>
+
+@if (formOpen()) {
+    <clients-form (saved)="saved($event)" (cancelled)="formOpen.set(false)"></clients-form>
+}

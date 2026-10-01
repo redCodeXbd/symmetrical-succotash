@@ -31,6 +31,12 @@ export const CATEGORY_GROUPS: CategoryGroup[] = [
         description: 'What an employee asks money for. It is chosen on the Request Funds form.',
         defaults: ['Travel & transport', 'Materials & supplies', 'Site expenses', 'Office', 'Meals & entertainment', 'Other'],
     },
+    {
+        id: 'store-items',
+        title: 'Store items',
+        description: 'Groups the product catalogue in Store, such as Electrical or Tools.',
+        defaults: ['Electrical', 'Mechanical', 'Civil', 'Tools & equipment', 'Safety', 'Office supplies', 'Spare parts'],
+    },
 ];
 
 /** Category lists for every feature. Kept in memory like the rest of the demo data. */

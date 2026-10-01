@@ -1,0 +1,399 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        @if (!vendor()) {
+            <div class="rounded-2xl bg-card p-10 text-center shadow">
+                <div class="text-2xl font-semibold">Vendor not available</div>
+                <div class="text-secondary mt-2">It does not exist, or your login cannot open it.</div>
+                <a mat-flat-button color="primary" class="mt-6" routerLink="/vendors">Back to vendors</a>
+                <div class="mt-6 flex justify-center"><treasury-user-switch></treasury-user-switch></div>
+            </div>
+        } @else {
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="min-w-0">
+                    <div class="text-secondary text-md">
+                        @if (access.can('vendors.view_all')) {
+                            <a routerLink="/vendors" class="hover:underline">Vendors</a> /
+                        } @else {
+                            Vendor portal /
+                        }
+                        {{ vendor()!.id }}
+                    </div>
+                    <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">{{ vendor()!.name }}</h1>
+                    <div class="mt-1 flex flex-wrap items-center gap-2 text-lg">
+                        <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="typeClasses[vendor()!.type]">{{ typeLabels[vendor()!.type] }}</span>
+                        <span class="text-secondary">{{ vendor()!.city }}{{ vendor()!.city && vendor()!.country ? ', ' : '' }}{{ vendor()!.country }}</span>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <treasury-user-switch></treasury-user-switch>
+                    @if (access.can('vendors.edit')) {
+                        <button mat-stroked-button type="button" (click)="editing.set(true)">Edit vendor</button>
+                    }
+                    @if (access.can('vendors.delete')) {
+                        @if (confirmDelete()) {
+                            <span class="text-sm">Delete this vendor?</span>
+                            <button mat-flat-button color="warn" type="button" (click)="deleteVendor()">Delete</button>
+                            <button mat-stroked-button type="button" (click)="confirmDelete.set(false)">Cancel</button>
+                        } @else {
+                            <button mat-stroked-button color="warn" type="button" (click)="confirmDelete.set(true)">Delete</button>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Money summary, always visible -->
+            <div class="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <div class="stat-tile" style="--tile: var(--fuse-primary-rgb)"><div class="stat-head"><span class="stat-label">Total invoiced</span></div><div class="stat-value"><span class="stat-cur">BDT</span>{{ service.invoiced(id) | number: '1.0-0' }}</div><div class="stat-sub">Approved invoices</div></div>
+                <div class="stat-tile" style="--tile: var(--fuse-primary-rgb)"><div class="stat-head"><span class="stat-label">Total paid</span></div><div class="stat-value"><span class="stat-cur">BDT</span>{{ service.paid(id) | number: '1.0-0' }}</div><div class="stat-sub">{{ service.paymentsOf(id).length }} payments</div></div>
+                <div class="stat-tile" style="--tile: var(--fuse-accent-rgb)"><div class="stat-head"><span class="stat-label">Due now</span></div><div class="stat-value"><span class="stat-cur">BDT</span>{{ service.due(id) | number: '1.0-0' }}</div><div class="stat-sub">Invoiced minus paid</div></div>
+                <div class="stat-tile" style="--tile: var(--fuse-accent-rgb)"><div class="stat-head"><span class="stat-label">Requested</span></div><div class="stat-value"><span class="stat-cur">BDT</span>{{ service.pendingRequested(id) | number: '1.0-0' }}</div><div class="stat-sub">Waiting for an answer</div></div>
+            </div>
+
+            <div class="mt-6 rounded-2xl bg-card shadow">
+                <div class="flex overflow-x-auto border-b px-4" role="tablist">
+                    @for (t of tabs; track t.id) {
+                        <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="tab() === t.id ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="tab() === t.id" (click)="setTab(t.id)">{{ t.label }}</button>
+                    }
+                </div>
+
+                @if (message(); as m) {
+                    <div class="mx-6 mt-5 rounded-lg p-3 text-md" [class]="m.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'" [attr.role]="m.ok ? 'status' : 'alert'">{{ m.text }}</div>
+                }
+
+                <!-- ============ Overview ============ -->
+                @if (tab() === 'overview') {
+                    <dl class="divide-y p-6">
+                        @for (row of [
+                            ['Contact person', vendor()!.contactPerson],
+                            ['Email', vendor()!.email],
+                            ['Phone', vendor()!.phone],
+                            ['Address', vendor()!.address],
+                            ['Tax / BIN number', vendor()!.taxId],
+                            ['Bank details', vendor()!.bankDetails],
+                            ['Payment terms', vendor()!.paymentTerms],
+                            ['Status', vendor()!.status === 'active' ? 'Active' : 'Inactive'],
+                            ['Notes', vendor()!.notes]
+                        ]; track row[0]) {
+                            <div class="flex justify-between gap-6 py-3"><dt class="text-secondary">{{ row[0] }}</dt><dd class="text-right">{{ row[1] || '-' }}</dd></div>
+                        }
+                    </dl>
+                }
+
+                <!-- ============ Products ============ -->
+                @if (tab() === 'products') {
+                    <div class="p-6">
+                        @if (service.canEditProducts(id)) {
+                            <form class="grid grid-cols-1 gap-3 sm:grid-cols-6" (ngSubmit)="addProduct()">
+                                <input class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-3" placeholder="Product name" aria-label="Product name" name="pr-name" [(ngModel)]="productDraft.name" />
+                                <input class="h-11 rounded-lg border bg-transparent px-3 text-md" placeholder="Unit" aria-label="Unit" name="pr-unit" [(ngModel)]="productDraft.unit" />
+                                <input type="number" min="0" class="h-11 rounded-lg border bg-transparent px-3 text-md" placeholder="Price" aria-label="Price" name="pr-price" [(ngModel)]="productDraft.price" />
+                                <button mat-flat-button color="primary" type="submit" class="fuse-mat-button-large">Add</button>
+                            </form>
+                        }
+                        <div class="mt-5 overflow-x-auto">
+                            <table class="app-table w-full">
+                                <thead><tr><th scope="col" class="text-left font-medium">Product</th><th scope="col" class="text-left font-medium">Unit</th><th scope="col" class="text-right font-medium">Price (BDT)</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+                                <tbody>
+                                    @for (p of service.productsOf(id); track p.id) {
+                                        <tr>
+                                            <td class="font-medium">{{ p.name }}<div class="text-secondary text-sm">{{ p.id }}</div></td>
+                                            <td>{{ p.unit }}</td>
+                                            <td class="text-right">{{ p.price | number: '1.0-2' }}</td>
+                                            <td class="text-right">@if (service.canEditProducts(id)) { <button type="button" class="font-medium text-red-600 hover:underline" (click)="deleteProduct(p.id)">Remove</button> }</td>
+                                        </tr>
+                                    } @empty {
+                                        <tr><td colspan="4" class="text-secondary py-8 text-center">No products listed yet.</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+                <!-- ============ Purchase orders ============ -->
+                @if (tab() === 'orders') {
+                    <div class="p-6">
+                        @if (access.can('vendors.create_po')) {
+                            @if (poOpen) {
+                                <form class="mb-6 rounded-xl border p-4" (ngSubmit)="createOrder()">
+                                    <div class="font-medium">New purchase order</div>
+                                    <datalist id="po-products">
+                                        @for (p of service.productsOf(id); track p.id) { <option [value]="p.name"></option> }
+                                    </datalist>
+                                    @for (l of poLines; track $index) {
+                                        <div class="mt-3 grid grid-cols-12 items-center gap-2">
+                                            <input class="col-span-12 h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-5" list="po-products" placeholder="Item" [attr.aria-label]="'Item ' + ($index + 1)" [name]="'l-name-' + $index" [(ngModel)]="l.name" (change)="pickProduct(l)" />
+                                            <input type="number" min="1" class="col-span-3 h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-2" placeholder="Qty" [attr.aria-label]="'Quantity ' + ($index + 1)" [name]="'l-qty-' + $index" [(ngModel)]="l.qty" />
+                                            <input class="col-span-3 h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-1" placeholder="Unit" [attr.aria-label]="'Unit ' + ($index + 1)" [name]="'l-unit-' + $index" [(ngModel)]="l.unit" />
+                                            <input type="number" min="0" class="col-span-4 h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-3" placeholder="Unit price" [attr.aria-label]="'Unit price ' + ($index + 1)" [name]="'l-price-' + $index" [(ngModel)]="l.price" />
+                                            <button type="button" class="col-span-2 text-red-600 hover:underline sm:col-span-1" (click)="removeLine($index)" [attr.aria-label]="'Remove item ' + ($index + 1)">Remove</button>
+                                        </div>
+                                    }
+                                    <button type="button" class="mt-3 font-medium text-primary hover:underline" (click)="addLine()">Add item</button>
+                                    <select class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="Project this order is for" name="po-project" [(ngModel)]="poProjectId">
+                                        <option value="">Not for a specific project</option>
+                                        @for (p of projects.projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                                    </select>
+                                    <textarea class="mt-3 w-full rounded-lg border bg-transparent px-3 py-2 text-md" rows="2" placeholder="Note to the vendor (optional)" aria-label="Note" name="po-note" [(ngModel)]="poNote"></textarea>
+                                    <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+                                        <div class="text-lg font-semibold">Total BDT {{ orderTotal | number: '1.0-2' }}</div>
+                                        <div class="flex gap-3"><button mat-stroked-button type="button" (click)="poOpen = false">Cancel</button><button mat-flat-button color="primary" type="submit">Send order</button></div>
+                                    </div>
+                                </form>
+                            } @else {
+                                <button mat-flat-button color="primary" class="mb-6" type="button" (click)="poOpen = true">New purchase order</button>
+                            }
+                        }
+                        <div class="flex flex-col gap-4">
+                            @for (o of service.ordersOf(id); track o.id) {
+                                <section class="rounded-xl border p-4" [attr.aria-label]="o.number">
+                                    <div class="flex flex-wrap items-center gap-3">
+                                        <button type="button" class="text-lg font-semibold text-primary hover:underline" (click)="openOrder.set(openOrder() === o.id ? null : o.id)" [attr.aria-expanded]="openOrder() === o.id">{{ o.number }}</button>
+                                        <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="poClasses[o.status]">{{ poLabels[o.status] }}</span>
+                                        <span class="text-secondary text-sm">{{ o.date | date: 'dd MMM y' }} · by {{ o.by }}</span>
+                                        <span class="flex-auto"></span>
+                                        <span class="text-lg font-semibold">BDT {{ o.total | number: '1.0-2' }}</span>
+                                    </div>
+                                    @if (openOrder() === o.id) {
+                                        <table class="app-table mt-3 w-full">
+                                            <thead><tr><th scope="col" class="text-left font-medium">Item</th><th scope="col" class="text-right font-medium">Qty</th><th scope="col" class="text-right font-medium">Unit price</th><th scope="col" class="text-right font-medium">Amount</th></tr></thead>
+                                            <tbody>
+                                                @for (l of o.lines; track $index) {
+                                                    <tr><td>{{ l.name }}</td><td class="text-right">{{ l.qty }} {{ l.unit }}</td><td class="text-right">{{ l.price | number: '1.0-2' }}</td><td class="text-right">{{ l.qty * l.price | number: '1.0-2' }}</td></tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                        @if (o.note) { <div class="text-secondary mt-2 text-sm">Note: {{ o.note }}</div> }
+                                        @if (access.can('vendors.create_po') && o.status === 'open') {
+                                            <div class="mt-3 flex gap-3">
+                                                <button mat-stroked-button type="button" (click)="setOrderStatus(o, 'cancelled')">Cancel order</button>
+                                                <button mat-flat-button color="primary" type="button" (click)="setOrderStatus(o, 'received')">Mark received</button>
+                                            </div>
+                                        }
+                                    }
+                                </section>
+                            } @empty {
+                                <div class="text-secondary py-6 text-center">No purchase orders yet.</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- ============ Invoices ============ -->
+                @if (tab() === 'invoices') {
+                    <div class="p-6">
+                        @if (service.canSubmitInvoice(id)) {
+                            @if (invoiceOpen) {
+                                <form class="mb-6 grid grid-cols-1 gap-3 rounded-xl border p-4 sm:grid-cols-2" (ngSubmit)="submitInvoice()">
+                                    <div class="font-medium sm:col-span-2">Submit an invoice</div>
+                                    <input class="h-11 rounded-lg border bg-transparent px-3 text-md" placeholder="Invoice number *" aria-label="Invoice number" name="i-number" [(ngModel)]="invoiceDraft.number" />
+                                    <input type="number" min="0" class="h-11 rounded-lg border bg-transparent px-3 text-md" placeholder="Amount (BDT) *" aria-label="Invoice amount" name="i-amount" [(ngModel)]="invoiceDraft.amount" />
+                                    @if (vendor()!.type === 'product') {
+                                        <select class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-2" aria-label="Purchase order" name="i-po" [(ngModel)]="invoiceDraft.poId">
+                                            <option value="">Not linked to a purchase order</option>
+                                            @for (o of service.ordersOf(id); track o.id) { <option [value]="o.id">{{ o.number }} (BDT {{ o.total | number: '1.0-0' }})</option> }
+                                        </select>
+                                    }
+                                    @if (access.can('vendors.edit')) {
+                                        <select class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-2" aria-label="Project this invoice is a cost of" name="i-project" [(ngModel)]="invoiceDraft.projectId">
+                                            <option value="">Project of the purchase order, if any</option>
+                                            @for (p of projects.projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                                        </select>
+                                    }
+                                    <label class="text-sm">Invoice date<input type="date" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="i-date" [(ngModel)]="invoiceDraft.date" /></label>
+                                    <label class="text-sm">Payment due<input type="date" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="i-due" [(ngModel)]="invoiceDraft.dueDate" /></label>
+                                    <label class="text-sm sm:col-span-2">Photo or scan of the invoice
+                                        <input type="file" accept="image/*" class="mt-1 block w-full text-md" (change)="pickImage($event)" />
+                                    </label>
+                                    @if (invoiceDraft.image) {
+                                        <img [src]="invoiceDraft.image" alt="Invoice preview" class="max-h-48 rounded-lg border sm:col-span-2" />
+                                    }
+                                    <textarea class="rounded-lg border bg-transparent px-3 py-2 text-md sm:col-span-2" rows="2" placeholder="Note (optional)" aria-label="Note" name="i-note" [(ngModel)]="invoiceDraft.note"></textarea>
+                                    <div class="flex justify-end gap-3 sm:col-span-2"><button mat-stroked-button type="button" (click)="invoiceOpen = false">Cancel</button><button mat-flat-button color="primary" type="submit">Submit invoice</button></div>
+                                </form>
+                            } @else {
+                                <button mat-flat-button color="primary" class="mb-6" type="button" (click)="invoiceOpen = true">Submit invoice</button>
+                            }
+                        }
+                        <div class="overflow-x-auto">
+                            <table class="app-table w-full">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="text-left font-medium">Invoice</th>
+                                        <th scope="col" class="text-left font-medium">Order</th>
+                                        <th scope="col" class="text-left font-medium">Date</th>
+                                        <th scope="col" class="text-right font-medium">Amount (BDT)</th>
+                                        <th scope="col" class="text-left font-medium">Status</th>
+                                        <th scope="col"><span class="sr-only">Actions</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (i of service.invoicesOf(id); track i.id) {
+                                        <tr>
+                                            <td class="font-medium">{{ i.number }}<div class="text-secondary text-sm">by {{ i.by }}</div></td>
+                                            <td>{{ poOf(i.poId) }}</td>
+                                            <td>{{ i.date | date: 'dd MMM y' }}<div class="text-secondary text-sm">due {{ i.dueDate | date: 'dd MMM y' }}</div></td>
+                                            <td class="text-right">{{ i.amount | number: '1.0-2' }}</td>
+                                            <td>
+                                                <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="invClasses[i.status]">{{ invLabels[i.status] }}</span>
+                                                @if (i.decisionNote) { <div class="text-secondary text-sm">{{ i.decisionNote }}</div> }
+                                                <div class="mt-1 flex flex-wrap items-center gap-1 text-xs" [attr.aria-label]="'Approval flow for ' + i.number">
+                                                    @for (s of i.approvals; track $index) {
+                                                        <span class="rounded-full px-2 py-0.5" [class]="s.status === 'approved' ? 'bg-green-100 text-green-800' : s.status === 'rejected' ? 'bg-red-100 text-red-800' : s.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-200 text-gray-600'" [attr.title]="s.by ? s.status + ' by ' + s.by : s.status">{{ $index + 1 }}. {{ s.roleName }}</span>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td class="whitespace-nowrap text-right">
+                                                @if (i.image) { <button type="button" class="mr-3 font-medium text-primary hover:underline" (click)="preview.set(i)">View image</button> }
+                                                @if (service.canApproveInvoice(i)) {
+                                                    <input class="mr-2 h-9 w-40 rounded-lg border bg-transparent px-2 text-sm" placeholder="Reason if rejecting" [attr.aria-label]="'Decision note for ' + i.number" [(ngModel)]="decisionNote[i.id]" />
+                                                    <button type="button" class="mr-3 font-medium text-red-600 hover:underline" (click)="decideInvoice(i, false)">Reject</button>
+                                                    <button type="button" class="font-medium text-primary hover:underline" (click)="decideInvoice(i, true)">{{ isLastStep(i) ? 'Approve' : 'Approve step' }}</button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    } @empty {
+                                        <tr><td colspan="6" class="text-secondary py-8 text-center">No invoices yet.</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+                <!-- ============ Payments ============ -->
+                @if (tab() === 'payments') {
+                    <div class="grid grid-cols-1 gap-8 p-6 xl:grid-cols-3">
+                        <div class="xl:col-span-2">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div class="text-sm font-medium uppercase tracking-wide text-secondary">Transactions</div>
+                                @if (access.can('vendors.pay')) {
+                                    <button mat-flat-button color="primary" type="button" (click)="paymentOpen = !paymentOpen">{{ paymentOpen ? 'Close' : 'Record payment' }}</button>
+                                }
+                            </div>
+                            @if (paymentOpen) {
+                                <form class="mt-4 grid grid-cols-1 gap-3 rounded-xl border p-4 sm:grid-cols-2" (ngSubmit)="recordPayment()">
+                                    <input type="number" min="0" class="h-11 rounded-lg border bg-transparent px-3 text-md" [placeholder]="'Amount (due ' + (service.due(id) | number: '1.0-0') + ')'" aria-label="Payment amount" name="pay-amount" [(ngModel)]="paymentDraft.amount" />
+                                    <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Method" name="pay-method" [(ngModel)]="paymentDraft.method">
+                                        @for (m of methods; track m) { <option [value]="m">{{ m }}</option> }
+                                    </select>
+                                    <input class="h-11 rounded-lg border bg-transparent px-3 text-md" placeholder="Reference" aria-label="Reference" name="pay-ref" [(ngModel)]="paymentDraft.reference" />
+                                    <input type="date" class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Date" name="pay-date" [(ngModel)]="paymentDraft.date" />
+                                    <div class="flex justify-end sm:col-span-2"><button mat-flat-button color="primary" type="submit">Save payment</button></div>
+                                </form>
+                            }
+                            <div class="mt-4 overflow-x-auto">
+                                <table class="app-table w-full">
+                                    <thead><tr><th scope="col" class="text-left font-medium">Transaction</th><th scope="col" class="text-left font-medium">Date</th><th scope="col" class="text-left font-medium">Method</th><th scope="col" class="text-right font-medium">Amount (BDT)</th></tr></thead>
+                                    <tbody>
+                                        @for (p of service.paymentsOf(id); track p.id) {
+                                            <tr><td class="font-medium">{{ p.id }}<div class="text-secondary text-sm">{{ p.reference || '-' }}</div></td><td>{{ p.date | date: 'dd MMM y' }}</td><td>{{ p.method }}<div class="text-secondary text-sm">by {{ p.by }}</div></td><td class="text-right">{{ p.amount | number: '1.0-2' }}</td></tr>
+                                        } @empty {
+                                            <tr><td colspan="4" class="text-secondary py-8 text-center">No payments yet.</td></tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium uppercase tracking-wide text-secondary">Due payment requests</div>
+                            @if (isVendorSide) {
+                                <form class="mt-4 rounded-xl border p-4" (ngSubmit)="requestDue()">
+                                    <div class="font-medium">Request a due payment</div>
+                                    <div class="text-secondary text-sm">You can request up to BDT {{ service.requestable(id) | number: '1.0-0' }} now.</div>
+                                    <input type="number" min="0" class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" placeholder="Amount (BDT)" aria-label="Request amount" name="rq-amount" [(ngModel)]="requestDraft.amount" />
+                                    <input class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" placeholder="Note (optional)" aria-label="Request note" name="rq-note" [(ngModel)]="requestDraft.note" />
+                                    <button mat-flat-button color="primary" class="mt-3" type="submit" [disabled]="service.requestable(id) <= 0">Send request</button>
+                                </form>
+                            }
+                            <ul class="mt-4 flex flex-col gap-3">
+                                @for (r of service.requestsOf(id); track r.id) {
+                                    <li class="rounded-xl border p-3">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <span class="font-medium">BDT {{ r.amount | number: '1.0-0' }}</span>
+                                            <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="reqClasses[r.status]">{{ r.status === 'pending' ? 'Waiting' : r.status === 'accepted' ? 'Accepted' : 'Declined' }}</span>
+                                        </div>
+                                        <div class="text-secondary text-sm">{{ r.createdAt | date: 'dd MMM y' }} · {{ r.by }}{{ r.note ? ': ' + r.note : '' }}</div>
+                                        @if (r.answerNote) { <div class="text-secondary text-sm">Answer: {{ r.answerNote }}</div> }
+                                        @if (r.status === 'pending' && access.can('vendors.approve_invoice')) {
+                                            <input class="mt-2 h-9 w-full rounded-lg border bg-transparent px-2 text-sm" placeholder="Reason if declining" [attr.aria-label]="'Answer note for ' + r.id" [(ngModel)]="decisionNote[r.id]" />
+                                            <div class="mt-2 flex gap-3"><button mat-stroked-button type="button" (click)="answer(r.id, false)">Decline</button><button mat-flat-button color="primary" type="button" (click)="answer(r.id, true)">Accept</button></div>
+                                        }
+                                    </li>
+                                } @empty {
+                                    <li class="text-secondary text-md">No requests.</li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                }
+
+                <!-- ============ History ============ -->
+                @if (tab() === 'history') {
+                    <ol class="flex flex-col gap-4 p-6">
+                        @for (e of service.history(id); track $index) {
+                            <li class="flex gap-3">
+                                <span class="mt-1.5 h-2.5 w-2.5 flex-none rounded-full bg-primary"></span>
+                                <div class="text-md"><div class="font-medium">{{ e.title }}</div><div class="text-secondary">{{ e.detail }}</div><div class="text-secondary text-sm">{{ e.at | date: 'dd MMM y, h:mm a' }}</div></div>
+                            </li>
+                        } @empty {
+                            <li class="text-secondary py-6 text-center">Nothing has happened yet.</li>
+                        }
+                    </ol>
+                }
+
+                <!-- ============ Daily reports (coming soon) ============ -->
+                @if (tab() === 'reports') {
+                    <div class="flex flex-col items-center px-6 py-14 text-center">
+                        <span class="rounded-full bg-primary/15 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">Coming soon</span>
+                        <h2 class="mt-4 text-3xl font-bold tracking-tight">Daily reports</h2>
+                        <p class="text-secondary mt-2 max-w-md text-lg">Service vendors will send a report every day about the work they did. This feature is on its way.</p>
+                    </div>
+                }
+
+                <!-- ============ Portal access ============ -->
+                @if (tab() === 'access' && access.can('vendors.assign_user')) {
+                    <div class="p-6">
+                        <p class="text-secondary text-md">A user linked to this vendor sees only this vendor's data: purchase orders, products, invoices, payments and history. They can submit invoices and request due payments.</p>
+                        <ul class="mt-5 flex flex-col divide-y">
+                            @for (u of service.usersOf(id); track u.id) {
+                                <li class="flex items-center gap-3 py-3">
+                                    <div class="min-w-0 flex-1"><div class="font-medium">{{ u.name }}</div><div class="text-secondary text-sm">{{ u.email }}</div></div>
+                                    <button type="button" class="font-medium text-red-600 hover:underline" (click)="unlinkUser(u.id)">Remove access</button>
+                                </li>
+                            } @empty {
+                                <li class="text-secondary py-3 text-md">Nobody has access yet.</li>
+                            }
+                        </ul>
+                        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            <form class="rounded-xl border p-4" (ngSubmit)="linkUser()">
+                                <div class="font-medium">Give an existing user access</div>
+                                <select class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="User" name="link-user" [(ngModel)]="linkUserId">
+                                    <option value="">Choose a user...</option>
+                                    @for (u of freeUsers; track u.id) { <option [value]="u.id">{{ u.name }} ({{ u.email }})</option> }
+                                </select>
+                                <button mat-flat-button color="primary" class="mt-3" type="submit">Give access</button>
+                            </form>
+                            <form class="rounded-xl border p-4" (ngSubmit)="createUser()">
+                                <div class="font-medium">Create a vendor login</div>
+                                <input class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" placeholder="Name" aria-label="Vendor user name" name="nu-name" [(ngModel)]="newUser.name" />
+                                <input type="email" class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" placeholder="Email" aria-label="Vendor user email" name="nu-email" [(ngModel)]="newUser.email" />
+                                <button mat-flat-button color="primary" class="mt-3" type="submit">Create login</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@if (editing() && vendor()) {
+    <vendors-form [vendor]="vendor()" (saved)="saved()" (cancelled)="editing.set(false)"></vendors-form>
+}
+
+@if (preview(); as inv) {
+    <treasury-slide-over [heading]="'Invoice ' + inv.number" [subheading]="inv.imageName ?? ''" (closed)="preview.set(null)">
+        <img [src]="inv.image" [alt]="'Image of invoice ' + inv.number" class="w-full rounded-lg border" />
+    </treasury-slide-over>
+}
