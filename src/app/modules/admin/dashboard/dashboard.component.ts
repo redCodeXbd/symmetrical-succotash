@@ -1,3 +1,4 @@
+import { BrandMarkComponent } from 'app/shared/brand-mark/brand-mark.component';
 import { DOCUMENT } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
     templateUrl: './dashboard.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [MatIconModule],
+    imports: [MatIconModule, BrandMarkComponent],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
     private _body = inject(DOCUMENT).body;
