@@ -9,6 +9,12 @@ export const defaultNavigation: FuseNavigationItem[] = [
         icon    : 'heroicons_outline:banknotes',
         children: [
             {
+                id   : 'treasury.organization-funds',
+                title: 'Organization Funds',
+                type : 'basic',
+                link : '/treasury/organization-funds'
+            },
+            {
                 id   : 'treasury.funds',
                 title: 'Funds',
                 type : 'basic',
@@ -24,6 +30,12 @@ export const compactNavigation: FuseNavigationItem[] = [
         type    : 'aside',
         icon    : 'heroicons_outline:banknotes',
         children: [
+            {
+                id   : 'treasury.organization-funds',
+                title: 'Organization Funds',
+                type : 'basic',
+                link : '/treasury/organization-funds'
+            },
             {
                 id   : 'treasury.funds',
                 title: 'Funds',
@@ -41,6 +53,12 @@ export const futuristicNavigation: FuseNavigationItem[] = [
         icon    : 'heroicons_outline:banknotes',
         children: [
             {
+                id   : 'treasury.organization-funds',
+                title: 'Organization Funds',
+                type : 'basic',
+                link : '/treasury/organization-funds'
+            },
+            {
                 id   : 'treasury.funds',
                 title: 'Funds',
                 type : 'basic',
@@ -56,6 +74,12 @@ export const horizontalNavigation: FuseNavigationItem[] = [
         type    : 'group',
         icon    : 'heroicons_outline:banknotes',
         children: [
+            {
+                id   : 'treasury.organization-funds',
+                title: 'Organization Funds',
+                type : 'basic',
+                link : '/treasury/organization-funds'
+            },
             {
                 id   : 'treasury.funds',
                 title: 'Funds',

@@ -1,0 +1,90 @@
+<treasury-slide-over [heading]="fund.name" [subheading]="fund.company + ' · ' + fund.type + ' fund'" (closed)="closed.emit()">
+    <div class="flex items-center gap-3">
+        <span class="rounded-full px-3 py-1 text-sm font-medium" [class]="statusClasses[org.status(fund)]">
+            {{ statusLabels[org.status(fund)] }}
+        </span>
+        <span class="text-2xl font-semibold">{{ fund.currency }} {{ available | number: '1.0-0' }}</span>
+        <span class="text-secondary text-md">available</span>
+    </div>
+
+    <div class="mt-5 flex border-b" role="tablist">
+        @for (t of [{ id: 'overview', label: 'Overview' }, { id: 'transactions', label: 'Transactions' }]; track t.id) {
+            <button
+                type="button"
+                role="tab"
+                class="-mb-px h-11 border-b-2 px-4 text-md font-medium"
+                [class]="tab === t.id ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'"
+                [attr.aria-selected]="tab === t.id"
+                (click)="tab = $any(t.id)"
+            >
+                {{ t.label }}
+            </button>
+        }
+    </div>
+
+    @if (tab === 'overview') {
+        <dl class="mt-2 divide-y text-md">
+            <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Current balance</dt><dd>{{ fund.currency }} {{ fund.balance | number: '1.0-0' }}</dd></div>
+            <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Reserved</dt><dd>{{ fund.currency }} {{ fund.reserved | number: '1.0-0' }}</dd></div>
+            <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Available</dt><dd>{{ fund.currency }} {{ available | number: '1.0-0' }}</dd></div>
+            <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Expected incoming</dt><dd>{{ fund.currency }} {{ incomingTotal | number: '1.0-0' }}</dd></div>
+            <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Scheduled outgoing</dt><dd>{{ fund.currency }} {{ outgoingTotal | number: '1.0-0' }}</dd></div>
+            <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Minimum balance</dt><dd>{{ fund.currency }} {{ fund.minBalance | number: '1.0-0' }}</dd></div>
+            <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Branch</dt><dd>{{ fund.branch }}</dd></div>
+            <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Department</dt><dd>{{ fund.department }}</dd></div>
+        </dl>
+        <div class="text-secondary mt-1 text-sm">Expected incoming funds do not raise the available balance until they are received.</div>
+
+        <div class="mt-8">
+            <div class="mb-2 text-sm font-medium uppercase tracking-wide text-secondary">Expected incoming</div>
+            @if (incoming.length === 0) {
+                <div class="text-secondary text-md">Nothing expected.</div>
+            }
+            @for (i of incoming; track i.id) {
+                <div class="flex justify-between gap-4 border-b py-2.5 text-md">
+                    <div>
+                        <div class="font-medium">{{ i.description }}</div>
+                        <div class="text-secondary text-sm">Expected {{ i.expectedDate | date: 'dd MMM y' }}</div>
+                    </div>
+                    <div class="whitespace-nowrap">{{ fund.currency }} {{ i.amount | number: '1.0-0' }}</div>
+                </div>
+            }
+        </div>
+
+        <div class="mt-8">
+            <div class="mb-2 text-sm font-medium uppercase tracking-wide text-secondary">Scheduled outgoing</div>
+            @if (outgoing.length === 0) {
+                <div class="text-secondary text-md">Nothing scheduled.</div>
+            }
+            @for (o of outgoing; track o.id) {
+                <div class="flex justify-between gap-4 border-b py-2.5 text-md">
+                    <div>
+                        <div class="font-medium">{{ o.description }}</div>
+                        <div class="text-sm" [class]="isOverdue(o) ? 'text-red-600' : 'text-secondary'">
+                            {{ isOverdue(o) ? 'Overdue, was due ' : 'Due ' }}{{ o.dueDate | date: 'dd MMM y' }}
+                        </div>
+                    </div>
+                    <div class="whitespace-nowrap">{{ fund.currency }} {{ o.amount | number: '1.0-0' }}</div>
+                </div>
+            }
+        </div>
+    } @else {
+        <div class="mt-2">
+            @if (movements.length === 0) {
+                <div class="text-secondary py-10 text-center text-md">No transactions yet.</div>
+            }
+            @for (m of movements; track m.id) {
+                <div class="flex justify-between gap-4 border-b py-3 text-md">
+                    <div>
+                        <div class="font-medium">{{ movementLabels[m.type] }} · {{ m.reference }}</div>
+                        <div class="text-secondary text-sm">{{ m.description }}</div>
+                        <div class="text-secondary text-sm">{{ m.date | date: 'dd MMM y' }} · {{ m.by }}</div>
+                    </div>
+                    <div class="whitespace-nowrap" [class]="m.direction === 'in' ? 'text-green-700' : ''">
+                        {{ m.direction === 'in' ? '+' : '-' }}{{ fund.currency }} {{ m.amount | number: '1.0-0' }}
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</treasury-slide-over>

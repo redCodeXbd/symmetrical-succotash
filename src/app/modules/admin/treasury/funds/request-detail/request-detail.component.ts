@@ -16,7 +16,7 @@ import {
     STATUS_CLASSES,
     STATUS_LABELS,
 } from '../funds.types';
-import { SlideOverComponent } from '../slide-over/slide-over.component';
+import { SlideOverComponent } from '../../shared/slide-over/slide-over.component';
 
 type Mode = 'view' | 'approve' | 'reject' | 'pay';
 

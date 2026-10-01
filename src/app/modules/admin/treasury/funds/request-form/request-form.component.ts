@@ -8,7 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { DateTime } from 'luxon';
 import { FundsService } from '../funds.service';
 import { FundRequest } from '../funds.types';
-import { SlideOverComponent } from '../slide-over/slide-over.component';
+import { SlideOverComponent } from '../../shared/slide-over/slide-over.component';
 
 @Component({
     selector: 'funds-request-form',
