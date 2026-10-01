@@ -102,6 +102,61 @@ export class FundsComponent {
     );
     receivedTotal = computed(() => this._sum(this.receivedThisMonth().map((t) => t.amount)));
 
+    // -----------------------------------------------------------------------------------------------------
+    // @ Employee wallet: money this employee has received from funds
+    // -----------------------------------------------------------------------------------------------------
+
+    private _ownPayments = computed(() => {
+        const ids = new Set(
+            this.funds
+                .requests()
+                .filter((r) => r.employee === this.funds.currentEmployee)
+                .map((r) => r.id)
+        );
+        return this.funds.transactions().filter((t) => ids.has(t.requestId));
+    });
+
+    walletTotal = computed(() => this._sum(this._ownPayments().map((t) => t.amount)));
+    walletCount = computed(() => this._ownPayments().length);
+    walletLast = computed(
+        () => [...this._ownPayments()].sort((a, b) => b.date.localeCompare(a.date))[0] ?? null
+    );
+
+    /** Where the money came from, by fund category. */
+    walletCategories = computed(() => {
+        const totals = new Map<string, number>();
+        for (const t of this._ownPayments()) {
+            const name = this.funds.fundCategory(t.fundId);
+            totals.set(name, (totals.get(name) ?? 0) + t.amount);
+        }
+        return [...totals].map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total);
+    });
+
+    /** Received per month for the last six months, with bar heights relative to the biggest month. */
+    walletMonths = computed(() => {
+        const months = Array.from({ length: 6 }, (_, i) => DateTime.now().startOf('month').minus({ months: 5 - i }));
+        const totals = months.map((m) =>
+            this._sum(
+                this._ownPayments()
+                    .filter((t) => DateTime.fromISO(t.date).hasSame(m, 'month'))
+                    .map((t) => t.amount)
+            )
+        );
+        const max = Math.max(...totals, 1);
+        return months.map((m, i) => ({
+            label: m.toFormat('LLL'),
+            total: totals[i],
+            pct: Math.round((totals[i] / max) * 100),
+        }));
+    });
+
+    /** Plain-text version of the chart for screen readers. */
+    walletSummary(): string {
+        return this.walletMonths()
+            .map((m) => `${m.label} ${this._sum([m.total]).toLocaleString('en-US')}`)
+            .join(', ');
+    }
+
     constructor(public funds: FundsService) {}
 
     setRole(role: FundRole): void {

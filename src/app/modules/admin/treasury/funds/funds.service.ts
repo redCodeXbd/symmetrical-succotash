@@ -53,6 +53,11 @@ export class FundsService {
         () => new Map(this._requests().map((r) => [r.id, r]))
     );
 
+    /** Category of the fund a payment was taken from. */
+    fundCategory(fundId: string): string {
+        return this._org.funds().find((f) => f.id === fundId)?.category ?? 'Other';
+    }
+
     remaining(request: FundRequest): number {
         return Math.max((request.approvedAmount ?? 0) - request.paidAmount, 0);
     }

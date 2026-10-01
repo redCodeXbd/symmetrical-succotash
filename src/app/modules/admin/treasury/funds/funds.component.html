@@ -24,8 +24,56 @@
             </div>
         </div>
 
+        <!-- Employee wallet -->
+        @if (role() === 'employee') {
+            <section class="stat-tile stat-tile-hero mt-8" style="--tile: var(--fuse-primary-rgb)" aria-labelledby="wallet-title">
+                <div class="stat-head">
+                    <span id="wallet-title" class="stat-label">My wallet · received from funds</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:wallet'"></mat-icon></span>
+                </div>
+                <div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
+                    <div class="lg:col-span-3">
+                        <div class="stat-value"><span class="stat-cur">{{ funds.currency }}</span>{{ walletTotal() | number: '1.0-2' }}</div>
+                        <div class="stat-sub">
+                            Total you have taken · {{ walletCount() }} {{ walletCount() === 1 ? 'payment' : 'payments' }}
+                            @if (walletLast(); as last) {
+                                · last {{ funds.currency }} {{ last.amount | number: '1.0-2' }} on {{ last.date | date: 'dd MMM y' }}
+                            }
+                        </div>
+
+                        @if (walletCategories().length > 0) {
+                            <div class="mt-4 text-xs font-medium uppercase tracking-wide text-secondary">Taken from</div>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                @for (c of walletCategories(); track c.name) {
+                                    <span class="wallet-chip">
+                                        <span class="wallet-chip-name">{{ c.name }}</span>
+                                        <span>{{ funds.currency }} {{ c.total | number: '1.0-0' }}</span>
+                                    </span>
+                                }
+                            </div>
+                        } @else {
+                            <div class="stat-sub mt-3">No money received yet. Approved requests appear here once Accounts pays them.</div>
+                        }
+                    </div>
+
+                    <div class="lg:col-span-2">
+                        <div class="text-xs font-medium uppercase tracking-wide text-secondary">Last 6 months</div>
+                        <div class="wallet-bars mt-3" role="img" [attr.aria-label]="'Received per month: ' + walletSummary()">
+                            @for (m of walletMonths(); track m.label) {
+                                <div class="wallet-bar">
+                                    <span class="wallet-bar-amount">{{ m.total ? (m.total / 1000 | number: '1.0-1') + 'k' : '' }}</span>
+                                    <span class="wallet-bar-fill" [style.height.%]="m.total ? (m.pct < 8 ? 8 : m.pct) : 3" [class.wallet-bar-empty]="!m.total"></span>
+                                    <span class="wallet-bar-label">{{ m.label }}</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </section>
+        }
+
         <!-- Summary tiles -->
-        <div class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+        <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             <div class="stat-tile col-span-2 sm:col-span-1" style="--tile: var(--fuse-accent-rgb)">
                 <div class="stat-head">
                     <span class="stat-label">Awaiting approval</span>
