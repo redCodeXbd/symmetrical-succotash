@@ -1,0 +1,35 @@
+<div class="fixed inset-0 z-[999] flex justify-end">
+    <div class="absolute inset-0 bg-slate-900/40" (click)="closed.emit()"></div>
+    <div
+        #panel
+        class="relative flex h-full w-full max-w-md flex-col bg-card shadow-2xl outline-none"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="heading"
+        tabindex="-1"
+        (keydown.escape)="closed.emit()"
+    >
+        <div class="flex items-start justify-between border-b px-6 py-5">
+            <div class="min-w-0">
+                <div class="truncate text-2xl font-semibold tracking-tight">{{ heading }}</div>
+                @if (subheading) {
+                    <div class="text-secondary mt-1 text-md">{{ subheading }}</div>
+                }
+            </div>
+            <button
+                type="button"
+                class="-mr-2 flex h-10 w-10 flex-none items-center justify-center rounded-full hover:bg-hover"
+                aria-label="Close"
+                (click)="closed.emit()"
+            >
+                <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+            </button>
+        </div>
+        <div class="flex-auto overflow-y-auto px-6 py-5">
+            <ng-content></ng-content>
+        </div>
+        <div class="flex justify-end gap-3 border-t px-6 py-4 empty:hidden">
+            <ng-content select="[footer]"></ng-content>
+        </div>
+    </div>
+</div>

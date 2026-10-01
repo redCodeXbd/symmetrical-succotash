@@ -1,0 +1,30 @@
+import {
+    AfterViewInit,
+    Component,
+    ElementRef,
+    EventEmitter,
+    Input,
+    Output,
+    ViewChild,
+    ViewEncapsulation,
+} from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+
+/** Right-hand drawer with a backdrop. Content goes in the default slot, actions in [footer]. */
+@Component({
+    selector: 'funds-slide-over',
+    templateUrl: './slide-over.component.html',
+    encapsulation: ViewEncapsulation.None,
+    standalone: true,
+    imports: [MatIconModule],
+})
+export class SlideOverComponent implements AfterViewInit {
+    @Input() heading = '';
+    @Input() subheading = '';
+    @Output() closed = new EventEmitter<void>();
+    @ViewChild('panel') panel: ElementRef<HTMLElement>;
+
+    ngAfterViewInit(): void {
+        this.panel.nativeElement.focus();
+    }
+}

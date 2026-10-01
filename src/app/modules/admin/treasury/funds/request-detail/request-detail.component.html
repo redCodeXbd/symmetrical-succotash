@@ -1,0 +1,176 @@
+<funds-slide-over
+    [heading]="request.id"
+    [subheading]="request.purpose"
+    (closed)="closed.emit()"
+>
+    <div class="flex items-center gap-3">
+        <span class="rounded-full px-3 py-1 text-sm font-medium" [class]="classes[request.status]">
+            {{ labels[request.status] }}
+        </span>
+        <span class="text-2xl font-semibold">{{ request.currency }} {{ request.amount | number: '1.0-2' }}</span>
+    </div>
+
+    @if (request.status === 'rejected' && request.rejectionReason) {
+        <div class="mt-4 rounded-lg bg-red-50 p-3 text-md text-red-800">
+            <span class="font-medium">Rejected:</span> {{ request.rejectionReason }}
+        </div>
+    }
+
+    @if (error) {
+        <div class="mt-4 rounded-lg bg-red-50 p-3 text-md text-red-800" role="alert">{{ error }}</div>
+    }
+
+    <!-- Details -->
+    <dl class="mt-6 divide-y text-md">
+        <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Requested by</dt><dd>{{ request.employee }}</dd></div>
+        <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Company</dt><dd>{{ request.company }}</dd></div>
+        <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Department</dt><dd>{{ request.department }}, {{ request.branch }}</dd></div>
+        <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Needed by</dt><dd>{{ request.neededBy | date: 'dd MMM y' }}</dd></div>
+        <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Work order</dt><dd>{{ request.workOrder || 'None' }}</dd></div>
+        <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Attachment</dt><dd>{{ request.attachment || 'None' }}</dd></div>
+        <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Approved amount</dt><dd>{{ request.approvedAmount === null ? 'Not approved yet' : request.currency + ' ' + (request.approvedAmount | number: '1.0-2') }}</dd></div>
+        <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Paid amount</dt><dd>{{ request.currency }} {{ request.paidAmount | number: '1.0-2' }}</dd></div>
+        @if (request.approvedAmount !== null) {
+            <div class="flex justify-between gap-4 py-3"><dt class="text-secondary">Remaining approved</dt><dd>{{ request.currency }} {{ remaining | number: '1.0-2' }}</dd></div>
+        }
+    </dl>
+
+    <!-- Approve / reject / pay forms -->
+    @if (mode === 'approve') {
+        <form class="mt-6 rounded-xl border p-4" [formGroup]="approveForm" (ngSubmit)="approve()">
+            <div class="mb-3 font-medium">Approve request</div>
+            <mat-form-field class="w-full">
+                <mat-label>Approved amount ({{ request.currency }})</mat-label>
+                <input matInput type="number" min="0" step="0.01" formControlName="amount" />
+                <mat-hint>Requested: {{ request.amount | number: '1.0-2' }}</mat-hint>
+                <mat-error>Enter an amount above zero</mat-error>
+            </mat-form-field>
+            <div class="mt-4 flex justify-end gap-3">
+                <button mat-stroked-button type="button" (click)="back()">Back</button>
+                <button mat-flat-button color="primary" type="submit">Confirm approval</button>
+            </div>
+        </form>
+    }
+    @if (mode === 'reject') {
+        <form class="mt-6 rounded-xl border p-4" [formGroup]="rejectForm" (ngSubmit)="reject()">
+            <div class="mb-3 font-medium">Reject request</div>
+            <mat-form-field class="w-full">
+                <mat-label>Rejection reason</mat-label>
+                <textarea matInput rows="3" formControlName="reason"></textarea>
+                <mat-error>A reason is required</mat-error>
+            </mat-form-field>
+            <div class="mt-4 flex justify-end gap-3">
+                <button mat-stroked-button type="button" (click)="back()">Back</button>
+                <button mat-flat-button color="warn" type="submit">Reject request</button>
+            </div>
+        </form>
+    }
+    @if (mode === 'pay') {
+        <form class="mt-6 rounded-xl border p-4" [formGroup]="payForm" (ngSubmit)="pay()">
+            <div class="mb-3 font-medium">Record payment</div>
+            <mat-form-field class="w-full">
+                <mat-label>Source fund</mat-label>
+                <mat-select formControlName="fundId">
+                    @for (fund of funds.funds(); track fund.id) {
+                        <mat-option [value]="fund.id">{{ fund.name }} ({{ fund.currency }} {{ fund.balance | number: '1.0-2' }})</mat-option>
+                    }
+                </mat-select>
+                <mat-error>Select a source fund</mat-error>
+            </mat-form-field>
+            <div class="grid grid-cols-2 gap-4">
+                <mat-form-field>
+                    <mat-label>Amount ({{ request.currency }})</mat-label>
+                    <input matInput type="number" min="0" step="0.01" formControlName="amount" />
+                    <mat-hint>Remaining: {{ remaining | number: '1.0-2' }}</mat-hint>
+                    <mat-error>Enter an amount above zero</mat-error>
+                </mat-form-field>
+                <mat-form-field>
+                    <mat-label>Payment date</mat-label>
+                    <input matInput [matDatepicker]="payDate" [max]="maxDate" formControlName="date" />
+                    <mat-datepicker-toggle matIconSuffix [for]="payDate"></mat-datepicker-toggle>
+                    <mat-datepicker #payDate></mat-datepicker>
+                    <mat-error>Choose a date</mat-error>
+                </mat-form-field>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <mat-form-field>
+                    <mat-label>Payment method</mat-label>
+                    <mat-select formControlName="method">
+                        @for (m of methods; track m) {
+                            <mat-option [value]="m">{{ m }}</mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                <mat-form-field>
+                    <mat-label>Reference</mat-label>
+                    <input matInput formControlName="reference" />
+                </mat-form-field>
+            </div>
+            <div class="mt-2 flex justify-end gap-3">
+                <button mat-stroked-button type="button" (click)="back()">Back</button>
+                <button mat-flat-button color="primary" type="submit">Record payment</button>
+            </div>
+        </form>
+    }
+
+    <!-- Payments -->
+    <div class="mt-8">
+        <div class="mb-2 text-sm font-medium uppercase tracking-wide text-secondary">Payments</div>
+        @if (payments.length === 0) {
+            <div class="text-secondary text-md">No payments recorded yet.</div>
+        }
+        @for (t of payments; track t.id) {
+            <div class="flex justify-between gap-4 border-b py-2.5 text-md">
+                <div>
+                    <div class="font-medium">{{ t.id }} · {{ t.method }}</div>
+                    <div class="text-secondary text-sm">{{ t.date | date: 'dd MMM y' }} · {{ fundName(t.fundId) }}</div>
+                </div>
+                <div class="whitespace-nowrap">{{ t.currency }} {{ t.amount | number: '1.0-2' }}</div>
+            </div>
+        }
+    </div>
+
+    <!-- Timeline -->
+    <div class="mt-8">
+        <div class="mb-3 text-sm font-medium uppercase tracking-wide text-secondary">Timeline</div>
+        <ol class="flex flex-col gap-4">
+            @for (e of request.events.slice().reverse(); track $index) {
+                <li class="flex gap-3">
+                    <span class="mt-1.5 h-2.5 w-2.5 flex-none rounded-full bg-primary"></span>
+                    <div class="text-md">
+                        <div class="font-medium">
+                            @switch (e.type) {
+                                @case ('submitted') { Request submitted }
+                                @case ('edited') { Request edited }
+                                @case ('approved') { Request approved }
+                                @case ('rejected') { Request rejected }
+                                @case ('cancelled') { Request cancelled }
+                                @case ('payment') { Payment recorded }
+                            }
+                        </div>
+                        @if (e.note) {
+                            <div class="text-secondary">{{ e.note }}</div>
+                        }
+                        <div class="text-secondary text-sm">{{ e.by }} · {{ e.at | date: 'dd MMM y, h:mm a' }}</div>
+                    </div>
+                </li>
+            }
+        </ol>
+    </div>
+
+    <ng-container footer>
+        @if (mode === 'view') {
+            @if (canEmployeeEdit) {
+                <button mat-stroked-button color="warn" type="button" (click)="cancelRequest()">Cancel request</button>
+                <button mat-flat-button color="primary" type="button" (click)="edit.emit(request)">Edit</button>
+            }
+            @if (canReview) {
+                <button mat-stroked-button type="button" (click)="start('reject')">Reject</button>
+                <button mat-flat-button color="primary" type="button" (click)="start('approve')">Approve Request</button>
+            }
+            @if (canPay) {
+                <button mat-flat-button color="primary" type="button" (click)="start('pay')">Record Payment</button>
+            }
+        }
+    </ng-container>
+</funds-slide-over>
