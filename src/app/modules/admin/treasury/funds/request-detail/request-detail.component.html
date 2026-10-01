@@ -3,6 +3,8 @@
     [subheading]="request.purpose"
     (closed)="closed.emit()"
 >
+    <treasury-export-menu headerActions [build]="detailDoc" [formats]="['pdf', 'docx']"></treasury-export-menu>
+
     <div class="flex items-center gap-3">
         <span class="rounded-full px-3 py-1 text-sm font-medium" [class]="classes[request.status]">
             {{ labels[request.status] }}

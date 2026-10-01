@@ -7,6 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { DateTime } from 'luxon';
 import { FundsService } from './funds.service';
 import { FundRequest, FundRequestStatus, FundRole, STATUS_CLASSES, STATUS_LABELS } from './funds.types';
+import { ExportMenuComponent } from '../shared/export-menu/export-menu.component';
+import { ReportDoc } from '../shared/report.types';
 import { RequestDetailComponent } from './request-detail/request-detail.component';
 import { RequestFormComponent } from './request-form/request-form.component';
 
@@ -25,6 +27,7 @@ type Range = 'this_month' | 'last_30' | 'all';
         MatButtonModule,
         MatButtonToggleModule,
         MatIconModule,
+        ExportMenuComponent,
         RequestDetailComponent,
         RequestFormComponent,
     ],
@@ -128,6 +131,48 @@ export class FundsComponent {
     openRequest(id: string): void {
         this.selectedId.set(id);
     }
+
+    /** Statement of the transactions currently listed, with the active filters in the subtitle. */
+    transactionsDoc = (): ReportDoc => {
+        const accounts = this.role() === 'accounts';
+        const requests = this.funds.requestById();
+        const rows = this.transactions();
+        const ranges = { this_month: 'This month', last_30: 'Last 30 days', all: 'All time' };
+        const columns = [
+            { header: 'Transaction' },
+            { header: 'Date' },
+            { header: 'Request' },
+            { header: 'Purpose' },
+            ...(accounts ? [{ header: 'Employee' }] : []),
+            { header: 'Method' },
+            { header: 'Reference' },
+            { header: `Amount (${this.funds.currency})`, format: 'number' as const },
+        ];
+        return {
+            kind: 'table',
+            title: accounts ? 'Fund transactions' : 'My fund transactions',
+            subtitle: `${ranges[this.range()]}${this.search().trim() ? ` · search "${this.search().trim()}"` : ''}`,
+            columns,
+            rows: rows.map((t) => {
+                const r = requests.get(t.requestId);
+                return [
+                    t.id,
+                    DateTime.fromISO(t.date).toFormat('dd MMM y'),
+                    t.requestId,
+                    r?.purpose ?? '',
+                    ...(accounts ? [r?.employee ?? ''] : []),
+                    t.method,
+                    t.reference || '-',
+                    t.amount,
+                ];
+            }),
+            footer: [
+                'Total',
+                ...columns.slice(1, -1).map(() => ''),
+                this._sum(rows.map((t) => t.amount)),
+            ],
+        };
+    };
 
     private _sum(values: number[]): number {
         return values.reduce((a, b) => a + b, 0);
