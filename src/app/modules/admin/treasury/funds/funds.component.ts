@@ -118,6 +118,16 @@ export class FundsComponent {
     });
 
     walletTotal = computed(() => this._sum(this._ownPayments().map((t) => t.amount)));
+    /** Money the employee gave back that Accounts or Admin confirmed. */
+    walletReturned = computed(() =>
+        this._sum(
+            this.funds
+                .requests()
+                .filter((r) => r.employee === this.funds.currentEmployee)
+                .map((r) => r.returnedAmount)
+        )
+    );
+    walletHolding = computed(() => this.walletTotal() - this.walletReturned());
     walletCount = computed(() => this._ownPayments().length);
     walletLast = computed(
         () => [...this._ownPayments()].sort((a, b) => b.date.localeCompare(a.date))[0] ?? null

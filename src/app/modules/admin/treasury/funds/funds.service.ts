@@ -1,10 +1,13 @@
 import { computed, Injectable, signal } from '@angular/core';
+import { RoleService } from 'app/core/role/role.service';
 import { OrgFundsService } from '../org-funds/org-funds.service';
 import { DateTime } from 'luxon';
 import {
     FundRequest,
     FundRequestEvent,
     FundRequestInput,
+    FundReturn,
+    ReturnInput,
     FundTransaction,
     PaymentInput,
     SourceFund,
@@ -19,7 +22,10 @@ const CURRENCY = 'BDT';
  */
 @Injectable({ providedIn: 'root' })
 export class FundsService {
-    constructor(private _org: OrgFundsService) {}
+    constructor(
+        private _org: OrgFundsService,
+        private _roles: RoleService
+    ) {}
 
     /**
      * Company, branch, department and currency come from the signed-in user's profile,
@@ -39,9 +45,11 @@ export class FundsService {
 
     private _requests = signal<FundRequest[]>(this._seedRequests());
     private _transactions = signal<FundTransaction[]>(this._seedTransactions());
+    private _returns = signal<FundReturn[]>(this._seedReturns());
 
     readonly requests = this._requests.asReadonly();
     readonly transactions = this._transactions.asReadonly();
+    readonly returns = this._returns.asReadonly();
     /** Active BDT funds a payment can be taken from, with their available balance. */
     readonly funds = computed<SourceFund[]>(() =>
         this._org
@@ -59,6 +67,9 @@ export class FundsService {
     }
 
     remaining(request: FundRequest): number {
+        if (request.status === 'closed') {
+            return 0;
+        }
         return Math.max((request.approvedAmount ?? 0) - request.paidAmount, 0);
     }
 
@@ -79,6 +90,8 @@ export class FundsService {
             status: 'pending',
             approvedAmount: null,
             paidAmount: 0,
+            returnedAmount: 0,
+            closedAmount: null,
             rejectionReason: null,
             submittedAt: now,
             events: [{ type: 'submitted', at: now, by: this.currentEmployee }],
@@ -213,6 +226,140 @@ export class FundsService {
     }
 
     // -----------------------------------------------------------------------------------------------------
+    // @ Closing and returning. Each returns an error message, or null on success.
+    // -----------------------------------------------------------------------------------------------------
+
+    returnsFor(requestId: string): FundReturn[] {
+        return this._returns().filter((r) => r.requestId === requestId);
+    }
+
+    /** Paid money the employee can still give back (not yet returned, not already awaiting confirmation). */
+    returnable(request: FundRequest): number {
+        const pending = this.returnsFor(request.id)
+            .filter((r) => r.status === 'pending')
+            .reduce((sum, r) => sum + r.amount, 0);
+        return Math.max(request.paidAmount - request.returnedAmount - pending, 0);
+    }
+
+    /** The owner or an admin can close a partly paid request; the unpaid rest is released. */
+    closeRequest(id: string, note: string): string | null {
+        const request = this.requestById().get(id);
+        if (!request || request.status !== 'partially_paid') {
+            return 'Only partly paid requests can be closed.';
+        }
+        const owner = this._roles.role() === 'employee' && request.employee === this.currentEmployee;
+        if (!owner && !this._roles.isAdmin()) {
+            return 'Only the requester or an admin can close this request.';
+        }
+        const unpaid = this.remaining(request);
+        const by = this._roles.isAdmin() ? 'Admin' : this.currentEmployee;
+        const detail = `${CURRENCY} ${unpaid.toLocaleString('en-US')} left unpaid${note.trim() ? `: ${note.trim()}` : ''}`;
+        this._patch(id, (r) => ({
+            ...r,
+            status: 'closed',
+            closedAmount: unpaid,
+            events: [...r.events, this._event('closed', by, detail)],
+        }));
+        return null;
+    }
+
+    /** An employee gives unused money back. It is only counted once Accounts or Admin confirm. */
+    requestReturn(id: string, input: ReturnInput): string | null {
+        const request = this.requestById().get(id);
+        if (!request || !['paid', 'partially_paid', 'closed'].includes(request.status)) {
+            return 'Funds can only be returned on a paid request.';
+        }
+        if (this._roles.role() !== 'employee' || request.employee !== this.currentEmployee) {
+            return 'Only the employee who received the funds can return them.';
+        }
+        if (!(input.amount > 0)) {
+            return 'Enter an amount above zero.';
+        }
+        if (input.amount > this.returnable(request)) {
+            return 'You cannot return more than you received and have not returned yet.';
+        }
+        const now = DateTime.now().toISO();
+        const record: FundReturn = {
+            id: this._nextId('RT-', this._returns().map((r) => r.id)),
+            requestId: id,
+            employee: request.employee,
+            amount: input.amount,
+            currency: CURRENCY,
+            method: input.method,
+            reference: input.reference.trim(),
+            note: input.note.trim(),
+            status: 'pending',
+            createdAt: now,
+            decidedAt: null,
+            decidedBy: null,
+            fundId: null,
+            rejectionReason: null,
+        };
+        this._returns.update((list) => [record, ...list]);
+        this._patch(id, (r) => ({
+            ...r,
+            events: [
+                ...r.events,
+                this._event('return_requested', r.employee, `${record.id}: ${CURRENCY} ${input.amount.toLocaleString('en-US')} via ${input.method}`),
+            ],
+        }));
+        return null;
+    }
+
+    /** Accounts or Admin confirm they received the money; it goes into the chosen fund. */
+    confirmReturn(returnId: string, fundId: string): string | null {
+        const record = this._returns().find((r) => r.id === returnId);
+        const fund = this.funds().find((f) => f.id === fundId);
+        if (!this._roles.canSeeAll()) {
+            return 'Only Accounts or Admin can confirm a return.';
+        }
+        if (!record || record.status !== 'pending') {
+            return 'This return is no longer waiting for confirmation.';
+        }
+        if (!fund) {
+            return 'Select the fund that received the money.';
+        }
+        const by = this._roles.isAdmin() ? 'Admin' : 'Accounts';
+        const now = DateTime.now().toISO();
+        this._org.deposit(fund.id, record.amount, now, record.id, `${record.requestId} returned by ${record.employee}`, by);
+        this._returns.update((list) =>
+            list.map((r) => (r.id === returnId ? { ...r, status: 'received', decidedAt: now, decidedBy: by, fundId: fund.id } : r))
+        );
+        this._patch(record.requestId, (r) => ({
+            ...r,
+            returnedAmount: r.returnedAmount + record.amount,
+            events: [
+                ...r.events,
+                this._event('return_received', by, `${record.id}: ${CURRENCY} ${record.amount.toLocaleString('en-US')} into ${fund.name}`),
+            ],
+        }));
+        return null;
+    }
+
+    rejectReturn(returnId: string, reason: string): string | null {
+        const record = this._returns().find((r) => r.id === returnId);
+        if (!this._roles.canSeeAll()) {
+            return 'Only Accounts or Admin can reject a return.';
+        }
+        if (!record || record.status !== 'pending') {
+            return 'This return is no longer waiting for confirmation.';
+        }
+        if (!reason.trim()) {
+            return 'A reason is required.';
+        }
+        const by = this._roles.isAdmin() ? 'Admin' : 'Accounts';
+        const now = DateTime.now().toISO();
+        this._returns.update((list) =>
+            list.map((r) => (r.id === returnId ? { ...r, status: 'rejected', decidedAt: now, decidedBy: by, rejectionReason: reason.trim() } : r))
+        );
+        this._patch(record.requestId, (r) => ({
+            ...r,
+            events: [...r.events, this._event('return_rejected', by, `${record.id}: ${reason.trim()}`)],
+        }));
+        return null;
+    }
+
+    // -----------------------------------------------------------------------------------------------------
     // @ Private
     // -----------------------------------------------------------------------------------------------------
 
@@ -248,6 +395,8 @@ export class FundsService {
             currency: CURRENCY,
             attachment: null,
             rejectionReason: null,
+            returnedAmount: 0,
+            closedAmount: null,
         };
         const sub = (days: number, by: string): FundRequestEvent => ({
             type: 'submitted',
@@ -261,6 +410,17 @@ export class FundsService {
             note,
         });
         return [
+            {
+                ...base, id: 'FR-1015', employee: 'Brian Hughes', purpose: 'Site cables',
+                amount: 10000, neededBy: this._daysAgo(7), workOrder: 'WO-004-26-100051',
+                status: 'partially_paid', approvedAmount: 10000, paidAmount: 4000,
+                submittedAt: this._daysAgo(8),
+                events: [
+                    sub(8, 'Brian Hughes'),
+                    ev('approved', 7, 'Accounts', 'Approved BDT 10,000'),
+                    ev('payment', 6, 'Accounts', 'TX-1018: BDT 4,000 from Operating Bank Fund'),
+                ],
+            },
             {
                 ...base, id: 'FR-1024', employee: 'Brian Hughes', purpose: 'Site visit & transport',
                 amount: 7500, neededBy: this._daysAgo(-3), workOrder: 'WO-004-26-100051',
@@ -344,12 +504,34 @@ export class FundsService {
         ];
     }
 
+    private _seedReturns(): FundReturn[] {
+        return [
+            {
+                id: 'RT-1001',
+                requestId: 'FR-1019',
+                employee: 'Brian Hughes',
+                amount: 1500,
+                currency: CURRENCY,
+                method: 'Cash',
+                reference: '',
+                note: 'Unused courier budget',
+                status: 'pending',
+                createdAt: this._daysAgo(1),
+                decidedAt: null,
+                decidedBy: null,
+                fundId: null,
+                rejectionReason: null,
+            },
+        ];
+    }
+
     private _seedTransactions(): FundTransaction[] {
         const tx = (id: string, requestId: string, days: number, amount: number, method: string, reference: string, fundId: string): FundTransaction => ({
             id, requestId, amount, method, reference, fundId,
             date: this._withinMonth(days), currency: CURRENCY, recordedBy: 'Accounts',
         });
         return [
+            tx('TX-1018', 'FR-1015', 6, 4000, 'Bank transfer', 'BNK-87990', 'F-02'),
             tx('TX-1022', 'FR-1016', 1, 5000, 'Cash', '-', 'F-01'),
             tx('TX-1021', 'FR-1021', 2, 6000, 'Bank transfer', 'BNK-88231', 'F-02'),
             tx('TX-1020', 'FR-1020', 5, 10000, 'Bank transfer', 'BNK-88102', 'F-02'),

@@ -34,6 +34,11 @@
                             }
                         </div>
 
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <span class="wallet-chip"><span class="wallet-chip-name">Returned</span><span>{{ funds.currency }} {{ walletReturned() | number: '1.0-0' }}</span></span>
+                            <span class="wallet-chip"><span class="wallet-chip-name">Holding now</span><span>{{ funds.currency }} {{ walletHolding() | number: '1.0-0' }}</span></span>
+                        </div>
+
                         @if (walletCategories().length > 0) {
                             <div class="mt-4 text-xs font-medium uppercase tracking-wide text-secondary">Taken from</div>
                             <div class="mt-2 flex flex-wrap gap-2">

@@ -76,6 +76,9 @@
                 <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="activeTab() === 'payments' ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="activeTab() === 'payments'" (click)="setTab('payments')">
                     Transactions
                 </button>
+                <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="activeTab() === 'returns' ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="activeTab() === 'returns'" (click)="setTab('returns')">
+                    Returns
+                </button>
                 <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="activeTab() === 'actions' ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="activeTab() === 'actions'" (click)="setTab('actions')">
                     Actions
                 </button>
@@ -103,12 +106,18 @@
                         }
                     </select>
                 }
-                <select class="h-11 rounded-lg border bg-card px-3 text-md" [attr.aria-label]="activeTab() === 'payments' ? 'Filter by method' : 'Filter by type'" [ngModel]="kind()" (ngModelChange)="kind.set($event)">
+                <select class="h-11 rounded-lg border bg-card px-3 text-md" aria-label="Filter" [ngModel]="kind()" (ngModelChange)="kind.set($event)">
                     @switch (activeTab()) {
                         @case ('payments') {
                             <option value="all">All methods</option>
                             @for (m of methods; track m) {
                                 <option [value]="m">{{ m }}</option>
+                            }
+                        }
+                        @case ('returns') {
+                            <option value="all">All statuses</option>
+                            @for (st of returnStatuses; track st) {
+                                <option [value]="st">{{ returnLabels[$any(st)] }}</option>
                             }
                         }
                         @case ('actions') {
@@ -128,7 +137,7 @@
                 <treasury-export-menu
                     [build]="doc"
                     [formats]="['xlsx', 'pdf']"
-                    [disabled]="!!rangeError() || (activeTab() === 'payments' ? payments().length : activeTab() === 'actions' ? actions().length : movements().length) === 0"
+                    [disabled]="!!rangeError() || (activeTab() === 'payments' ? payments().length : activeTab() === 'returns' ? returns().length : activeTab() === 'actions' ? actions().length : movements().length) === 0"
                 ></treasury-export-menu>
             </div>
 
@@ -178,6 +187,57 @@
                                         <td>{{ p.t.reference || '-' }}</td>
                                         <td class="whitespace-nowrap text-right">{{ p.t.currency }} {{ p.t.amount | number: '1.0-2' }}</td>
                                         <td class="text-right"><button type="button" class="font-medium text-primary hover:underline" (click)="openRequest(p.r.id)">Details</button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+
+            <!-- Returns -->
+            @if (activeTab() === 'returns') {
+                @if (returns().length === 0) {
+                    <div class="px-6 py-16 text-center">
+                        <div class="text-xl font-semibold">No returns in this period</div>
+                        <div class="text-secondary mt-1 text-md">Money employees give back appears here once it is requested.</div>
+                    </div>
+                } @else {
+                    <div class="overflow-x-auto">
+                        <table class="app-table min-w-[880px] text-md">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Return / Date</th>
+                                    <th scope="col">Request</th>
+                                    @if (roles.canSeeAll()) {
+                                        <th scope="col">Employee</th>
+                                    }
+                                    <th scope="col">Method</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Received into</th>
+                                    <th scope="col" class="text-right">Amount</th>
+                                    <th scope="col"><span class="sr-only">Action</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (t of returns(); track t.x.id) {
+                                    <tr>
+                                        <td>
+                                            <div class="font-medium">{{ t.x.id }}</div>
+                                            <div class="text-secondary text-sm">{{ t.x.createdAt | date: 'dd MMM y' }}</div>
+                                        </td>
+                                        <td>
+                                            <div>{{ t.r.id }}</div>
+                                            <div class="text-secondary text-sm">{{ t.r.purpose }}</div>
+                                        </td>
+                                        @if (roles.canSeeAll()) {
+                                            <td>{{ t.r.employee }}</td>
+                                        }
+                                        <td>{{ t.x.method }}</td>
+                                        <td><span class="whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-medium" [class]="returnClasses[t.x.status]">{{ returnLabels[t.x.status] }}</span></td>
+                                        <td>{{ t.fund?.name || '-' }}</td>
+                                        <td class="whitespace-nowrap text-right">{{ t.x.currency }} {{ t.x.amount | number: '1.0-2' }}</td>
+                                        <td class="text-right"><button type="button" class="font-medium text-primary hover:underline" (click)="openRequest(t.r.id)">Details</button></td>
                                     </tr>
                                 }
                             </tbody>
@@ -281,6 +341,7 @@
             <div class="text-secondary border-t px-6 py-3 text-sm">
                 @switch (activeTab()) {
                     @case ('payments') { {{ payments().length }} {{ payments().length === 1 ? 'transaction' : 'transactions' }} }
+                    @case ('returns') { {{ returns().length }} {{ returns().length === 1 ? 'return' : 'returns' }} }
                     @case ('actions') { {{ actions().length }} {{ actions().length === 1 ? 'action' : 'actions' }} }
                     @default { {{ movements().length }} {{ movements().length === 1 ? 'movement' : 'movements' }} }
                 }

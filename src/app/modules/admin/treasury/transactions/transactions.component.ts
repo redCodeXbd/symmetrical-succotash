@@ -6,7 +6,16 @@ import { Router } from '@angular/router';
 import { DateTime } from 'luxon';
 import { RoleService } from 'app/core/role/role.service';
 import { FundsService } from '../funds/funds.service';
-import { FundEventType, FundRequest, FundRole, PAYMENT_METHODS } from '../funds/funds.types';
+import {
+    EVENT_CLASSES,
+    EVENT_LABELS,
+    FundEventType,
+    FundRequest,
+    FundRole,
+    PAYMENT_METHODS,
+    RETURN_STATUS_CLASSES,
+    RETURN_STATUS_LABELS,
+} from '../funds/funds.types';
 import { RequestDetailComponent } from '../funds/request-detail/request-detail.component';
 import { MOVEMENT_LABELS } from '../org-funds/org-funds.types';
 import { OrgFundsService } from '../org-funds/org-funds.service';
@@ -14,7 +23,7 @@ import { ExportMenuComponent } from '../shared/export-menu/export-menu.component
 import { ReportDoc } from '../shared/report.types';
 import { RoleSwitchComponent } from '../shared/role-switch/role-switch.component';
 
-type Tab = 'payments' | 'actions' | 'movements';
+type Tab = 'payments' | 'returns' | 'actions' | 'movements';
 type Preset = 'today' | 'last_7' | 'last_30' | 'this_month' | 'last_month' | 'this_year' | 'all' | 'custom';
 
 const PRESETS: { id: Preset; label: string }[] = [
@@ -27,24 +36,6 @@ const PRESETS: { id: Preset; label: string }[] = [
     { id: 'all', label: 'All time' },
     { id: 'custom', label: 'Custom' },
 ];
-
-const ACTION_LABELS: Record<FundEventType, string> = {
-    submitted: 'Request submitted',
-    edited: 'Request edited',
-    approved: 'Request approved',
-    rejected: 'Request rejected',
-    cancelled: 'Request cancelled',
-    payment: 'Payment recorded',
-};
-
-const ACTION_CLASSES: Record<FundEventType, string> = {
-    submitted: 'bg-amber-100 text-amber-800',
-    edited: 'bg-gray-200 text-gray-700',
-    approved: 'bg-blue-100 text-blue-800',
-    rejected: 'bg-red-100 text-red-800',
-    cancelled: 'bg-gray-200 text-gray-700',
-    payment: 'bg-green-100 text-green-800',
-};
 
 @Component({
     selector: 'treasury-transactions',
@@ -63,9 +54,12 @@ const ACTION_CLASSES: Record<FundEventType, string> = {
 })
 export class TransactionsComponent {
     readonly presets = PRESETS;
-    readonly actionLabels = ACTION_LABELS;
-    readonly actionClasses = ACTION_CLASSES;
-    readonly actionTypes = Object.keys(ACTION_LABELS) as FundEventType[];
+    readonly actionLabels = EVENT_LABELS;
+    readonly actionClasses = EVENT_CLASSES;
+    readonly actionTypes = Object.keys(EVENT_LABELS) as FundEventType[];
+    readonly returnLabels = RETURN_STATUS_LABELS;
+    readonly returnClasses = RETURN_STATUS_CLASSES;
+    readonly returnStatuses = Object.keys(RETURN_STATUS_LABELS);
     readonly methods = PAYMENT_METHODS;
     readonly movementLabels = MOVEMENT_LABELS;
     readonly movementTypes = Object.keys(MOVEMENT_LABELS);
@@ -157,6 +151,22 @@ export class TransactionsComponent {
             .sort((a, b) => b.t.date.localeCompare(a.t.date));
     });
 
+    /** Money employees gave back, with whether it has been confirmed. */
+    returns = computed(() => {
+        const q = this.search().trim().toLowerCase();
+        return this.funds
+            .returns()
+            .filter((x) => this._requestMap().has(x.requestId) && this._inRange(x.createdAt))
+            .map((x) => ({ x, r: this._requestMap().get(x.requestId)!, fund: this.org.funds().find((f) => f.id === x.fundId) }))
+            .filter(
+                ({ x, r }) =>
+                    (this.employee() === 'all' || r.employee === this.employee()) &&
+                    (this.kind() === 'all' || x.status === this.kind()) &&
+                    (!q || [x.id, x.requestId, r.purpose, r.employee, x.reference, x.note].some((v) => v.toLowerCase().includes(q)))
+            )
+            .sort((a, b) => b.x.createdAt.localeCompare(a.x.createdAt));
+    });
+
     actions = computed(() => {
         const q = this.search().trim().toLowerCase();
         return this._requests()
@@ -166,7 +176,7 @@ export class TransactionsComponent {
                     this._inRange(e.at) &&
                     (this.employee() === 'all' || r.employee === this.employee()) &&
                     (this.kind() === 'all' || e.type === this.kind()) &&
-                    (!q || [r.id, r.purpose, r.employee, e.by, e.note ?? '', ACTION_LABELS[e.type]].some((v) => v.toLowerCase().includes(q)))
+                    (!q || [r.id, r.purpose, r.employee, e.by, e.note ?? '', EVENT_LABELS[e.type]].some((v) => v.toLowerCase().includes(q)))
             )
             .sort((a, b) => b.e.at.localeCompare(a.e.at));
     });
@@ -239,7 +249,25 @@ export class TransactionsComponent {
                     { header: 'Action' }, { header: 'By' }, { header: 'Note' },
                 ],
                 rows: this.actions().map(({ e, r }) => [
-                    time(e.at), r.id, r.purpose, ...(all ? [r.employee] : []), ACTION_LABELS[e.type], e.by, e.note ?? '',
+                    time(e.at), r.id, r.purpose, ...(all ? [r.employee] : []), EVENT_LABELS[e.type], e.by, e.note ?? '',
+                ]),
+            };
+        }
+        if (this.activeTab() === 'returns') {
+            const rows = this.returns();
+            return {
+                kind: 'table',
+                title: all ? 'Fund returns' : 'My fund returns',
+                subtitle,
+                columns: [
+                    { header: 'Return' }, { header: 'Date' }, { header: 'Request' },
+                    ...(all ? [{ header: 'Employee' }] : []),
+                    { header: 'Method' }, { header: 'Reference' }, { header: 'Status' }, { header: 'Received into' },
+                    { header: `Amount (${this.funds.currency})`, format: 'number' },
+                ],
+                rows: rows.map(({ x, r, fund }) => [
+                    x.id, day(x.createdAt), r.id, ...(all ? [r.employee] : []), x.method, x.reference || '-',
+                    RETURN_STATUS_LABELS[x.status], fund ? fund.name : '-', x.amount,
                 ]),
             };
         }

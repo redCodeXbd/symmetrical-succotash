@@ -101,6 +101,27 @@ export class OrgFundsService {
         return fund;
     }
 
+    /** Adds money to a fund, for example when an employee returns unused funds. */
+    deposit(fundId: string, amount: number, date: string, reference: string, description: string, by: string): void {
+        this._funds.update((list) =>
+            list.map((f) => (f.id === fundId ? { ...f, balance: f.balance + amount } : f))
+        );
+        this._movements.update((list) => [
+            {
+                id: `M-${String(list.length + 1).padStart(2, '0')}`,
+                fundId,
+                date,
+                type: 'deposit',
+                direction: 'in',
+                amount,
+                reference,
+                description,
+                by,
+            },
+            ...list,
+        ]);
+    }
+
     /** Records a disbursement made from the Funds page against a source fund. */
     disburse(fundId: string, amount: number, date: string, reference: string, description: string, by: string): void {
         this._funds.update((list) =>
@@ -160,6 +181,7 @@ export class OrgFundsService {
             m('M-16', 'F-06', this._ago(7), 'disbursement', 80000, 'PAY-TR-052', 'Supplier payment'),
             m('M-17', 'F-07', this._ago(11), 'deposit', 80000, 'CS-0140', 'Cash sales deposit'),
             m('M-18', 'F-07', this._ago(3), 'disbursement', 15000, 'PC-TR-019', 'Office expenses'),
+            m('M-19', 'F-02', this._withinMonth(6), 'disbursement', 4000, 'TX-1018', 'FR-1015 Site cables'),
         ];
     }
 

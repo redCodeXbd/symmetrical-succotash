@@ -359,6 +359,10 @@ body[data-sidebar-glow='on'] fuse-vertical-navigation.app-sidebar {
     .fund-chip {
         min-height: 2.75rem;
     }
+
+    .fund-filter-open {
+        min-height: 2.75rem;
+    }
 }
 
 .fund-segment {
@@ -417,6 +421,27 @@ body[data-sidebar-glow='on'] fuse-vertical-navigation.app-sidebar {
     background: rgb(var(--fuse-primary-rgb));
     color: rgb(var(--fuse-on-primary-rgb));
     font-size: 0.75rem;
+}
+
+.fund-segment-sm button {
+    min-height: 2rem;
+    padding: 0 0.85rem;
+}
+
+.fund-chip-sm {
+    min-height: 2rem !important;
+    padding: 0 0.75rem;
+}
+
+.fund-filter-open {
+    min-height: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+    .fund-sheet {
+        border-radius: 1.5rem !important;
+        border: 1px solid rgba(var(--fuse-primary-rgb), 0.35);
+    }
 }
 
 .fund-sheet {
