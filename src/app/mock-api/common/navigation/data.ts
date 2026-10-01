@@ -45,6 +45,12 @@ export const defaultNavigation: FuseNavigationItem[] = [
                 title: 'Theme',
                 type : 'basic',
                 link : '/settings/theme'
+            },
+            {
+                id   : 'settings.roles',
+                title: 'Roles and permissions',
+                type : 'basic',
+                link : '/settings/roles'
             }
         ]
     }

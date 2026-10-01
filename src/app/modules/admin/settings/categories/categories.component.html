@@ -4,7 +4,7 @@
             <div class="text-secondary text-md">Settings / Categories</div>
             <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Categories</h1>
             <div class="text-secondary mt-0.5 text-lg">
-                Create, rename and delete the categories each feature uses. Admin only.
+                Create, rename and delete the categories each feature uses. What you can do depends on your role.
             </div>
         </div>
 
@@ -21,6 +21,7 @@
                         <p class="text-secondary mt-1 text-md">{{ section.group.description }}</p>
 
                         <!-- Add -->
+                        @if (access.can('categories.add')) {
                         <form class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-6" (ngSubmit)="add(section)">
                             <input
                                 type="text"
@@ -43,6 +44,7 @@
                         </form>
                         @if (errors[section.group.id]) {
                             <div class="mt-2 text-sm text-red-600" role="alert">{{ errors[section.group.id] }}</div>
+                        }
                         }
                     </div>
 
@@ -88,8 +90,11 @@
                                                         <button type="button" class="mr-4 font-medium text-red-600 hover:underline" (click)="remove(section, c)">Delete</button>
                                                         <button type="button" class="text-secondary hover:underline" (click)="deleting = null">Cancel</button>
                                                     } @else {
-                                                        <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="startEdit(section, c)">Edit</button>
-                                                        @if (section.usage(c.name) > 0) {
+                                                        @if (access.can('categories.edit')) {
+                                                            <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="startEdit(section, c)">Edit</button>
+                                                        }
+                                                        @if (!access.can('categories.delete')) {
+                                                        } @else if (section.usage(c.name) > 0) {
                                                             <span class="text-secondary text-sm" [attr.title]="'Move or change the ' + section.nounPlural + ' using it first'">In use</span>
                                                         } @else {
                                                             <button type="button" class="font-medium text-red-600 hover:underline" (click)="deleting = { groupId: section.group.id, id: c.id }">Delete</button>

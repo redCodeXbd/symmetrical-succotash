@@ -1,3 +1,5 @@
+import { ApprovalStep } from 'app/core/access/access.types';
+
 export type FundRequestStatus =
     | 'pending'
     | 'approved'
@@ -12,6 +14,7 @@ export type FundRole = 'employee' | 'accounts';
 export type FundEventType =
     | 'submitted'
     | 'edited'
+    | 'step_approved'
     | 'approved'
     | 'rejected'
     | 'cancelled'
@@ -50,6 +53,8 @@ export interface FundRequest {
     /** Approved money that was never paid because the request was closed early. */
     closedAmount: number | null;
     rejectionReason: string | null;
+    /** The approval path this request follows, copied from the approval tree when it was submitted. */
+    approvals: ApprovalStep[];
     submittedAt: string;
     events: FundRequestEvent[];
 }
@@ -162,6 +167,7 @@ export const STATUS_CLASSES: Record<FundRequestStatus, string> = {
 export const EVENT_LABELS: Record<FundEventType, string> = {
     submitted: 'Request submitted',
     edited: 'Request edited',
+    step_approved: 'Approval step passed',
     approved: 'Request approved',
     rejected: 'Request rejected',
     cancelled: 'Request cancelled',
@@ -175,6 +181,7 @@ export const EVENT_LABELS: Record<FundEventType, string> = {
 export const EVENT_CLASSES: Record<FundEventType, string> = {
     submitted: 'bg-amber-100 text-amber-800',
     edited: 'bg-gray-200 text-gray-700',
+    step_approved: 'bg-sky-100 text-sky-800',
     approved: 'bg-blue-100 text-blue-800',
     rejected: 'bg-red-100 text-red-800',
     cancelled: 'bg-gray-200 text-gray-700',

@@ -1,3 +1,4 @@
+import { AccessService } from 'app/core/access/access.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -191,7 +192,8 @@ export class OrgFundsComponent {
     constructor(
         public org: OrgFundsService,
         private funds$: FundsService,
-        private _theme: ThemeService
+        private _theme: ThemeService,
+        public access: AccessService
     ) {}
 
     fmtAxis = (n: number): string => this._n(n);

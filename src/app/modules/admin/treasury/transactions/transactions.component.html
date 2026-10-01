@@ -6,10 +6,10 @@
                 <div class="text-secondary text-md">Treasury / Transactions</div>
                 <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Transactions</h1>
                 <div class="text-secondary mt-0.5 text-lg">
-                    {{ roles.canSeeAll() ? 'Every fund payment and action, in one place.' : 'Your fund payments and the actions taken on your requests.' }}
+                    {{ access.can('transactions.view_all') ? 'Every fund payment and action, in one place.' : 'Your fund payments and the actions taken on your requests.' }}
                 </div>
             </div>
-            <treasury-role-switch></treasury-role-switch>
+            <treasury-user-switch></treasury-user-switch>
         </div>
 
         <!-- Summary tiles -->
@@ -82,7 +82,7 @@
                 <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="activeTab() === 'actions' ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="activeTab() === 'actions'" (click)="setTab('actions')">
                     Actions
                 </button>
-                @if (roles.isAdmin()) {
+                @if (access.can('transactions.view_movements')) {
                     <button type="button" role="tab" class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium" [class]="activeTab() === 'movements' ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="activeTab() === 'movements'" (click)="setTab('movements')">
                         Treasury movements
                     </button>
@@ -98,7 +98,7 @@
                     [ngModel]="search()"
                     (ngModelChange)="search.set($event)"
                 />
-                @if (roles.canSeeAll() && activeTab() !== 'movements') {
+                @if (access.can('transactions.view_all') && activeTab() !== 'movements') {
                     <select class="h-11 rounded-lg border bg-card px-3 text-md" aria-label="Filter by employee" [ngModel]="employee()" (ngModelChange)="employee.set($event)">
                         <option value="all">All employees</option>
                         @for (e of employees(); track e) {
@@ -134,11 +134,13 @@
                         }
                     }
                 </select>
-                <treasury-export-menu
+                @if (access.can('transactions.export')) {
+                    <treasury-export-menu
                     [build]="doc"
                     [formats]="['xlsx', 'pdf']"
                     [disabled]="!!rangeError() || (activeTab() === 'payments' ? payments().length : activeTab() === 'returns' ? returns().length : activeTab() === 'actions' ? actions().length : movements().length) === 0"
                 ></treasury-export-menu>
+                }
             </div>
 
             <!-- Transactions -->
@@ -155,7 +157,7 @@
                                 <tr>
                                     <th scope="col">Transaction / Date</th>
                                     <th scope="col">Request</th>
-                                    @if (roles.canSeeAll()) {
+                                    @if (access.can('transactions.view_all')) {
                                         <th scope="col">Employee</th>
                                     }
                                     <th scope="col">Fund</th>
@@ -176,7 +178,7 @@
                                             <div>{{ p.r.id }}</div>
                                             <div class="text-secondary text-sm">{{ p.r.purpose }}</div>
                                         </td>
-                                        @if (roles.canSeeAll()) {
+                                        @if (access.can('transactions.view_all')) {
                                             <td>{{ p.r.employee }}</td>
                                         }
                                         <td>
@@ -209,7 +211,7 @@
                                 <tr>
                                     <th scope="col">Return / Date</th>
                                     <th scope="col">Request</th>
-                                    @if (roles.canSeeAll()) {
+                                    @if (access.can('transactions.view_all')) {
                                         <th scope="col">Employee</th>
                                     }
                                     <th scope="col">Method</th>
@@ -230,7 +232,7 @@
                                             <div>{{ t.r.id }}</div>
                                             <div class="text-secondary text-sm">{{ t.r.purpose }}</div>
                                         </td>
-                                        @if (roles.canSeeAll()) {
+                                        @if (access.can('transactions.view_all')) {
                                             <td>{{ t.r.employee }}</td>
                                         }
                                         <td>{{ t.x.method }}</td>
@@ -261,7 +263,7 @@
                                     <th scope="col">When</th>
                                     <th scope="col">Action</th>
                                     <th scope="col">Request</th>
-                                    @if (roles.canSeeAll()) {
+                                    @if (access.can('transactions.view_all')) {
                                         <th scope="col">Employee</th>
                                     }
                                     <th scope="col">By</th>
@@ -278,7 +280,7 @@
                                             <div>{{ a.r.id }}</div>
                                             <div class="text-secondary text-sm">{{ a.r.purpose }}</div>
                                         </td>
-                                        @if (roles.canSeeAll()) {
+                                        @if (access.can('transactions.view_all')) {
                                             <td>{{ a.r.employee }}</td>
                                         }
                                         <td>{{ a.e.by }}</td>
@@ -352,5 +354,5 @@
 </div>
 
 @if (selected(); as request) {
-    <funds-request-detail [request]="request" [role]="role()" (closed)="selectedId.set(null)" (edit)="goToFunds()"></funds-request-detail>
+    <funds-request-detail [request]="request" (closed)="selectedId.set(null)" (edit)="goToFunds()"></funds-request-detail>
 }

@@ -1,3 +1,4 @@
+import { AccessService } from 'app/core/access/access.service';
 import { Component, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -37,6 +38,7 @@ export class CategoriesSettingsComponent {
 
     constructor(
         public categories: CategoryService,
+        public access: AccessService,
         org: OrgFundsService,
         funds: FundsService
     ) {

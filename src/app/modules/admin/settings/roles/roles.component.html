@@ -1,0 +1,293 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div class="text-secondary text-md">Settings / Roles and permissions</div>
+                <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Roles and permissions</h1>
+                <div class="text-secondary mt-0.5 text-lg">
+                    Decide who can do what, give employees one or more roles, and set who approves fund requests.
+                </div>
+            </div>
+            <div class="text-secondary text-md">
+                Signed in as <strong>{{ access.user().name }}</strong>
+                <span class="ml-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-sm font-medium text-primary">{{ access.userRoles().length }} {{ access.userRoles().length === 1 ? 'role' : 'roles' }}</span>
+            </div>
+        </div>
+
+        <div class="mt-8 rounded-2xl bg-card shadow">
+            <div class="flex overflow-x-auto border-b px-4" role="tablist">
+                @for (t of tabs; track t.id) {
+                    <button
+                        type="button"
+                        role="tab"
+                        class="-mb-px h-14 flex-none border-b-2 px-4 text-lg font-medium"
+                        [class]="tab() === t.id ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'"
+                        [attr.aria-selected]="tab() === t.id"
+                        (click)="setTab(t.id)"
+                    >
+                        {{ t.label }}
+                    </button>
+                }
+            </div>
+
+            @if (message(); as m) {
+                <div class="mx-6 mt-5 rounded-lg p-3 text-md" [class]="m.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'" [attr.role]="m.ok ? 'status' : 'alert'">{{ m.text }}</div>
+            }
+
+            <!-- ================= Roles ================= -->
+            @if (tab() === 'roles') {
+                <div class="p-6">
+                    @if (access.can('roles.add')) {
+                        <form class="grid grid-cols-1 gap-3 sm:grid-cols-6" (ngSubmit)="addRole()">
+                            <input type="text" maxlength="40" class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-2" placeholder="New role name, e.g. Auditor" aria-label="New role name" name="role-name" [(ngModel)]="roleDraft.name" />
+                            <input type="text" class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-3" placeholder="What is this role for? (optional)" aria-label="Role description" name="role-desc" [(ngModel)]="roleDraft.description" />
+                            <button mat-flat-button color="primary" type="submit" class="fuse-mat-button-large">Create role</button>
+                        </form>
+                    }
+                    <div class="mt-6 overflow-x-auto">
+                        <table class="app-table w-full">
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="text-left font-medium">Role</th>
+                                    <th scope="col" class="text-left font-medium">Description</th>
+                                    <th scope="col" class="text-right font-medium">Permissions</th>
+                                    <th scope="col" class="text-right font-medium">Employees</th>
+                                    <th scope="col"><span class="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (r of access.roles(); track r.id) {
+                                    <tr>
+                                        @if (editingRole && editingRole.id === r.id) {
+                                            <td><input type="text" maxlength="40" class="h-10 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="Role name" [(ngModel)]="editingRole.name" /></td>
+                                            <td><input type="text" class="h-10 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="Role description" [(ngModel)]="editingRole.description" /></td>
+                                            <td class="text-right">{{ permissionCount(r) }}</td>
+                                            <td class="text-right">{{ peopleCount(r) }}</td>
+                                            <td class="whitespace-nowrap text-right">
+                                                <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="saveEdit()">Save</button>
+                                                <button type="button" class="text-secondary hover:underline" (click)="editingRole = null">Cancel</button>
+                                            </td>
+                                        } @else {
+                                            <td class="font-medium">
+                                                {{ r.name }}
+                                                @if (r.locked) {
+                                                    <span class="ml-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700">Built in</span>
+                                                }
+                                            </td>
+                                            <td class="text-secondary">{{ r.description || '-' }}</td>
+                                            <td class="text-right">{{ permissionCount(r) }}</td>
+                                            <td class="text-right">{{ peopleCount(r) }}</td>
+                                            <td class="whitespace-nowrap text-right">
+                                                @if (r.locked) {
+                                                    <span class="text-secondary text-sm">Always full access</span>
+                                                } @else if (deletingRole === r.id) {
+                                                    <span class="mr-3 text-sm">Delete "{{ r.name }}"?</span>
+                                                    <button type="button" class="mr-4 font-medium text-red-600 hover:underline" (click)="removeRole(r)">Delete</button>
+                                                    <button type="button" class="text-secondary hover:underline" (click)="deletingRole = null">Cancel</button>
+                                                } @else {
+                                                    @if (access.can('roles.edit')) {
+                                                        <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="startEdit(r)">Edit</button>
+                                                    }
+                                                    @if (access.can('roles.delete')) {
+                                                        <button type="button" class="font-medium text-red-600 hover:underline" (click)="deletingRole = r.id; message.set(null)">Delete</button>
+                                                    }
+                                                }
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- ================= Permissions ================= -->
+            @if (tab() === 'permissions') {
+                <div class="p-6">
+                    <p class="text-secondary text-md">
+                        Tick what each role may do. An employee with several roles gets everything those roles allow.
+                        @if (!access.can('roles.edit')) {
+                            <strong>View only.</strong>
+                        }
+                    </p>
+                    <div class="mt-5 overflow-x-auto">
+                        <table class="app-table w-full">
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="text-left font-medium">Permission</th>
+                                    @for (r of access.roles(); track r.id) {
+                                        <th scope="col" class="text-center font-medium">{{ r.name }}</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (f of features; track f.id) {
+                                    <tr>
+                                        <th [attr.colspan]="access.roles().length + 1" scope="colgroup" class="bg-primary/10 text-left text-sm font-semibold uppercase tracking-wide">{{ f.title }}</th>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-secondary text-sm">Everything in {{ f.title.toLowerCase() }}</td>
+                                        @for (r of access.roles(); track r.id) {
+                                            <td class="text-center">
+                                                <input type="checkbox" class="h-4 w-4" [attr.aria-label]="'All ' + f.title + ' for ' + r.name" [checked]="featureAll(r, f.id)" [disabled]="r.locked || !access.can('roles.edit')" (change)="toggleFeature(r, f.id, $any($event.target).checked)" />
+                                            </td>
+                                        }
+                                    </tr>
+                                    @for (p of f.permissions; track p.key) {
+                                        <tr>
+                                            <td>
+                                                <div class="font-medium">{{ p.label }}</div>
+                                                <div class="text-secondary text-sm">{{ p.description }}</div>
+                                            </td>
+                                            @for (r of access.roles(); track r.id) {
+                                                <td class="text-center">
+                                                    <input type="checkbox" class="h-4 w-4" [attr.aria-label]="p.label + ' ' + f.title + ' for ' + r.name" [checked]="has(r, f.id + '.' + p.key)" [disabled]="r.locked || !access.can('roles.edit')" (change)="toggle(r, f.id + '.' + p.key, $event)" />
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- ================= Employees ================= -->
+            @if (tab() === 'employees') {
+                <div class="p-6">
+                    @if (access.can('roles.assign')) {
+                        <form class="grid grid-cols-1 gap-3 sm:grid-cols-6" (ngSubmit)="addUser()">
+                            <input type="text" class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-2" placeholder="Employee name" aria-label="Employee name" name="user-name" [(ngModel)]="userDraft.name" />
+                            <input type="email" class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-3" placeholder="Email address" aria-label="Employee email" name="user-email" [(ngModel)]="userDraft.email" />
+                            <button mat-flat-button color="primary" type="submit" class="fuse-mat-button-large">Add employee</button>
+                        </form>
+                    }
+                    <p class="text-secondary mt-5 text-md">Tick as many roles as an employee needs. Permissions from every role add together.</p>
+                    <ul class="mt-4 flex flex-col divide-y">
+                        @for (u of access.users(); track u.id) {
+                            <li class="flex flex-col gap-3 py-4 md:flex-row md:items-center">
+                                <div class="flex min-w-0 flex-1 items-center gap-3">
+                                    <span class="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">{{ initials(u.name) }}</span>
+                                    <div class="min-w-0">
+                                        <div class="truncate font-medium">{{ u.name }}</div>
+                                        <div class="text-secondary truncate text-sm">{{ u.email }} · {{ effectivePermissions(u) }} permissions</div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-2 md:justify-end" role="group" [attr.aria-label]="'Roles for ' + u.name">
+                                    @for (r of access.roles(); track r.id) {
+                                        <label class="flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 text-sm" [class]="u.roleIds.includes(r.id) ? 'border-primary bg-primary/10' : ''">
+                                            <input type="checkbox" class="h-4 w-4" [checked]="u.roleIds.includes(r.id)" [disabled]="!access.can('roles.assign')" (change)="toggleUserRole(u, r.id, $event)" />
+                                            {{ r.name }}
+                                        </label>
+                                    }
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <!-- ================= Approval tree ================= -->
+            @if (tab() === 'approvals') {
+                <div class="p-6">
+                    <p class="text-secondary text-md">
+                        Every fund request starts at step 1 and moves down its path. Each step is approved by someone holding that role (with the "Approve" permission). The path depends on the amount.
+                    </p>
+
+                    <div class="mt-6 flex flex-col gap-5">
+                        <div class="rounded-xl border p-4">
+                            <div class="font-medium">Request submitted</div>
+                            <div class="text-secondary text-sm">An employee asks for funds.</div>
+                        </div>
+                        @for (rule of sortedRules(); track rule.id) {
+                            <div class="ml-4 border-l-2 border-primary/40 pl-5">
+                                <div class="rounded-xl border p-4" [class.border-primary]="ruleDraft?.id === rule.id">
+                                    <div class="flex flex-wrap items-center gap-3">
+                                        <span class="rounded-full bg-primary/15 px-3 py-1 text-sm font-semibold text-primary">{{ rangeText(rule) }}</span>
+                                        <span class="text-secondary text-sm">BDT</span>
+                                        <span class="flex-auto"></span>
+                                        @if (access.can('approvals.edit')) {
+                                            @if (deletingRule === rule.id) {
+                                                <span class="text-sm">Delete this branch?</span>
+                                                <button type="button" class="font-medium text-red-600 hover:underline" (click)="removeRule(rule)">Delete</button>
+                                                <button type="button" class="text-secondary hover:underline" (click)="deletingRule = null">Cancel</button>
+                                            } @else {
+                                                <button type="button" class="font-medium text-primary hover:underline" (click)="startRule(rule)">Edit</button>
+                                                @if (rule.minAmount !== 0) {
+                                                    <button type="button" class="font-medium text-red-600 hover:underline" (click)="deletingRule = rule.id; message.set(null)">Delete</button>
+                                                }
+                                            }
+                                        }
+                                    </div>
+                                    <ol class="mt-4 flex flex-wrap items-center gap-2">
+                                        @for (id of rule.steps; track $index; let last = $last) {
+                                            <li class="flex items-center gap-2">
+                                                <span class="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-md font-medium">
+                                                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">{{ $index + 1 }}</span>
+                                                    {{ access.roleName(id) }}
+                                                </span>
+                                                <span class="text-secondary" aria-hidden="true">{{ last ? '= Approved' : '→' }}</span>
+                                            </li>
+                                        }
+                                    </ol>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (access.can('approvals.edit')) {
+                        @if (ruleDraft) {
+                            <form class="mt-6 rounded-xl border p-5" (ngSubmit)="saveRule()">
+                                <div class="font-medium">{{ ruleDraft.id ? 'Edit branch' : 'New branch' }}</div>
+                                <label class="mt-4 block text-sm font-medium" for="rule-min">Applies to requests from (BDT)</label>
+                                <input id="rule-min" type="number" min="0" class="mt-1 h-11 w-full max-w-xs rounded-lg border bg-transparent px-3 text-md" name="rule-min" [(ngModel)]="ruleDraft.minAmount" [disabled]="ruleDraft.id !== null && ruleDraft.minAmount === 0" />
+                                <div class="mt-4 text-sm font-medium">Approval steps, in order</div>
+                                <ol class="mt-2 flex flex-col gap-2">
+                                    @for (id of ruleDraft.steps; track $index) {
+                                        <li class="flex items-center gap-2">
+                                            <span class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-primary text-xs text-white">{{ $index + 1 }}</span>
+                                            <span class="flex-auto font-medium">{{ access.roleName(id) }}</span>
+                                            <button type="button" class="text-primary hover:underline" [disabled]="$index === 0" (click)="moveStep($index, -1)" aria-label="Move up">Up</button>
+                                            <button type="button" class="text-primary hover:underline" [disabled]="$index === ruleDraft.steps.length - 1" (click)="moveStep($index, 1)" aria-label="Move down">Down</button>
+                                            <button type="button" class="text-red-600 hover:underline" (click)="removeStep($index)">Remove</button>
+                                        </li>
+                                    }
+                                </ol>
+                                <div class="mt-3 flex flex-wrap items-center gap-3">
+                                    <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Role for the next step" name="rule-step" [(ngModel)]="addStepRole">
+                                        <option value="">Add a step...</option>
+                                        @for (r of access.roles(); track r.id) {
+                                            <option [value]="r.id">{{ r.name }}</option>
+                                        }
+                                    </select>
+                                    <button mat-stroked-button type="button" [disabled]="!addStepRole" (click)="addStep()">Add step</button>
+                                </div>
+                                <div class="mt-5 flex justify-end gap-3">
+                                    <button mat-stroked-button type="button" (click)="cancelRule()">Cancel</button>
+                                    <button mat-flat-button color="primary" type="submit">Save branch</button>
+                                </div>
+                            </form>
+                        } @else {
+                            <button mat-stroked-button class="mt-6" type="button" (click)="startRule()">Add a branch for larger amounts</button>
+                        }
+                    }
+
+                    <div class="mt-8 rounded-xl bg-primary/5 p-5">
+                        <div class="font-medium">Try an amount</div>
+                        <div class="mt-2 flex flex-wrap items-center gap-3">
+                            <input type="number" min="0" class="h-11 w-44 rounded-lg border bg-transparent px-3 text-md" aria-label="Amount to test" name="test-amount" [(ngModel)]="testAmount" />
+                            <span class="text-secondary text-md">BDT {{ testAmount || 0 | number: '1.0-0' }} goes through:</span>
+                            <span class="font-medium">
+                                @for (id of testPath(); track $index; let last = $last) {
+                                    {{ access.roleName(id) }}{{ last ? '' : ' → ' }}
+                                }
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

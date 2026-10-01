@@ -1,5 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { RoleService } from 'app/core/role/role.service';
+import { AccessService } from 'app/core/access/access.service';
+import { ApprovalStep } from 'app/core/access/access.types';
 import { OrgFundsService } from '../org-funds/org-funds.service';
 import { DateTime } from 'luxon';
 import {
@@ -24,15 +25,18 @@ const CURRENCY = 'BDT';
 export class FundsService {
     constructor(
         private _org: OrgFundsService,
-        private _roles: RoleService
+        private _access: AccessService
     ) {}
 
     /**
      * Company, branch, department and currency come from the signed-in user's profile,
      * never from the request form. Hard-coded here until the user profile carries them.
      */
-    /** Name of the signed-in employee (matches the mock auth user). */
-    readonly currentEmployee = 'Brian Hughes';
+    /** Name of the signed-in employee. */
+    get currentEmployee(): string {
+        return this._access.user().name;
+    }
+
     readonly department = 'Procurement';
     readonly branch = 'Head Office';
     readonly company = COMPANY;
@@ -98,6 +102,7 @@ export class FundsService {
             returnedAmount: 0,
             closedAmount: null,
             rejectionReason: null,
+            approvals: this._pathFor(input.amount),
             submittedAt: now,
             events: [{ type: 'submitted', at: now, by: this.currentEmployee }],
         };
@@ -109,7 +114,13 @@ export class FundsService {
         this._patch(id, (r) =>
             r.status !== 'pending'
                 ? r
-                : { ...r, ...input, events: [...r.events, this._event('edited', r.employee)] }
+                : {
+                      ...r,
+                      ...input,
+                      // A different amount can belong to a different branch of the approval tree.
+                      approvals: input.amount === r.amount ? r.approvals : this._pathFor(input.amount),
+                      events: [...r.events, this._event('edited', r.employee)],
+                  }
         );
     }
 
@@ -129,44 +140,95 @@ export class FundsService {
     // @ Accounts actions. Each returns an error message, or null on success.
     // -----------------------------------------------------------------------------------------------------
 
-    approve(id: string, amount: number, by: string): string | null {
+    /** The step a request is waiting on, or null once every step has passed. */
+    currentStep(request: FundRequest): ApprovalStep | null {
+        return request.status === 'pending' ? (request.approvals.find((s) => s.status === 'pending') ?? null) : null;
+    }
+
+    /** Whether the acting user may approve or reject the request at its current step. */
+    canApprove(request: FundRequest): boolean {
+        const step = this.currentStep(request);
+        if (!step) {
+            return false;
+        }
+        if (this._access.can('fund-requests.approve_any')) {
+            return true;
+        }
+        return this._access.can('fund-requests.approve') && this._access.hasRole(step.roleId);
+    }
+
+    /** Passes the current step. The last step approves the request for the chosen amount. */
+    approve(id: string, amount: number): string | null {
         const request = this.requestById().get(id);
         if (!request || request.status !== 'pending') {
             return 'Only pending requests can be approved.';
         }
+        if (!this.canApprove(request)) {
+            const step = this.currentStep(request);
+            return `This request is waiting for ${step?.roleName ?? 'another approver'}.`;
+        }
         if (!(amount > 0) || amount > request.amount) {
             return 'The approved amount must be above zero and not more than the requested amount.';
         }
-        this._patch(id, (r) => ({
-            ...r,
-            status: 'approved',
-            approvedAmount: amount,
-            events: [
-                ...r.events,
-                this._event('approved', by, `Approved ${CURRENCY} ${amount.toLocaleString('en-US')}`),
-            ],
-        }));
+        const by = this._access.user().name;
+        const now = DateTime.now().toISO();
+        this._patch(id, (r) => {
+            const index = r.approvals.findIndex((s) => s.status === 'pending');
+            const approvals = r.approvals.map((s, i) => {
+                if (i === index) {
+                    return { ...s, status: 'approved' as const, by, at: now };
+                }
+                return i === index + 1 ? { ...s, status: 'pending' as const } : s;
+            });
+            const last = index === r.approvals.length - 1;
+            const money = `${CURRENCY} ${amount.toLocaleString('en-US')}`;
+            if (!last) {
+                const next = r.approvals[index + 1].roleName;
+                return {
+                    ...r,
+                    approvals,
+                    events: [...r.events, this._event('step_approved', by, `${r.approvals[index].roleName} approved ${money}. Next: ${next}`)],
+                };
+            }
+            return {
+                ...r,
+                approvals,
+                status: 'approved',
+                approvedAmount: amount,
+                events: [...r.events, this._event('approved', by, `Approved ${money}`)],
+            };
+        });
         return null;
     }
 
-    reject(id: string, reason: string, by: string): string | null {
+    reject(id: string, reason: string): string | null {
         const request = this.requestById().get(id);
         if (!request || request.status !== 'pending') {
             return 'Only pending requests can be rejected.';
         }
+        if (!this.canApprove(request)) {
+            return 'You cannot reject this request at its current step.';
+        }
         if (!reason.trim()) {
             return 'A rejection reason is required.';
         }
+        const by = this._access.user().name;
+        const now = DateTime.now().toISO();
         this._patch(id, (r) => ({
             ...r,
             status: 'rejected',
             rejectionReason: reason.trim(),
+            approvals: r.approvals.map((s) => (s.status === 'pending' ? { ...s, status: 'rejected' as const, by, at: now } : s)),
             events: [...r.events, this._event('rejected', by, reason.trim())],
         }));
         return null;
     }
 
-    recordPayment(id: string, input: PaymentInput, by: string): string | null {
+    recordPayment(id: string, input: PaymentInput): string | null {
+        if (!this._access.can('fund-requests.pay')) {
+            return 'You do not have permission to record payments.';
+        }
+        const by = this._access.user().name;
         const request = this.requestById().get(id);
         const fund = this.funds().find((f) => f.id === input.fundId);
         if (!request || !['approved', 'partially_paid'].includes(request.status)) {
@@ -246,18 +308,25 @@ export class FundsService {
         return Math.max(request.paidAmount - request.returnedAmount - pending, 0);
     }
 
-    /** The owner or an admin can close a partly paid request; the unpaid rest is released. */
+    /** The requester (with "close own") or anyone with "close any" can close a partly paid request. */
+    canClose(request: FundRequest): boolean {
+        return (
+            request.status === 'partially_paid' &&
+            ((this._access.can('fund-requests.close') && request.employee === this.currentEmployee) || this._access.can('fund-requests.close_any'))
+        );
+    }
+
+    /** Closing releases the unpaid rest of a partly paid request. */
     closeRequest(id: string, note: string): string | null {
         const request = this.requestById().get(id);
         if (!request || request.status !== 'partially_paid') {
             return 'Only partly paid requests can be closed.';
         }
-        const owner = this._roles.role() === 'employee' && request.employee === this.currentEmployee;
-        if (!owner && !this._roles.isAdmin()) {
-            return 'Only the requester or an admin can close this request.';
+        if (!this.canClose(request)) {
+            return 'You do not have permission to close this request.';
         }
         const unpaid = this.remaining(request);
-        const by = this._roles.isAdmin() ? 'Admin' : this.currentEmployee;
+        const by = this._access.user().name;
         const detail = `${CURRENCY} ${unpaid.toLocaleString('en-US')} left unpaid${note.trim() ? `: ${note.trim()}` : ''}`;
         this._patch(id, (r) => ({
             ...r,
@@ -274,7 +343,7 @@ export class FundsService {
         if (!request || !['paid', 'partially_paid', 'closed'].includes(request.status)) {
             return 'Funds can only be returned on a paid request.';
         }
-        if (this._roles.role() !== 'employee' || request.employee !== this.currentEmployee) {
+        if (!this._access.can('fund-requests.return') || request.employee !== this.currentEmployee) {
             return 'Only the employee who received the funds can return them.';
         }
         if (!(input.amount > 0)) {
@@ -315,8 +384,8 @@ export class FundsService {
     confirmReturn(returnId: string, fundId: string): string | null {
         const record = this._returns().find((r) => r.id === returnId);
         const fund = this.funds().find((f) => f.id === fundId);
-        if (!this._roles.canSeeAll()) {
-            return 'Only Accounts or Admin can confirm a return.';
+        if (!this._access.can('fund-requests.confirm_return')) {
+            return 'You do not have permission to confirm returns.';
         }
         if (!record || record.status !== 'pending') {
             return 'This return is no longer waiting for confirmation.';
@@ -324,7 +393,7 @@ export class FundsService {
         if (!fund) {
             return 'Select the fund that received the money.';
         }
-        const by = this._roles.isAdmin() ? 'Admin' : 'Accounts';
+        const by = this._access.user().name;
         const now = DateTime.now().toISO();
         this._org.deposit(fund.id, record.amount, now, record.id, `${record.requestId} returned by ${record.employee}`, by);
         this._returns.update((list) =>
@@ -343,8 +412,8 @@ export class FundsService {
 
     rejectReturn(returnId: string, reason: string): string | null {
         const record = this._returns().find((r) => r.id === returnId);
-        if (!this._roles.canSeeAll()) {
-            return 'Only Accounts or Admin can reject a return.';
+        if (!this._access.can('fund-requests.confirm_return')) {
+            return 'You do not have permission to reject returns.';
         }
         if (!record || record.status !== 'pending') {
             return 'This return is no longer waiting for confirmation.';
@@ -352,7 +421,7 @@ export class FundsService {
         if (!reason.trim()) {
             return 'A reason is required.';
         }
-        const by = this._roles.isAdmin() ? 'Admin' : 'Accounts';
+        const by = this._access.user().name;
         const now = DateTime.now().toISO();
         this._returns.update((list) =>
             list.map((r) => (r.id === returnId ? { ...r, status: 'rejected', decidedAt: now, decidedBy: by, rejectionReason: reason.trim() } : r))
@@ -367,6 +436,17 @@ export class FundsService {
     // -----------------------------------------------------------------------------------------------------
     // @ Private
     // -----------------------------------------------------------------------------------------------------
+
+    /** A fresh approval path for a request of this amount: the first step waits for its approver. */
+    private _pathFor(amount: number): ApprovalStep[] {
+        return this._access.ruleFor(amount).steps.map((roleId, i) => ({
+            roleId,
+            roleName: this._access.roleName(roleId),
+            status: i === 0 ? 'pending' : 'waiting',
+            by: null,
+            at: null,
+        }));
+    }
 
     private _patch(id: string, fn: (r: FundRequest) => FundRequest): void {
         this._requests.update((list) => list.map((r) => (r.id === id ? fn(r) : r)));
@@ -402,6 +482,7 @@ export class FundsService {
             rejectionReason: null,
             returnedAmount: 0,
             closedAmount: null,
+            approvals: [] as ApprovalStep[],
         };
         const sub = (days: number, by: string): FundRequestEvent => ({
             type: 'submitted',
@@ -414,7 +495,7 @@ export class FundsService {
             by,
             note,
         });
-        return [
+        const requests: FundRequest[] = [
             {
                 ...base, id: 'FR-1015', employee: 'Brian Hughes', purpose: 'Site cables', category: 'Materials & supplies',
                 amount: 10000, neededBy: this._daysAgo(7), workOrder: 'WO-004-26-100051',
@@ -496,6 +577,12 @@ export class FundsService {
                 submittedAt: this._daysAgo(0), events: [sub(0, 'Mehedi Hasan')],
             },
             {
+                ...base, id: 'FR-1025', employee: 'Mehedi Hasan', branch: 'Dhaka Site', department: 'Operations',
+                purpose: 'Generator service and fuel', category: 'Materials & supplies', amount: 45000, neededBy: this._daysAgo(-4),
+                workOrder: 'WO-003-26-100052', status: 'pending', approvedAmount: null, paidAmount: 0,
+                submittedAt: this._daysAgo(0), events: [sub(0, 'Mehedi Hasan')],
+            },
+            {
                 ...base, id: 'FR-1016', employee: 'Rahim Ahmed', branch: 'Head Office', department: 'Sales',
                 purpose: 'Client visit travel', category: 'Travel & transport', amount: 12000, neededBy: this._daysAgo(-2),
                 workOrder: null, status: 'partially_paid', approvedAmount: 12000, paidAmount: 5000,
@@ -507,6 +594,20 @@ export class FundsService {
                 ],
             },
         ];
+        return requests.map((r) => ({ ...r, approvals: this._seedPath(r) }));
+    }
+
+    /** Seed requests follow the current approval tree; finished ones show every step passed. */
+    private _seedPath(r: FundRequest): ApprovalStep[] {
+        const steps = this._pathFor(r.amount);
+        if (r.status === 'pending') {
+            return steps;
+        }
+        const when = r.events.find((e) => e.type === 'approved' || e.type === 'rejected')?.at ?? r.submittedAt;
+        if (r.status === 'rejected') {
+            return steps.map((s, i) => (i === 0 ? { ...s, status: 'rejected' as const, by: 'Accounts', at: when } : s));
+        }
+        return steps.map((s) => ({ ...s, status: 'approved' as const, by: 'Accounts', at: when }));
     }
 
     private _seedReturns(): FundReturn[] {

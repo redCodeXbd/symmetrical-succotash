@@ -1,3 +1,4 @@
+import { AccessService } from 'app/core/access/access.service';
 import { Component, OnDestroy, ViewEncapsulation } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -38,7 +39,10 @@ export class ThemeSettingsComponent implements OnDestroy {
     logoError: string | null = null;
     savedMessage = false;
 
-    constructor(public theme: ThemeService) {}
+    constructor(
+        public theme: ThemeService,
+        public access: AccessService
+    ) {}
 
     get t(): AppTheme {
         return this.theme.theme();
