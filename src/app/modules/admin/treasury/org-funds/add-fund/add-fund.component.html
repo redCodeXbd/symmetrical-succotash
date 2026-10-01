@@ -40,29 +40,6 @@
 
         <div class="grid grid-cols-2 gap-4">
             <mat-form-field>
-                <mat-label>Branch</mat-label>
-                <input matInput formControlName="branch" list="add-fund-branches" />
-                <datalist id="add-fund-branches">
-                    @for (b of branches; track b) {
-                        <option [value]="b"></option>
-                    }
-                </datalist>
-                <mat-error>Required</mat-error>
-            </mat-form-field>
-            <mat-form-field>
-                <mat-label>Department</mat-label>
-                <input matInput formControlName="department" list="add-fund-departments" />
-                <datalist id="add-fund-departments">
-                    @for (d of departments; track d) {
-                        <option [value]="d"></option>
-                    }
-                </datalist>
-                <mat-error>Required</mat-error>
-            </mat-form-field>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-            <mat-form-field>
                 <mat-label>Fund type</mat-label>
                 <mat-select formControlName="type">
                     @for (t of types; track t) {

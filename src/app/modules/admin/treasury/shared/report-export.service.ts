@@ -1,13 +1,21 @@
 import { Injectable } from '@angular/core';
+import { ThemeService } from 'app/core/theme/theme.service';
 import { DateTime } from 'luxon';
 import { DetailDoc, ReportDoc, ReportFormat, TableDoc } from './report.types';
-
-const GREEN = '#39a935';
-const LOGO_URL = 'images/logo/encore-logo.png';
 
 /** Builds Excel, PDF and Word files in the browser. Libraries load only when a file is requested. */
 @Injectable({ providedIn: 'root' })
 export class ReportExportService {
+    constructor(private _theme: ThemeService) {}
+
+    private get _primary(): string {
+        return this._theme.theme().primary;
+    }
+
+    private get _company(): string {
+        return this._theme.theme().companyName;
+    }
+
     async download(doc: ReportDoc, format: ReportFormat): Promise<void> {
         const blob = await this.toBlob(doc, format);
         const url = URL.createObjectURL(blob);
@@ -104,7 +112,10 @@ export class ReportExportService {
 
         const logo = await this._logo();
         if (logo) {
-            pdf.addImage(logo, 'PNG', margin, 28, 96, 32);
+            pdf.addImage(logo.data, logo.format, margin, 28, logo.width, logo.height);
+        } else {
+            pdf.setFontSize(13).setTextColor(this._primary);
+            pdf.text(this._company, margin, 48);
         }
         pdf.setFontSize(9).setTextColor(110);
         pdf.text(`Generated ${DateTime.now().toFormat('dd MMM y, h:mm a')}`, pageWidth - margin, 40, { align: 'right' });
@@ -123,7 +134,7 @@ export class ReportExportService {
         y += 16;
 
         const fmt = (v: string | number) => (typeof v === 'number' ? this._n(v) : v);
-        const headStyles = { fillColor: GREEN as any, textColor: 255 };
+        const headStyles = { fillColor: this._primary as any, textColor: 255 };
 
         if (doc.kind === 'table') {
             autoTable(pdf, {
@@ -172,22 +183,35 @@ export class ReportExportService {
         const pageHeight = pdf.internal.pageSize.getHeight();
         for (let i = 1; i <= pages; i++) {
             pdf.setPage(i).setFontSize(8).setTextColor(130);
-            pdf.text(`Encore Engineering Ltd.   |   Page ${i} of ${pages}`, pageWidth / 2, pageHeight - 20, {
+            pdf.text(`${this._company}   |   Page ${i} of ${pages}`, pageWidth / 2, pageHeight - 20, {
                 align: 'center',
             });
         }
         return pdf.output('blob');
     }
 
-    private async _logo(): Promise<string | null> {
+    /** The company logo as an image jsPDF can embed, scaled to fit the header. SVG logos are skipped. */
+    private async _logo(): Promise<{ data: string; format: 'PNG' | 'JPEG' | 'WEBP'; width: number; height: number } | null> {
         try {
-            const blob = await (await fetch(LOGO_URL)).blob();
-            return await new Promise((resolve, reject) => {
+            const blob = await (await fetch(this._theme.logoUrl())).blob();
+            const format = { 'image/png': 'PNG', 'image/jpeg': 'JPEG', 'image/webp': 'WEBP' }[blob.type] as 'PNG' | 'JPEG' | 'WEBP';
+            if (!format) {
+                return null;
+            }
+            const data: string = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result as string);
                 reader.onerror = reject;
                 reader.readAsDataURL(blob);
             });
+            const size: { w: number; h: number } = await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+                img.onerror = reject;
+                img.src = data;
+            });
+            const scale = Math.min(120 / size.w, 40 / size.h);
+            return { data, format, width: size.w * scale, height: size.h * scale };
         } catch {
             return null;
         }
@@ -220,7 +244,7 @@ export class ReportExportService {
                 rows: [
                     new d.TableRow({
                         tableHeader: true,
-                        children: head.map((h, i) => cellOf(h, { bold: true, fill: '39A935', color: 'FFFFFF', right: rightCols.includes(i) })),
+                        children: head.map((h, i) => cellOf(h, { bold: true, fill: this._primary.replace('#', '').toUpperCase(), color: 'FFFFFF', right: rightCols.includes(i) })),
                     }),
                     ...body.map((r) => new d.TableRow({ children: r.map((v, i) => cellOf(v, { right: rightCols.includes(i) })) })),
                 ],
@@ -229,7 +253,7 @@ export class ReportExportService {
             new d.Paragraph({ heading: d.HeadingLevel.HEADING_2, spacing: { before: 280, after: 100 }, children: [new d.TextRun({ text, bold: true, color: '1F2937' })] });
 
         const children: (import('docx').Paragraph | import('docx').Table)[] = [
-            new d.Paragraph({ children: [new d.TextRun({ text: 'Encore Engineering Ltd.', bold: true, color: '39A935', size: 22 })] }),
+            new d.Paragraph({ children: [new d.TextRun({ text: this._company, bold: true, color: this._primary.replace('#', '').toUpperCase(), size: 22 })] }),
             new d.Paragraph({ heading: d.HeadingLevel.HEADING_1, spacing: { before: 120 }, children: [new d.TextRun({ text: doc.title, bold: true })] }),
         ];
         if (doc.subtitle) {

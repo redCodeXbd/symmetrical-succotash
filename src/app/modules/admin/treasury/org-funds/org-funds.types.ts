@@ -74,8 +74,6 @@ export interface NewFundInput {
     name: string;
     category: string;
     company: string;
-    branch: string;
-    department: string;
     type: FundType;
     currency: string;
     openingBalance: number;

@@ -1,49 +1,47 @@
 <div
-    class="relative hidden h-full flex-none flex-col md:w-1/2 justify-between overflow-hidden border-r border-[#1d3524] bg-[#06110a] p-16 md:flex lg:px-24"
+    class="relative hidden h-full flex-none flex-col md:w-1/2 justify-between overflow-hidden border-r border-[rgb(var(--fuse-auth-border-rgb))] bg-[rgb(var(--fuse-auth-bg-rgb))] p-16 md:flex lg:px-24"
 >
     <!-- Orbital background -->
     <!-- prettier-ignore -->
     <svg class="pointer-events-none absolute inset-0" width="100%" height="100%" viewBox="0 0 720 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <defs>
             <pattern id="encore-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-                <path d="M48 0H0V48" fill="none" stroke="#10261a" stroke-width="1" />
+                <path d="M48 0H0V48" fill="none" style="stroke: rgb(var(--fuse-auth-border-rgb))" stroke-width="1" />
             </pattern>
             <radialGradient id="encore-core" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#39a935" stop-opacity="0.55" />
-                <stop offset="100%" stop-color="#39a935" stop-opacity="0" />
+                <stop offset="0%" style="stop-color: rgb(var(--fuse-auth-primary-rgb))" stop-opacity="0.55" />
+                <stop offset="100%" style="stop-color: rgb(var(--fuse-auth-primary-rgb))" stop-opacity="0" />
             </radialGradient>
         </defs>
         <rect width="720" height="900" fill="url(#encore-grid)" />
         <circle cx="360" cy="470" r="200" fill="url(#encore-core)" />
-        <circle cx="360" cy="470" r="90" fill="none" stroke="#39a935" stroke-opacity="0.9" stroke-width="1.5" />
-        <circle cx="360" cy="470" r="150" fill="none" stroke="#325441" stroke-dasharray="3 7" />
-        <circle cx="360" cy="470" r="215" fill="none" stroke="#254030" />
-        <circle cx="360" cy="470" r="285" fill="none" stroke="#1d3524" stroke-dasharray="1 9" />
-        <path d="M360 470 L360 255" stroke="#39a935" stroke-opacity="0.5" />
-        <circle cx="360" cy="255" r="6" fill="#39a935" />
-        <circle cx="546" cy="578" r="5" fill="#d5af36" />
-        <circle cx="190" cy="560" r="5" fill="#d5af36" />
-        <circle cx="360" cy="470" r="8" fill="#eef6ef" />
+        <circle cx="360" cy="470" r="90" fill="none" style="stroke: rgb(var(--fuse-auth-primary-rgb))" stroke-opacity="0.9" stroke-width="1.5" />
+        <circle cx="360" cy="470" r="150" fill="none" style="stroke: rgb(var(--fuse-auth-border-strong-rgb))" stroke-dasharray="3 7" />
+        <circle cx="360" cy="470" r="215" fill="none" style="stroke: rgb(var(--fuse-auth-border-rgb))" />
+        <circle cx="360" cy="470" r="285" fill="none" style="stroke: rgb(var(--fuse-auth-border-rgb))" stroke-dasharray="1 9" />
+        <path d="M360 470 L360 255" style="stroke: rgb(var(--fuse-auth-primary-rgb))" stroke-opacity="0.5" />
+        <circle cx="360" cy="255" r="6" style="fill: rgb(var(--fuse-auth-primary-rgb))" />
+        <circle cx="546" cy="578" r="5" style="fill: rgb(var(--fuse-auth-accent-rgb))" />
+        <circle cx="190" cy="560" r="5" style="fill: rgb(var(--fuse-auth-accent-rgb))" />
+        <circle cx="360" cy="470" r="8" style="fill: rgb(var(--fuse-auth-text-rgb))" />
     </svg>
 
     <!-- Logo -->
     <div class="relative">
-        <img
-            class="block w-64"
-            src="images/logo/encore-logo.png"
-            alt="Encore Engineering Ltd - illumination with first service"
-        />
+        <div class="inline-block" [class]="theme.theme().logoBadge ? 'rounded-xl bg-white px-4 py-3' : ''">
+            <img class="block w-64" [src]="theme.logoUrl()" [alt]="theme.theme().companyName" />
+        </div>
     </div>
 
     <!-- Headline -->
     <div class="relative max-w-lg">
-        <div class="mb-4 font-mono text-xs tracking-[0.18em] text-[#d5af36]">
+        <div class="mb-4 font-mono text-xs tracking-[0.18em] text-[rgb(var(--fuse-auth-accent-rgb))]">
             ERP &amp; TREASURY
         </div>
-        <div class="text-5xl font-bold leading-[1.05] tracking-tight text-[#eef6ef]">
+        <div class="text-5xl font-bold leading-[1.05] tracking-tight text-[rgb(var(--fuse-auth-text-rgb))]">
             One workspace for every work order, fund and payment.
         </div>
-        <div class="mt-4 text-lg leading-7 text-[#9bb3a2]">
+        <div class="mt-4 text-lg leading-7 text-[rgb(var(--fuse-auth-muted-rgb))]">
             Sales, purchasing, collections, expenses and treasury, connected end
             to end.
         </div>
@@ -53,7 +51,7 @@
     <div class="relative flex flex-wrap gap-2.5">
         @for (module of modules; track module) {
             <span
-                class="rounded-full border border-[#2c4a37] bg-[#0c1a11] px-3 py-2 font-mono text-xs text-[#bfd2c5]"
+                class="rounded-full border border-[rgb(var(--fuse-auth-border-strong-rgb))] bg-[rgb(var(--fuse-auth-card-rgb))] px-3 py-2 font-mono text-xs text-[rgb(var(--fuse-auth-muted-rgb))]"
                 >{{ module }}</span
             >
         }

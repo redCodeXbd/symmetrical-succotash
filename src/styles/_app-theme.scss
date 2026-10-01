@@ -1,0 +1,365 @@
+/* Sidebar */
+fuse-vertical-navigation.app-sidebar {
+    background-color: rgb(var(--fuse-app-sidebar-bg-rgb)) !important;
+    /* Re-point the dark-scheme text colours so every item, icon and label follows the sidebar text colour. */
+    --fuse-text-default-rgb: var(--fuse-app-sidebar-text-rgb);
+    --fuse-text-default: rgb(var(--fuse-app-sidebar-text-rgb));
+    --fuse-text-secondary-rgb: var(--fuse-app-sidebar-text-rgb);
+    --fuse-text-secondary: rgb(var(--fuse-app-sidebar-text-rgb));
+    --fuse-text-hint: rgb(var(--fuse-app-sidebar-text-rgb));
+    --fuse-bg-hover: rgba(var(--fuse-app-sidebar-text-rgb), 0.08);
+    color: rgb(var(--fuse-app-sidebar-text-rgb));
+
+    .fuse-vertical-navigation-item-title,
+    .fuse-vertical-navigation-item-subtitle,
+    .fuse-vertical-navigation-item-icon,
+    .fuse-vertical-navigation-item-arrow,
+    .mat-icon {
+        color: rgb(var(--fuse-app-sidebar-text-rgb)) !important;
+    }
+
+    .fuse-vertical-navigation-item-active,
+    .fuse-vertical-navigation-item-active-forced {
+        background-color: rgb(var(--fuse-app-sidebar-active-rgb)) !important;
+
+        .fuse-vertical-navigation-item-title,
+        .fuse-vertical-navigation-item-icon,
+        .mat-icon {
+            color: rgb(var(--fuse-app-sidebar-active-text-rgb)) !important;
+        }
+    }
+}
+
+/* Header */
+.app-header {
+    background-color: rgb(var(--fuse-app-header-bg-rgb));
+    color: rgb(var(--fuse-app-header-text-rgb));
+
+    .mat-icon,
+    .mat-mdc-icon-button {
+        color: rgb(var(--fuse-app-header-text-rgb));
+    }
+}
+
+/* Angular Material surfaces and buttons are compiled with fixed colours, so point them at the theme. */
+.mat-mdc-dialog-container {
+    --mdc-dialog-container-color: rgb(var(--fuse-bg-dialog-rgb)) !important;
+    --mdc-dialog-subhead-color: rgb(var(--fuse-text-default-rgb)) !important;
+    --mdc-dialog-supporting-text-color: rgb(var(--fuse-text-secondary-rgb)) !important;
+}
+
+.mat-mdc-menu-panel {
+    --mat-menu-container-color: rgb(var(--fuse-bg-card-rgb)) !important;
+    --mat-menu-item-label-text-color: rgb(var(--fuse-text-default-rgb)) !important;
+}
+
+.mat-mdc-select-panel,
+.mat-datepicker-content {
+    --mat-select-panel-background-color: rgb(var(--fuse-bg-card-rgb)) !important;
+    --mat-datepicker-calendar-container-background-color: rgb(var(--fuse-bg-card-rgb)) !important;
+}
+
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-raised-button.mat-primary {
+    --mdc-filled-button-container-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-protected-button-container-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-filled-button-label-text-color: rgb(var(--fuse-on-primary-rgb)) !important;
+    --mdc-protected-button-label-text-color: rgb(var(--fuse-on-primary-rgb)) !important;
+    background-color: rgb(var(--fuse-primary-rgb)) !important;
+    color: rgb(var(--fuse-on-primary-rgb)) !important;
+}
+
+.mat-mdc-unelevated-button.mat-warn,
+.mat-mdc-raised-button.mat-warn {
+    --mdc-filled-button-container-color: rgb(var(--fuse-warn-rgb)) !important;
+    --mdc-filled-button-label-text-color: rgb(var(--fuse-on-warn-rgb)) !important;
+    background-color: rgb(var(--fuse-warn-rgb)) !important;
+    color: rgb(var(--fuse-on-warn-rgb)) !important;
+}
+
+.mat-mdc-unelevated-button.mat-accent,
+.mat-mdc-raised-button.mat-accent {
+    --mdc-filled-button-container-color: rgb(var(--fuse-accent-rgb)) !important;
+    --mdc-filled-button-label-text-color: rgb(var(--fuse-on-accent-rgb)) !important;
+    background-color: rgb(var(--fuse-accent-rgb)) !important;
+    color: rgb(var(--fuse-on-accent-rgb)) !important;
+}
+
+.mat-mdc-button.mat-primary,
+.mat-mdc-outlined-button.mat-primary {
+    --mdc-text-button-label-text-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-outlined-button-label-text-color: rgb(var(--fuse-primary-rgb)) !important;
+    color: rgb(var(--fuse-primary-rgb)) !important;
+}
+
+.mat-mdc-button.mat-warn,
+.mat-mdc-outlined-button.mat-warn {
+    --mdc-text-button-label-text-color: rgb(var(--fuse-warn-rgb)) !important;
+    --mdc-outlined-button-label-text-color: rgb(var(--fuse-warn-rgb)) !important;
+    color: rgb(var(--fuse-warn-rgb)) !important;
+}
+
+.mat-mdc-form-field.mat-primary {
+    --mdc-filled-text-field-focus-active-indicator-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-outlined-text-field-focus-outline-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mat-form-field-focus-select-arrow-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-outlined-text-field-focus-label-text-color: rgb(var(--fuse-primary-rgb)) !important;
+}
+
+.mat-mdc-progress-spinner {
+    --mdc-circular-progress-active-indicator-color: rgb(var(--fuse-primary-rgb)) !important;
+}
+
+.mat-mdc-checkbox.mat-primary,
+.mat-mdc-radio-button.mat-primary,
+.mat-mdc-slide-toggle.mat-primary {
+    --mdc-checkbox-selected-icon-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-checkbox-selected-focus-icon-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-checkbox-selected-hover-icon-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-checkbox-selected-pressed-icon-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-radio-selected-icon-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-radio-selected-focus-icon-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-switch-selected-track-color: rgb(var(--fuse-primary-rgb)) !important;
+    --mdc-switch-selected-handle-color: rgb(var(--fuse-primary-rgb)) !important;
+}
+
+.mat-calendar-body-selected {
+    background-color: rgb(var(--fuse-primary-rgb)) !important;
+    color: rgb(var(--fuse-on-primary-rgb)) !important;
+}
+
+.mat-button-toggle-checked {
+    --mat-standard-button-toggle-selected-state-background-color: rgba(var(--fuse-primary-rgb), 0.12) !important;
+}
+
+/* ----------------------------------------------------------------------------------------------------- */
+/*  Organization Funds filters: chips, segmented controls, panel and phone sheet.
+/* ----------------------------------------------------------------------------------------------------- */
+.fund-filter-label {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(var(--fuse-text-secondary-rgb));
+}
+
+.fund-filter-panel {
+    position: relative;
+    padding: 1.25rem 1.5rem;
+    border-radius: 1.25rem;
+    background: rgb(var(--fuse-bg-card-rgb));
+    border: 1px solid rgba(var(--fuse-primary-rgb), 0.28);
+    box-shadow:
+        0 0 0 1px rgba(var(--fuse-primary-rgb), 0.05),
+        0 12px 40px -18px rgba(var(--fuse-primary-rgb), 0.45);
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 2px;
+        background: linear-gradient(90deg, rgb(var(--fuse-primary-rgb)), rgb(var(--fuse-accent-rgb)), transparent);
+    }
+}
+
+.fund-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0 0.95rem;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--fuse-border-rgb));
+    background: transparent;
+    color: rgb(var(--fuse-text-default-rgb));
+    font-size: 0.875rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s, color 0.15s;
+
+    &:hover {
+        border-color: rgba(var(--fuse-primary-rgb), 0.6);
+    }
+
+    &.fund-chip-on {
+        border-color: rgb(var(--fuse-primary-rgb));
+        background: rgba(var(--fuse-primary-rgb), 0.14);
+        color: rgb(var(--fuse-primary-rgb));
+        font-weight: 600;
+        box-shadow: 0 0 14px -2px rgba(var(--fuse-primary-rgb), 0.5);
+    }
+}
+
+@media (max-width: 1023px) {
+    .fund-chip {
+        min-height: 2.75rem;
+    }
+}
+
+.fund-segment {
+    display: inline-flex;
+    padding: 0.25rem;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--fuse-border-rgb));
+    background: var(--fuse-bg-hover);
+
+    &.flex-auto {
+        display: flex;
+    }
+
+    button {
+        flex: 1 1 0;
+        min-height: 2.5rem;
+        padding: 0 1rem;
+        border-radius: 999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: rgb(var(--fuse-text-secondary-rgb));
+        cursor: pointer;
+        transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+
+        &.fund-segment-on {
+            background: rgb(var(--fuse-primary-rgb));
+            color: rgb(var(--fuse-on-primary-rgb));
+            box-shadow: 0 0 16px -2px rgba(var(--fuse-primary-rgb), 0.6);
+        }
+    }
+}
+
+.fund-filter-open {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--fuse-primary-rgb), 0.5);
+    background: rgb(var(--fuse-bg-card-rgb));
+    color: rgb(var(--fuse-text-default-rgb));
+    font-weight: 600;
+    box-shadow: 0 0 18px -6px rgba(var(--fuse-primary-rgb), 0.55);
+}
+
+.fund-filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: rgb(var(--fuse-primary-rgb));
+    color: rgb(var(--fuse-on-primary-rgb));
+    font-size: 0.75rem;
+}
+
+.fund-sheet {
+    border-radius: 1.5rem 1.5rem 0 0;
+    background: rgb(var(--fuse-bg-card-rgb));
+    border-top: 1px solid rgba(var(--fuse-primary-rgb), 0.45);
+    box-shadow: 0 -20px 60px -20px rgba(var(--fuse-primary-rgb), 0.5);
+}
+
+.fund-apply {
+    flex: 1 1 auto;
+    min-height: 3rem;
+    border-radius: 0.75rem;
+    background: rgb(var(--fuse-primary-rgb));
+    color: rgb(var(--fuse-on-primary-rgb));
+    font-weight: 700;
+    box-shadow: 0 0 22px -4px rgba(var(--fuse-primary-rgb), 0.6);
+}
+
+/* ----------------------------------------------------------------------------------------------------- */
+/*  Data tables. Add class "app-table"; style, density and colours come from the theme.
+/* ----------------------------------------------------------------------------------------------------- */
+body {
+    --app-table-pad-y: 0.9rem;
+    --app-table-pad-x: 0.75rem;
+}
+
+body[data-table-density='compact'] {
+    --app-table-pad-y: 0.4rem;
+    --app-table-pad-x: 0.6rem;
+}
+
+.app-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    text-align: left;
+
+    th,
+    td {
+        padding: var(--app-table-pad-y) var(--app-table-pad-x);
+        border-bottom: 1px solid var(--fuse-app-table-border);
+    }
+
+    th:first-child,
+    td:first-child {
+        padding-left: 1.5rem;
+    }
+
+    th:last-child,
+    td:last-child {
+        padding-right: 1.5rem;
+    }
+
+    th {
+        text-align: inherit;
+    }
+
+    thead th {
+        padding-top: calc(var(--app-table-pad-y) * 0.75);
+        padding-bottom: calc(var(--app-table-pad-y) * 0.75);
+        background: var(--fuse-app-table-header-bg);
+        color: var(--fuse-app-table-header-text);
+        font-size: 0.8125rem;
+        font-weight: 500;
+    }
+
+    tbody td {
+        background: var(--fuse-app-table-row-bg);
+    }
+
+    tbody tr:last-child td {
+        border-bottom-color: transparent;
+    }
+
+    tbody tr:hover td {
+        background: var(--fuse-app-table-hover-bg);
+    }
+}
+
+body[data-table-style='striped'] .app-table {
+    th,
+    td {
+        border-bottom-color: transparent;
+    }
+
+    tbody tr:nth-child(even) td {
+        background: var(--fuse-app-table-stripe-bg);
+    }
+
+    tbody tr:nth-child(even):hover td {
+        background: var(--fuse-app-table-hover-bg);
+    }
+}
+
+body[data-table-style='grid'] .app-table {
+    th,
+    td {
+        border-right: 1px solid var(--fuse-app-table-border);
+        border-bottom: 1px solid var(--fuse-app-table-border);
+    }
+
+    th:last-child,
+    td:last-child {
+        border-right-color: transparent;
+    }
+
+    tbody tr:last-child td {
+        border-bottom-color: var(--fuse-app-table-border);
+    }
+}

@@ -19,6 +19,10 @@ const TRADING = 'Encore Trading Ltd.';
  */
 @Injectable({ providedIn: 'root' })
 export class OrgFundsService {
+    /** Branch and department come from the signed-in user's profile, not from forms. Hard-coded until the profile carries them. */
+    readonly userBranch = 'Head Office';
+    readonly userDepartment = 'Accounts';
+
     private _funds = signal<OrgFund[]>([
         { id: 'F-01', name: 'Head Office Cash Fund', company: ENCORE, branch: 'Head Office', department: 'Accounts', category: 'Operations', type: 'Cash', currency: 'BDT', balance: 150000, reserved: 0, minBalance: 50000, active: true },
         { id: 'F-02', name: 'Operating Bank Fund', company: ENCORE, branch: 'Head Office', department: 'Accounts', category: 'Operations', type: 'Bank', currency: 'BDT', balance: 800000, reserved: 50000, minBalance: 200000, active: true },
@@ -67,8 +71,8 @@ export class OrgFundsService {
             id: `F-${String(max + 1).padStart(2, '0')}`,
             name: input.name.trim(),
             company: input.company,
-            branch: input.branch.trim(),
-            department: input.department.trim(),
+            branch: this.userBranch,
+            department: this.userDepartment,
             category,
             type: input.type,
             currency: input.currency,

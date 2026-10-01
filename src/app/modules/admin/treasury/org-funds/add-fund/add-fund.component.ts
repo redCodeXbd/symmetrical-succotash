@@ -36,8 +36,6 @@ export class AddFundComponent {
         category: ['', Validators.required],
         newCategoryName: [''],
         company: ['', Validators.required],
-        branch: ['', Validators.required],
-        department: ['', Validators.required],
         type: ['Bank', Validators.required],
         currency: ['BDT', Validators.required],
         openingBalance: [0, [Validators.required, Validators.min(0)]],
@@ -55,14 +53,6 @@ export class AddFundComponent {
 
     get currencies(): string[] {
         return [...new Set(this.org.funds().map((f) => f.currency))].sort();
-    }
-
-    get branches(): string[] {
-        return [...new Set(this.org.funds().map((f) => f.branch))].sort();
-    }
-
-    get departments(): string[] {
-        return [...new Set(this.org.funds().map((f) => f.department))].sort();
     }
 
     get creatingCategory(): boolean {
@@ -85,8 +75,6 @@ export class AddFundComponent {
                     name: v.name,
                     category,
                     company: v.company,
-                    branch: v.branch,
-                    department: v.department,
                     type: v.type as OrgFund['type'],
                     currency: v.currency,
                     openingBalance: Number(v.openingBalance),

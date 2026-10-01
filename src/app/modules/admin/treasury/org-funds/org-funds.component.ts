@@ -5,9 +5,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { DateTime } from 'luxon';
+import { ThemeService } from 'app/core/theme/theme.service';
 import { FundsService } from '../funds/funds.service';
 import { ExportMenuComponent } from '../shared/export-menu/export-menu.component';
 import { ReportDoc } from '../shared/report.types';
+import { FundFiltersComponent, FundFilters } from './filters/fund-filters.component';
 import { AddFundComponent } from './add-fund/add-fund.component';
 import { FundDetailComponent } from './fund-detail/fund-detail.component';
 import { OrgFundsService } from './org-funds.service';
@@ -33,7 +35,7 @@ export interface Alert {
     templateUrl: './org-funds.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatIconModule, NgApexchartsModule, FundDetailComponent, AddFundComponent, ExportMenuComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatIconModule, NgApexchartsModule, FundDetailComponent, AddFundComponent, ExportMenuComponent, FundFiltersComponent],
 })
 export class OrgFundsComponent {
     readonly statusLabels = STATUS_LABELS;
@@ -49,6 +51,14 @@ export class OrgFundsComponent {
     addOpen = signal(false);
     trendMode = signal<TrendMode>('total');
     selectedId = signal<string | null>(null);
+
+    filters = computed<FundFilters>(() => ({
+        company: this.company(),
+        range: this.range(),
+        currency: this.currency(),
+        category: this.category(),
+        type: this.type(),
+    }));
 
     companies = computed(() => this._unique((f) => f.company));
     currencies = computed(() => this._unique((f) => f.currency));
@@ -172,13 +182,14 @@ export class OrgFundsComponent {
         return {
             series,
             categories: days.map((d) => d.toFormat('dd MMM')),
-            colors: ['#39a935', '#d5af36', '#0ea5e9', '#8b5cf6'],
+            colors: [this._theme.theme().primary, this._theme.theme().accent, '#0ea5e9', '#8b5cf6'],
         };
     });
 
     constructor(
         public org: OrgFundsService,
-        private funds$: FundsService
+        private funds$: FundsService,
+        private _theme: ThemeService
     ) {}
 
     fmtAxis = (n: number): string => this._n(n);
@@ -222,6 +233,14 @@ export class OrgFundsComponent {
             footer: ['Net movement', '', '', '', '', '', '', movements.reduce((sum, m) => sum + signed(m), 0)],
         };
     };
+
+    setFilters(f: FundFilters): void {
+        this.company.set(f.company);
+        this.range.set(f.range);
+        this.currency.set(f.currency);
+        this.category.set(f.category);
+        this.type.set(f.type);
+    }
 
     onFundAdded(fund: OrgFund): void {
         this.addOpen.set(false);
