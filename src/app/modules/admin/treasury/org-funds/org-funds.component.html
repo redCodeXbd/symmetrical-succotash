@@ -7,7 +7,9 @@
                 <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Organization Funds</h1>
                 <div class="text-secondary mt-0.5 text-lg">Balances, reserved amounts and activity across company funds.</div>
             </div>
-            <treasury-add-button label="Add fund" (pressed)="addOpen.set(true)"></treasury-add-button>
+            @if (access.can('org-funds.add')) {
+                <treasury-add-button label="Add fund" (pressed)="addOpen.set(true)"></treasury-add-button>
+            }
         </div>
 
         <!-- Filters -->
@@ -213,7 +215,9 @@
         <div class="mt-6 overflow-hidden rounded-2xl bg-card shadow">
             <div class="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
                 <div class="text-xl font-semibold">Recent activity</div>
-                <treasury-export-menu [build]="activityDoc" [formats]="['xlsx', 'pdf']" [disabled]="recentActivity().length === 0"></treasury-export-menu>
+                @if (access.can('org-funds.export')) {
+                    <treasury-export-menu [build]="activityDoc" [formats]="['xlsx', 'pdf']" [disabled]="recentActivity().length === 0"></treasury-export-menu>
+                }
             </div>
             @if (recentActivity().length === 0) {
                 <div class="text-secondary border-t px-6 py-12 text-center text-md">No activity in the selected period.</div>

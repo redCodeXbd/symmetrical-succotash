@@ -8,8 +8,8 @@ import {
     FuseVerticalNavigationComponent,
 } from '@fuse/components/navigation';
 import { FuseMediaWatcherService } from '@fuse/services/media-watcher';
-import { filterNavigation } from 'app/core/role/nav-access';
-import { RoleService } from 'app/core/role/role.service';
+import { AccessService } from 'app/core/access/access.service';
+import { filterNavigation } from 'app/core/access/nav-access';
 import { ThemeService } from 'app/core/theme/theme.service';
 import { NavigationService } from 'app/core/navigation/navigation.service';
 import { Navigation } from 'app/core/navigation/navigation.types';
@@ -44,7 +44,7 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
     private _menu = signal<import('@fuse/components/navigation').FuseNavigationItem[]>([]);
 
     /** The menu this role may see. */
-    menu = computed(() => filterNavigation(this._menu(), this.roles.role()));
+    menu = computed(() => filterNavigation(this._menu(), this.access));
 
     /**
      * Constructor
@@ -57,7 +57,7 @@ export class ClassyLayoutComponent implements OnInit, OnDestroy {
         private _fuseMediaWatcherService: FuseMediaWatcherService,
         private _fuseNavigationService: FuseNavigationService,
         public theme: ThemeService,
-        public roles: RoleService
+        public access: AccessService
     ) {}
 
     // -----------------------------------------------------------------------------------------------------

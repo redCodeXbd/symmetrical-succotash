@@ -1,6 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { DateTime } from 'luxon';
-import { RoleService, AppRole } from 'app/core/role/role.service';
+import { AccessService } from 'app/core/access/access.service';
 import { FundsService } from 'app/modules/admin/treasury/funds/funds.service';
 import { FundEventType, FundRequest, FundRequestEvent } from 'app/modules/admin/treasury/funds/funds.types';
 import { Notification } from './notifications.types';
@@ -19,6 +19,7 @@ interface RoleState {
 const ICONS: Record<FundEventType, string> = {
     submitted: 'heroicons_solid:plus-circle',
     edited: 'heroicons_solid:pencil-square',
+    step_approved: 'heroicons_solid:arrow-right-circle',
     approved: 'heroicons_solid:check-circle',
     rejected: 'heroicons_solid:x-circle',
     cancelled: 'heroicons_solid:no-symbol',
@@ -33,21 +34,21 @@ const escape = (text: string): string =>
     text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 /**
- * Builds the bell's notifications from the actions on fund requests.
+ * Builds the bell's notifications from the actions on fund requests. Roles decide what is shown:
  *
- *  - Admin: every action.
- *  - Accountant: every action taken by an employee (new requests, edits, cancellations, returns, closing).
- *  - Employee: actions Accounts or Admin took on his own requests (approved, rejected, paid, return confirmed...).
+ *  - "All actions" permission: every action.
+ *  - "Employee actions" permission: every action an employee took (new requests, edits, returns, closing).
+ *  - Everyone: what others did on his or her own requests (approved, rejected, paid, return confirmed...).
  *
- * Read, unread and dismissed flags are remembered per role in this browser.
+ * Read, unread and dismissed flags are remembered per user in this browser.
  */
 @Injectable({ providedIn: 'root' })
 export class FundNotificationsService {
     private _state = signal<Record<string, RoleState>>(this._load());
 
     readonly notifications = computed<Notification[]>(() => {
-        const role = this._roles.role();
-        const state = this._state()[role] ?? { read: [], unread: [], dismissed: [] };
+        const user = this._access.userId();
+        const state = this._state()[user] ?? { read: [], unread: [], dismissed: [] };
         const read = new Set(state.read);
         const unread = new Set(state.unread);
         const dismissed = new Set(state.dismissed);
@@ -56,7 +57,7 @@ export class FundNotificationsService {
         return this._funds
             .requests()
             .flatMap((r) => r.events.map((e) => ({ r, e })))
-            .filter(({ r, e }) => this._visible(role, r, e))
+            .filter(({ r, e }) => this._visible(r, e))
             .map(({ r, e }) => {
                 const id = `${r.id}|${e.at}|${e.type}`;
                 const isOld = DateTime.fromISO(e.at) < cutoff;
@@ -81,7 +82,7 @@ export class FundNotificationsService {
 
     constructor(
         private _funds: FundsService,
-        private _roles: RoleService
+        private _access: AccessService
     ) {}
 
     markRead(id: string): void {
@@ -110,16 +111,17 @@ export class FundNotificationsService {
     // -----------------------------------------------------------------------------------------------------
 
     /** Who is allowed to be told about an event. */
-    private _visible(role: AppRole, request: FundRequest, event: FundRequestEvent): boolean {
-        const byStaff = event.by === 'Accounts' || event.by === 'Admin';
-        switch (role) {
-            case 'admin':
-                return true;
-            case 'accountant':
-                return !byStaff;
-            default:
-                return request.employee === this._funds.currentEmployee && byStaff;
+    private _visible(request: FundRequest, event: FundRequestEvent): boolean {
+        if (this._access.can('notifications.view_all')) {
+            return true;
         }
+        // Actions the requester took himself or herself.
+        const byEmployee = event.by === request.employee;
+        if (this._access.can('notifications.view_employee') && byEmployee) {
+            return true;
+        }
+        // Everyone is told what others did on their own requests.
+        return request.employee === this._funds.currentEmployee && !byEmployee;
     }
 
     private _title(r: FundRequest, e: FundRequestEvent): string {
@@ -127,6 +129,7 @@ export class FundNotificationsService {
         const labels: Record<FundEventType, string> = {
             submitted: `New request ${id}`,
             edited: `Request ${id} edited`,
+            step_approved: `Approval step passed on ${id}`,
             approved: `Request ${id} approved`,
             rejected: `Request ${id} rejected`,
             cancelled: `Request ${id} cancelled`,
@@ -140,14 +143,15 @@ export class FundNotificationsService {
     }
 
     private _description(r: FundRequest, e: FundRequestEvent): string {
-        const who = this._roles.role() === 'employee' ? '' : `${escape(e.by)}${e.by === r.employee ? '' : ` on ${escape(r.employee)}'s request`}. `;
+        const watchesOthers = this._access.can('notifications.view_all') || this._access.can('notifications.view_employee');
+        const who = !watchesOthers ? '' : `${escape(e.by)}${e.by === r.employee ? '' : ` on ${escape(r.employee)}'s request`}. `;
         const detail = e.note ? escape(e.note) : escape(r.purpose);
         return `${who}${detail}`;
     }
 
     private _update(fn: (s: RoleState) => RoleState): void {
-        const role = this._roles.role();
-        this._state.update((all) => ({ ...all, [role]: fn(all[role] ?? { read: [], unread: [], dismissed: [] }) }));
+        const user = this._access.userId();
+        this._state.update((all) => ({ ...all, [user]: fn(all[user] ?? { read: [], unread: [], dismissed: [] }) }));
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(this._state()));
         } catch {

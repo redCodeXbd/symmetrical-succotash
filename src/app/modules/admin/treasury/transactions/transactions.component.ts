@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 import { DateTime } from 'luxon';
-import { RoleService } from 'app/core/role/role.service';
+import { AccessService } from 'app/core/access/access.service';
 import { FundsService } from '../funds/funds.service';
 import {
     EVENT_CLASSES,
@@ -21,7 +21,7 @@ import { MOVEMENT_LABELS } from '../org-funds/org-funds.types';
 import { OrgFundsService } from '../org-funds/org-funds.service';
 import { ExportMenuComponent } from '../shared/export-menu/export-menu.component';
 import { ReportDoc } from '../shared/report.types';
-import { RoleSwitchComponent } from '../shared/role-switch/role-switch.component';
+import { UserSwitchComponent } from '../shared/user-switch/user-switch.component';
 
 type Tab = 'payments' | 'returns' | 'actions' | 'movements';
 type Preset = 'today' | 'last_7' | 'last_30' | 'this_month' | 'last_month' | 'this_year' | 'all' | 'custom';
@@ -48,7 +48,7 @@ const PRESETS: { id: Preset; label: string }[] = [
         FormsModule,
         MatIconModule,
         ExportMenuComponent,
-        RoleSwitchComponent,
+        UserSwitchComponent,
         RequestDetailComponent,
     ],
 })
@@ -74,13 +74,13 @@ export class TransactionsComponent {
     selectedId = signal<string | null>(null);
 
     /** A role the user cannot open falls back to the first tab. */
-    activeTab = computed<Tab>(() => (this.tab() === 'movements' && !this.roles.isAdmin() ? 'payments' : this.tab()));
+    activeTab = computed<Tab>(() => (this.tab() === 'movements' && !this.access.can('transactions.view_movements') ? 'payments' : this.tab()));
 
-    role = computed<FundRole>(() => (this.roles.canSeeAll() ? 'accounts' : 'employee'));
+    role = computed<FundRole>(() => (this.access.can('transactions.view_all') ? 'accounts' : 'employee'));
 
     /** Employees only ever get their own requests; accountants and admins get all. */
     private _requests = computed(() =>
-        this.funds.requests().filter((r) => this.roles.canSeeAll() || r.employee === this.funds.currentEmployee)
+        this.funds.requests().filter((r) => this.access.can('transactions.view_all') || r.employee === this.funds.currentEmployee)
     );
     private _requestMap = computed(() => new Map(this._requests().map((r) => [r.id, r])));
 
@@ -133,7 +133,7 @@ export class TransactionsComponent {
     });
 
     scopeLabel = computed(() =>
-        this.roles.isAdmin() ? 'All data' : this.roles.canSeeAll() ? 'All fund transactions and actions' : 'Your transactions and actions only'
+        this.access.can('transactions.view_movements') ? 'All data' : this.access.can('transactions.view_all') ? 'All fund transactions and actions' : 'Your transactions and actions only'
     );
 
     payments = computed(() => {
@@ -183,7 +183,7 @@ export class TransactionsComponent {
 
     /** Every treasury movement, including deposits and transfers. Admin only. */
     movements = computed(() => {
-        if (!this.roles.isAdmin()) {
+        if (!this.access.can('transactions.view_movements')) {
             return [];
         }
         const q = this.search().trim().toLowerCase();
@@ -204,7 +204,7 @@ export class TransactionsComponent {
 
     constructor(
         public funds: FundsService,
-        public roles: RoleService,
+        public access: AccessService,
         public org: OrgFundsService,
         private _router: Router
     ) {}
@@ -234,7 +234,7 @@ export class TransactionsComponent {
 
     doc = (): ReportDoc => {
         const subtitle = `${this.scopeLabel()} · ${this.rangeLabel()}`;
-        const all = this.roles.canSeeAll();
+        const all = this.access.can('transactions.view_all');
         const day = (iso: string) => DateTime.fromISO(iso).toFormat('dd MMM y');
         const time = (iso: string) => DateTime.fromISO(iso).toFormat('dd MMM y, h:mm a');
 

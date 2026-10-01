@@ -7,14 +7,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { DateTime } from 'luxon';
-import { RoleService } from 'app/core/role/role.service';
+import { AccessService } from 'app/core/access/access.service';
 import { OrgFundsService } from '../../org-funds/org-funds.service';
 import { FundsService } from '../funds.service';
 import {
     EVENT_LABELS,
     FundRequest,
     FundReturn,
-    FundRole,
     FundTransaction,
     PAYMENT_METHODS,
     RETURN_STATUS_CLASSES,
@@ -48,7 +47,6 @@ type Mode = 'view' | 'approve' | 'reject' | 'pay' | 'close' | 'return' | 'confir
 })
 export class RequestDetailComponent {
     @Input() request: FundRequest;
-    @Input() role: FundRole = 'employee';
     @Output() closed = new EventEmitter<void>();
     @Output() edit = new EventEmitter<FundRequest>();
 
@@ -88,7 +86,7 @@ export class RequestDetailComponent {
         private _fb: FormBuilder,
         public funds: FundsService,
         public org: OrgFundsService,
-        public roles: RoleService
+        public access: AccessService
     ) {}
 
     get payments(): FundTransaction[] {
@@ -99,10 +97,6 @@ export class RequestDetailComponent {
         return this.funds.remaining(this.request);
     }
 
-    get actor(): string {
-        return this.role === 'accounts' ? 'Accounts' : this.funds.currentEmployee;
-    }
-
     get returns(): FundReturn[] {
         return this.funds.returnsFor(this.request.id);
     }
@@ -111,34 +105,51 @@ export class RequestDetailComponent {
         return this.funds.returnable(this.request);
     }
 
-    private get _isOwnerEmployee(): boolean {
-        return this.roles.role() === 'employee' && this.request.employee === this.funds.currentEmployee;
+    private get _isOwner(): boolean {
+        return this.request.employee === this.funds.currentEmployee;
     }
 
-    /** The requester or an admin can close a request that was only partly paid. */
+    /** The requester (with "close own") or anyone with "close any" can close a partly paid request. */
     get canClose(): boolean {
-        return this.request.status === 'partially_paid' && (this._isOwnerEmployee || this.roles.isAdmin());
+        return this.funds.canClose(this.request);
     }
 
     /** The employee who received money can give unused money back. */
     get canReturn(): boolean {
-        return this._isOwnerEmployee && this.returnable > 0 && ['paid', 'partially_paid', 'closed'].includes(this.request.status);
+        return (
+            this.access.can('fund-requests.return') &&
+            this._isOwner &&
+            this.returnable > 0 &&
+            ['paid', 'partially_paid', 'closed'].includes(this.request.status)
+        );
     }
 
     get canDecideReturns(): boolean {
-        return this.roles.canSeeAll();
+        return this.access.can('fund-requests.confirm_return');
     }
 
     get canEmployeeEdit(): boolean {
-        return this.role === 'employee' && this.request.status === 'pending';
+        return this.access.can('fund-requests.edit') && this._isOwner && this.request.status === 'pending';
     }
 
+    /** Whether the acting user is the next approver in this request's approval path. */
     get canReview(): boolean {
-        return this.role === 'accounts' && this.request.status === 'pending';
+        return this.funds.canApprove(this.request);
+    }
+
+    /** Who the request is waiting on, when the acting user is not that approver. */
+    get waitingFor(): string | null {
+        const step = this.funds.currentStep(this.request);
+        return step && !this.canReview ? step.roleName : null;
+    }
+
+    get isLastStep(): boolean {
+        const step = this.funds.currentStep(this.request);
+        return !!step && this.request.approvals[this.request.approvals.length - 1] === step;
     }
 
     get canPay(): boolean {
-        return this.role === 'accounts' && this.remaining > 0 && ['approved', 'partially_paid'].includes(this.request.status);
+        return this.access.can('fund-requests.pay') && this.remaining > 0 && ['approved', 'partially_paid'].includes(this.request.status);
     }
 
     /** Categories that have at least one fund a payment can be given from. */
@@ -302,7 +313,7 @@ export class RequestDetailComponent {
             this.approveForm.markAllAsTouched();
             return;
         }
-        this._finish(this.funds.approve(this.request.id, Number(this.approveForm.value.amount), this.actor));
+        this._finish(this.funds.approve(this.request.id, Number(this.approveForm.value.amount)));
     }
 
     reject(): void {
@@ -310,7 +321,7 @@ export class RequestDetailComponent {
             this.rejectForm.markAllAsTouched();
             return;
         }
-        this._finish(this.funds.reject(this.request.id, this.rejectForm.value.reason, this.actor));
+        this._finish(this.funds.reject(this.request.id, this.rejectForm.value.reason));
     }
 
     pay(): void {
@@ -329,8 +340,7 @@ export class RequestDetailComponent {
                     date: v.date.toISO(),
                     method: v.method,
                     reference: v.reference ?? '',
-                },
-                this.actor
+                }
             )
         );
     }

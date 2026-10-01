@@ -2,7 +2,7 @@ import { Route } from '@angular/router';
 import { initialDataResolver } from 'app/app.resolvers';
 import { AuthGuard } from 'app/core/auth/guards/auth.guard';
 import { NoAuthGuard } from 'app/core/auth/guards/noAuth.guard';
-import { roleGuard } from 'app/core/role/role.guard';
+import { permissionGuard } from 'app/core/access/permission.guard';
 import { LayoutComponent } from 'app/layout/layout.component';
 
 // @formatter:off
@@ -77,11 +77,12 @@ export const appRoutes: Route[] = [
         },
         children: [
             {path: 'example', loadChildren: () => import('app/modules/admin/example/example.routes')},
-            {path: 'settings/categories', canActivate: [roleGuard(['admin'])], loadChildren: () => import('app/modules/admin/settings/categories/categories.routes')},
-            {path: 'settings/theme', canActivate: [roleGuard(['admin'])], loadChildren: () => import('app/modules/admin/settings/theme/theme.routes')},
-            {path: 'treasury/organization-funds', canActivate: [roleGuard(['accountant', 'admin'])], loadChildren: () => import('app/modules/admin/treasury/org-funds/org-funds.routes')},
-            {path: 'treasury/transactions', loadChildren: () => import('app/modules/admin/treasury/transactions/transactions.routes')},
-            {path: 'treasury/funds', loadChildren: () => import('app/modules/admin/treasury/funds/funds.routes')},
+            {path: 'settings/categories', canActivate: [permissionGuard('categories.view')], loadChildren: () => import('app/modules/admin/settings/categories/categories.routes')},
+            {path: 'settings/theme', canActivate: [permissionGuard('theme.view')], loadChildren: () => import('app/modules/admin/settings/theme/theme.routes')},
+            {path: 'settings/roles', canActivate: [permissionGuard('roles.view')], loadChildren: () => import('app/modules/admin/settings/roles/roles.routes')},
+            {path: 'treasury/organization-funds', canActivate: [permissionGuard('org-funds.view')], loadChildren: () => import('app/modules/admin/treasury/org-funds/org-funds.routes')},
+            {path: 'treasury/transactions', canActivate: [permissionGuard('transactions.view')], loadChildren: () => import('app/modules/admin/treasury/transactions/transactions.routes')},
+            {path: 'treasury/funds', canActivate: [permissionGuard('fund-requests.view')], loadChildren: () => import('app/modules/admin/treasury/funds/funds.routes')},
         ]
     }
 ];

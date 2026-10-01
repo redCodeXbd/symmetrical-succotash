@@ -3,7 +3,9 @@
     [subheading]="request.purpose"
     (closed)="closed.emit()"
 >
-    <treasury-export-menu headerActions [build]="detailDoc" [formats]="['pdf', 'docx']"></treasury-export-menu>
+    @if (access.can('fund-requests.export')) {
+        <treasury-export-menu headerActions [build]="detailDoc" [formats]="['pdf', 'docx']"></treasury-export-menu>
+    }
 
     <div class="flex items-center gap-3">
         <span class="rounded-full px-3 py-1 text-sm font-medium" [class]="classes[request.status]">
@@ -46,11 +48,11 @@
     <!-- Approve / reject / pay forms -->
     @if (mode === 'approve') {
         <form class="mt-6 rounded-xl border p-4" [formGroup]="approveForm" (ngSubmit)="approve()">
-            <div class="mb-3 font-medium">Approve request</div>
+            <div class="mb-3 font-medium">{{ isLastStep ? 'Approve request' : 'Approve this step' }}</div>
             <mat-form-field class="w-full">
                 <mat-label>Approved amount ({{ request.currency }})</mat-label>
                 <input matInput type="number" min="0" step="0.01" formControlName="amount" />
-                <mat-hint>Requested: {{ request.amount | number: '1.0-2' }}</mat-hint>
+                <mat-hint>Requested: {{ request.amount | number: '1.0-2' }}{{ isLastStep ? '' : ' · final amount is set at the last step' }}</mat-hint>
                 <mat-error>Enter an amount above zero</mat-error>
             </mat-form-field>
             <div class="mt-4 flex justify-end gap-3">
@@ -258,6 +260,49 @@
                         </div>
                     }
                 </div>
+            }
+        </div>
+    }
+
+    <!-- Approval flow -->
+    @if (request.approvals.length) {
+        <div class="mt-8">
+            <div class="mb-3 text-sm font-medium uppercase tracking-wide text-secondary">Approval flow</div>
+            <ol class="flex flex-col">
+                @for (step of request.approvals; track $index; let last = $last) {
+                    <li class="flex gap-3">
+                        <div class="flex flex-col items-center">
+                            <span
+                                class="flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-semibold"
+                                [class.bg-green-100]="step.status === 'approved'"
+                                [class.text-green-800]="step.status === 'approved'"
+                                [class.bg-amber-100]="step.status === 'pending'"
+                                [class.text-amber-800]="step.status === 'pending'"
+                                [class.bg-red-100]="step.status === 'rejected'"
+                                [class.text-red-800]="step.status === 'rejected'"
+                                [class.bg-gray-200]="step.status === 'waiting'"
+                                [class.text-gray-600]="step.status === 'waiting'"
+                            >{{ $index + 1 }}</span>
+                            @if (!last) {
+                                <span class="my-1 w-px flex-auto bg-gray-300"></span>
+                            }
+                        </div>
+                        <div class="pb-4 text-md">
+                            <div class="font-medium">{{ step.roleName }}</div>
+                            <div class="text-secondary text-sm">
+                                @switch (step.status) {
+                                    @case ('approved') { Approved by {{ step.by }} · {{ step.at | date: 'dd MMM y, h:mm a' }} }
+                                    @case ('rejected') { Rejected by {{ step.by }} · {{ step.at | date: 'dd MMM y, h:mm a' }} }
+                                    @case ('pending') { Waiting for approval }
+                                    @default { Not reached yet }
+                                }
+                            </div>
+                        </div>
+                    </li>
+                }
+            </ol>
+            @if (waitingFor) {
+                <div class="mt-1 rounded-lg bg-amber-50 p-3 text-md text-amber-800">This request is waiting for <strong>{{ waitingFor }}</strong>. You cannot approve it at this step.</div>
             }
         </div>
     }

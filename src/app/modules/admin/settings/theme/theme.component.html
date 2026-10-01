@@ -13,16 +13,19 @@
                 @if (savedMessage && !theme.dirty()) {
                     <span class="text-md font-medium text-primary" role="status">Theme saved</span>
                 }
+                @if (!access.can('theme.edit')) {
+                    <span class="text-secondary text-md">View only. Your role cannot change the theme.</span>
+                }
                 @if (theme.dirty()) {
                     <button mat-stroked-button type="button" (click)="discard()">Discard changes</button>
                 }
-                <button mat-flat-button color="primary" class="fuse-mat-button-large" type="button" [disabled]="!theme.dirty()" (click)="save()">
+                <button mat-flat-button [hidden]="!access.can('theme.edit')" color="primary" class="fuse-mat-button-large" type="button" [disabled]="!theme.dirty()" (click)="save()">
                     Save theme
                 </button>
             </div>
         </div>
 
-        <div class="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div class="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3" [attr.inert]="access.can('theme.edit') ? null : ''" [class.opacity-70]="!access.can('theme.edit')">
             <div class="flex flex-col gap-6 xl:col-span-2">
                 <!-- Presets -->
                 <section class="rounded-2xl bg-card p-6 shadow" aria-labelledby="presets-title">

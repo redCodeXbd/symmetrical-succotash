@@ -6,8 +6,8 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DateTime } from 'luxon';
-import { RoleService } from 'app/core/role/role.service';
-import { RoleSwitchComponent } from '../shared/role-switch/role-switch.component';
+import { AccessService } from 'app/core/access/access.service';
+import { UserSwitchComponent } from '../shared/user-switch/user-switch.component';
 import { FundsService } from './funds.service';
 import { FundRequest, FundRequestStatus, FundRole, STATUS_CLASSES, STATUS_LABELS } from './funds.types';
 import { AddButtonComponent } from '../shared/add-button/add-button.component';
@@ -31,7 +31,7 @@ type Range = 'this_month' | 'last_30' | 'all';
         MatButtonModule,
         MatIconModule,
         ExportMenuComponent,
-        RoleSwitchComponent,
+        UserSwitchComponent,
         RequestDetailComponent,
         RequestFormComponent,
         AddButtonComponent,
@@ -43,7 +43,7 @@ export class FundsComponent {
     readonly statuses = Object.keys(STATUS_LABELS) as FundRequestStatus[];
 
     /** Preview switch between the two audiences; real permissions will drive this later. */
-    role = computed<FundRole>(() => (this.roles.canSeeAll() ? 'accounts' : 'employee'));
+    role = computed<FundRole>(() => (this.access.can('fund-requests.view_all') ? 'accounts' : 'employee'));
     tab = signal<Tab>('requests');
     search = signal('');
     status = signal<'all' | FundRequestStatus>('all');
@@ -172,7 +172,7 @@ export class FundsComponent {
 
     constructor(
         public funds: FundsService,
-        public roles: RoleService,
+        public access: AccessService,
         route: ActivatedRoute
     ) {
         // A notification links here with ?request=FR-1024 to open that request.
