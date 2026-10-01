@@ -3,6 +3,39 @@ import { FuseNavigationItem } from '@fuse/components/navigation';
 
 export const defaultNavigation: FuseNavigationItem[] = [
     {
+        id      : 'settings',
+        title   : 'Configuration',
+        type    : 'collapsable',
+        icon    : 'heroicons_outline:adjustments-horizontal',
+        children: [
+            {
+                id   : 'settings.categories',
+                title: 'Categories',
+                type : 'basic',
+                link : '/settings/categories'
+            },
+            {
+                id   : 'settings.theme',
+                title: 'Theme',
+                type : 'basic',
+                link : '/settings/theme'
+            },
+            {
+                id   : 'settings.roles',
+                title: 'Roles and permissions',
+                type : 'basic',
+                link : '/settings/roles'
+            }
+        ]
+    },
+    {
+        id   : 'dashboard',
+        title: 'Dashboard',
+        type : 'basic',
+        icon : 'heroicons_outline:chart-pie',
+        link : '/dashboard'
+    },
+    {
         id      : 'treasury',
         title   : 'Treasury',
         type    : 'collapsable',
@@ -25,32 +58,6 @@ export const defaultNavigation: FuseNavigationItem[] = [
                 title: 'Transactions',
                 type : 'basic',
                 link : '/treasury/transactions'
-            }
-        ]
-    },
-    {
-        id      : 'settings',
-        title   : 'Settings',
-        type    : 'collapsable',
-        icon    : 'heroicons_outline:adjustments-horizontal',
-        children: [
-            {
-                id   : 'settings.categories',
-                title: 'Categories',
-                type : 'basic',
-                link : '/settings/categories'
-            },
-            {
-                id   : 'settings.theme',
-                title: 'Theme',
-                type : 'basic',
-                link : '/settings/theme'
-            },
-            {
-                id   : 'settings.roles',
-                title: 'Roles and permissions',
-                type : 'basic',
-                link : '/settings/roles'
             }
         ]
     }

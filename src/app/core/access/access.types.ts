@@ -58,7 +58,7 @@ export const FEATURES: FeatureDef[] = [
         id: 'categories',
         title: 'Categories',
         permissions: [
-            { key: 'view', label: 'View', description: 'Open Settings > Categories' },
+            { key: 'view', label: 'View', description: 'Open Configuration > Categories' },
             { key: 'add', label: 'Add', description: 'Create categories' },
             { key: 'edit', label: 'Edit', description: 'Rename categories' },
             { key: 'delete', label: 'Delete', description: 'Delete unused categories' },
@@ -68,7 +68,7 @@ export const FEATURES: FeatureDef[] = [
         id: 'theme',
         title: 'Theme',
         permissions: [
-            { key: 'view', label: 'View', description: 'Open Settings > Theme' },
+            { key: 'view', label: 'View', description: 'Open Configuration > Theme' },
             { key: 'edit', label: 'Edit', description: 'Save theme changes' },
         ],
     },
@@ -76,7 +76,7 @@ export const FEATURES: FeatureDef[] = [
         id: 'roles',
         title: 'Roles and permissions',
         permissions: [
-            { key: 'view', label: 'View', description: 'Open Settings > Roles and permissions' },
+            { key: 'view', label: 'View', description: 'Open Configuration > Roles and permissions' },
             { key: 'add', label: 'Add', description: 'Create roles' },
             { key: 'edit', label: 'Edit', description: 'Rename roles and change what they can do' },
             { key: 'delete', label: 'Delete', description: 'Delete unused roles' },
