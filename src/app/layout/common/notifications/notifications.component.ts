@@ -3,7 +3,6 @@ import { TemplatePortal } from '@angular/cdk/portal';
 import { DatePipe, NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     OnDestroy,
     OnInit,
@@ -16,9 +15,8 @@ import { MatButton, MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { NotificationsService } from 'app/layout/common/notifications/notifications.service';
+import { FundNotificationsService } from 'app/layout/common/notifications/fund-notifications.service';
 import { Notification } from 'app/layout/common/notifications/notifications.types';
-import { Subject, takeUntil } from 'rxjs';
 
 @Component({
     selector: 'notifications',
@@ -42,20 +40,25 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     @ViewChild('notificationsPanel')
     private _notificationsPanel: TemplateRef<any>;
 
-    notifications: Notification[];
-    unreadCount: number = 0;
     private _overlayRef: OverlayRef;
-    private _unsubscribeAll: Subject<any> = new Subject<any>();
 
     /**
      * Constructor
      */
     constructor(
-        private _changeDetectorRef: ChangeDetectorRef,
-        private _notificationsService: NotificationsService,
+        private _notificationsService: FundNotificationsService,
         private _overlay: Overlay,
         private _viewContainerRef: ViewContainerRef
     ) {}
+
+    /** Notifications for the current role. Reading signals here keeps the OnPush view up to date. */
+    get notifications(): Notification[] {
+        return this._notificationsService.notifications();
+    }
+
+    get unreadCount(): number {
+        return this._notificationsService.unreadCount();
+    }
 
     // -----------------------------------------------------------------------------------------------------
     // @ Lifecycle hooks
@@ -64,30 +67,12 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     /**
      * On init
      */
-    ngOnInit(): void {
-        // Subscribe to notification changes
-        this._notificationsService.notifications$
-            .pipe(takeUntil(this._unsubscribeAll))
-            .subscribe((notifications: Notification[]) => {
-                // Load the notifications
-                this.notifications = notifications;
-
-                // Calculate the unread count
-                this._calculateUnreadCount();
-
-                // Mark for check
-                this._changeDetectorRef.markForCheck();
-            });
-    }
+    ngOnInit(): void {}
 
     /**
      * On destroy
      */
     ngOnDestroy(): void {
-        // Unsubscribe from all subscriptions
-        this._unsubscribeAll.next(null);
-        this._unsubscribeAll.complete();
-
         // Dispose the overlay
         if (this._overlayRef) {
             this._overlayRef.dispose();
@@ -129,29 +114,21 @@ export class NotificationsComponent implements OnInit, OnDestroy {
      * Mark all notifications as read
      */
     markAllAsRead(): void {
-        // Mark all as read
-        this._notificationsService.markAllAsRead().subscribe();
+        this._notificationsService.markAllRead();
     }
 
-    /**
-     * Toggle read status of the given notification
-     */
+    /** Opening a notification marks it read and closes the panel. */
+    onOpen(notification: Notification): void {
+        this._notificationsService.markRead(notification.id);
+        this._overlayRef?.detach();
+    }
+
     toggleRead(notification: Notification): void {
-        // Toggle the read status
-        notification.read = !notification.read;
-
-        // Update the notification
-        this._notificationsService
-            .update(notification.id, notification)
-            .subscribe();
+        this._notificationsService.toggleRead(notification);
     }
 
-    /**
-     * Delete the given notification
-     */
     delete(notification: Notification): void {
-        // Delete the notification
-        this._notificationsService.delete(notification.id).subscribe();
+        this._notificationsService.dismiss(notification.id);
     }
 
     /**
@@ -216,22 +193,5 @@ export class NotificationsComponent implements OnInit, OnDestroy {
         this._overlayRef.backdropClick().subscribe(() => {
             this._overlayRef.detach();
         });
-    }
-
-    /**
-     * Calculate the unread count
-     *
-     * @private
-     */
-    private _calculateUnreadCount(): void {
-        let count = 0;
-
-        if (this.notifications && this.notifications.length) {
-            count = this.notifications.filter(
-                (notification) => !notification.read
-            ).length;
-        }
-
-        this.unreadCount = count;
     }
 }

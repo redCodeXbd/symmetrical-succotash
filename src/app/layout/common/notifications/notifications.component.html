@@ -79,6 +79,8 @@
                             <a
                                 class="flex flex-auto cursor-pointer py-5 pl-6"
                                 [routerLink]="notification.link"
+                                [queryParams]="notification.queryParams"
+                                (click)="onOpen(notification)"
                             >
                                 <ng-container
                                     *ngTemplateOutlet="notificationContent"

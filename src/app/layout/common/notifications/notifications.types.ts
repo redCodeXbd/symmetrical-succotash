@@ -6,6 +6,7 @@ export interface Notification {
     description?: string;
     time: string;
     link?: string;
+    queryParams?: Record<string, string>;
     useRouter?: boolean;
     read: boolean;
 }
