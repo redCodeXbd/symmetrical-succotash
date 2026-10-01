@@ -6,7 +6,7 @@ export const defaultNavigation: FuseNavigationItem[] = [
         id      : 'treasury',
         title   : 'Treasury',
         type    : 'collapsable',
-        icon    : 'heroicons_outline:banknotes',
+        icon    : 'heroicons_outline:wallet',
         children: [
             {
                 id   : 'treasury.organization-funds',
@@ -26,7 +26,7 @@ export const defaultNavigation: FuseNavigationItem[] = [
         id      : 'settings',
         title   : 'Settings',
         type    : 'collapsable',
-        icon    : 'heroicons_outline:cog-6-tooth',
+        icon    : 'heroicons_outline:adjustments-horizontal',
         children: [
             {
                 id   : 'settings.theme',
@@ -42,7 +42,7 @@ export const compactNavigation: FuseNavigationItem[] = [
         id      : 'treasury',
         title   : 'Treasury',
         type    : 'aside',
-        icon    : 'heroicons_outline:banknotes',
+        icon    : 'heroicons_outline:wallet',
         children: [
             {
                 id   : 'treasury.organization-funds',
@@ -64,7 +64,7 @@ export const futuristicNavigation: FuseNavigationItem[] = [
         id      : 'treasury',
         title   : 'Treasury',
         type    : 'group',
-        icon    : 'heroicons_outline:banknotes',
+        icon    : 'heroicons_outline:wallet',
         children: [
             {
                 id   : 'treasury.organization-funds',
@@ -86,7 +86,7 @@ export const horizontalNavigation: FuseNavigationItem[] = [
         id      : 'treasury',
         title   : 'Treasury',
         type    : 'group',
-        icon    : 'heroicons_outline:banknotes',
+        icon    : 'heroicons_outline:wallet',
         children: [
             {
                 id   : 'treasury.organization-funds',

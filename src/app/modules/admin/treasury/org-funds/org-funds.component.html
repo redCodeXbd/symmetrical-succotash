@@ -24,32 +24,50 @@
         </div>
         <div class="text-secondary mt-2 text-sm">Totals are shown in {{ currency() }} only. Currencies are never added together.</div>
 
-        <!-- Summary cards -->
-        <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-5">
-            <div class="rounded-2xl bg-card p-6 shadow">
-                <div class="text-secondary text-md font-medium">Current balance</div>
-                <div class="mt-2 whitespace-nowrap text-xl font-semibold tracking-tight">{{ currency() }} {{ cardFmt(current()) }}</div>
-                <div class="text-secondary mt-1 text-sm">{{ activeFunds().length }} active {{ activeFunds().length === 1 ? 'fund' : 'funds' }}</div>
+        <!-- Summary tiles -->
+        <div class="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <div class="stat-tile stat-tile-hero col-span-2 lg:col-span-4" style="--tile: var(--fuse-primary-rgb)">
+                <div class="stat-head">
+                    <span class="stat-label">Available balance</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:wallet'"></mat-icon></span>
+                </div>
+                <div class="stat-value"><span class="stat-cur">{{ currency() }}</span>{{ cardFmt(available()) }}</div>
+                <div class="stat-bar" role="img" [attr.aria-label]="availablePct() + '% of the current balance is available'">
+                    <span [style.width.%]="availablePct()"></span>
+                </div>
+                <div class="stat-sub">{{ availablePct() }}% of current balance is free to use</div>
             </div>
-            <div class="rounded-2xl bg-card p-6 shadow">
-                <div class="text-secondary text-md font-medium">Available balance</div>
-                <div class="mt-2 whitespace-nowrap text-xl font-semibold tracking-tight">{{ currency() }} {{ cardFmt(available()) }}</div>
-                <div class="text-secondary mt-1 text-sm">Current minus reserved</div>
+            <div class="stat-tile" style="--tile: var(--fuse-text-secondary-rgb)">
+                <div class="stat-head">
+                    <span class="stat-label">Current balance</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:banknotes'"></mat-icon></span>
+                </div>
+                <div class="stat-value"><span class="stat-cur">{{ currency() }}</span>{{ cardFmt(current()) }}</div>
+                <div class="stat-sub">{{ activeFunds().length }} active {{ activeFunds().length === 1 ? 'fund' : 'funds' }}</div>
             </div>
-            <div class="rounded-2xl bg-card p-6 shadow">
-                <div class="text-secondary text-md font-medium">Reserved</div>
-                <div class="mt-2 whitespace-nowrap text-xl font-semibold tracking-tight">{{ currency() }} {{ cardFmt(reserved()) }}</div>
-                <div class="text-secondary mt-1 text-sm">Held for commitments</div>
+            <div class="stat-tile" style="--tile: var(--fuse-accent-rgb)">
+                <div class="stat-head">
+                    <span class="stat-label">Reserved</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:lock-closed'"></mat-icon></span>
+                </div>
+                <div class="stat-value"><span class="stat-cur">{{ currency() }}</span>{{ cardFmt(reserved()) }}</div>
+                <div class="stat-sub">Held for commitments</div>
             </div>
-            <div class="rounded-2xl bg-card p-6 shadow">
-                <div class="text-secondary text-md font-medium">Expected incoming</div>
-                <div class="mt-2 whitespace-nowrap text-xl font-semibold tracking-tight">{{ currency() }} {{ cardFmt(incoming()) }}</div>
-                <div class="text-secondary mt-1 text-sm">Not yet received</div>
+            <div class="stat-tile" style="--tile: 22, 163, 74">
+                <div class="stat-head">
+                    <span class="stat-label">Expected incoming</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon></span>
+                </div>
+                <div class="stat-value"><span class="stat-cur">{{ currency() }}</span>{{ cardFmt(incoming()) }}</div>
+                <div class="stat-sub">Not yet received</div>
             </div>
-            <div class="rounded-2xl bg-card p-6 shadow">
-                <div class="text-secondary text-md font-medium">Scheduled outgoing</div>
-                <div class="mt-2 whitespace-nowrap text-xl font-semibold tracking-tight">{{ currency() }} {{ cardFmt(outgoing()) }}</div>
-                <div class="text-secondary mt-1 text-sm">Due payments</div>
+            <div class="stat-tile" style="--tile: var(--fuse-warn-rgb)">
+                <div class="stat-head">
+                    <span class="stat-label">Scheduled outgoing</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:arrow-up-tray'"></mat-icon></span>
+                </div>
+                <div class="stat-value"><span class="stat-cur">{{ currency() }}</span>{{ cardFmt(outgoing()) }}</div>
+                <div class="stat-sub">Due payments</div>
             </div>
         </div>
 

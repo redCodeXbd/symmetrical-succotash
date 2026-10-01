@@ -24,22 +24,31 @@
             </div>
         </div>
 
-        <!-- Summary cards -->
-        <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
-            <div class="rounded-2xl bg-card p-6 shadow">
-                <div class="text-secondary text-md font-medium">Awaiting approval</div>
-                <div class="mt-2 text-3xl font-semibold tracking-tight">{{ funds.currency }} {{ awaitingApprovalTotal() | number: '1.0-2' }}</div>
-                <div class="text-secondary mt-1 text-sm">{{ awaitingApproval().length }} {{ awaitingApproval().length === 1 ? 'request' : 'requests' }} under review</div>
+        <!-- Summary tiles -->
+        <div class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+            <div class="stat-tile col-span-2 sm:col-span-1" style="--tile: var(--fuse-accent-rgb)">
+                <div class="stat-head">
+                    <span class="stat-label">Awaiting approval</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:clock'"></mat-icon></span>
+                </div>
+                <div class="stat-value"><span class="stat-cur">{{ funds.currency }}</span>{{ awaitingApprovalTotal() | number: '1.0-2' }}</div>
+                <div class="stat-sub">{{ awaitingApproval().length }} {{ awaitingApproval().length === 1 ? 'request' : 'requests' }} under review</div>
             </div>
-            <div class="rounded-2xl bg-card p-6 shadow">
-                <div class="text-secondary text-md font-medium">Awaiting payment</div>
-                <div class="mt-2 text-3xl font-semibold tracking-tight">{{ funds.currency }} {{ awaitingPaymentTotal() | number: '1.0-2' }}</div>
-                <div class="text-secondary mt-1 text-sm">Approved for disbursement</div>
+            <div class="stat-tile" style="--tile: var(--fuse-primary-rgb)">
+                <div class="stat-head">
+                    <span class="stat-label">Awaiting payment</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:wallet'"></mat-icon></span>
+                </div>
+                <div class="stat-value"><span class="stat-cur">{{ funds.currency }}</span>{{ awaitingPaymentTotal() | number: '1.0-2' }}</div>
+                <div class="stat-sub">Approved for disbursement</div>
             </div>
-            <div class="rounded-2xl bg-card p-6 shadow">
-                <div class="text-secondary text-md font-medium">{{ role() === 'employee' ? 'Received this month' : 'Paid out this month' }}</div>
-                <div class="mt-2 text-3xl font-semibold tracking-tight">{{ funds.currency }} {{ receivedTotal() | number: '1.0-2' }}</div>
-                <div class="text-secondary mt-1 text-sm">{{ receivedThisMonth().length }} {{ receivedThisMonth().length === 1 ? 'payment' : 'payments' }} recorded</div>
+            <div class="stat-tile" style="--tile: 22, 163, 74">
+                <div class="stat-head">
+                    <span class="stat-label">{{ role() === 'employee' ? 'Received this month' : 'Paid out this month' }}</span>
+                    <span class="stat-icon"><mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon></span>
+                </div>
+                <div class="stat-value"><span class="stat-cur">{{ funds.currency }}</span>{{ receivedTotal() | number: '1.0-2' }}</div>
+                <div class="stat-sub">{{ receivedThisMonth().length }} {{ receivedThisMonth().length === 1 ? 'payment' : 'payments' }} recorded</div>
             </div>
         </div>
 
