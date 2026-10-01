@@ -7,12 +7,7 @@
                 <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Organization Funds</h1>
                 <div class="text-secondary mt-0.5 text-lg">Balances, reserved amounts and activity across company funds.</div>
             </div>
-            <button type="button" class="app-add-button" (click)="addOpen.set(true)">
-                <span class="app-add-button-icon" aria-hidden="true">
-                    <mat-icon [svgIcon]="'heroicons_mini:plus'"></mat-icon>
-                </span>
-                Add fund
-            </button>
+            <treasury-add-button label="Add fund" (pressed)="addOpen.set(true)"></treasury-add-button>
         </div>
 
         <!-- Filters -->
