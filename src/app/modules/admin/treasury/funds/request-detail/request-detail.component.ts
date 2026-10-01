@@ -133,7 +133,6 @@ export class RequestDetailComponent {
                     rows: [
                         ['Requested by', r.employee],
                         ['Company', r.company],
-                        ['Department', `${r.department}, ${r.branch}`],
                         ['Requested amount', money(r.amount)],
                         ['Approved amount', r.approvedAmount === null ? 'Not approved yet' : money(r.approvedAmount)],
                         ['Paid amount', money(r.paidAmount)],

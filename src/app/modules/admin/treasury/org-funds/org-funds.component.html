@@ -14,50 +14,16 @@
         </div>
 
         <!-- Filters -->
-        <div class="mt-6 flex flex-wrap items-end gap-3">
-            <label class="flex flex-col gap-1 text-sm text-secondary">
-                Company
-                <select class="h-11 min-w-48 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="company()" (ngModelChange)="company.set($event)">
-                    <option value="all">All companies</option>
-                    @for (c of companies(); track c) {
-                        <option [value]="c">{{ c }}</option>
-                    }
-                </select>
-            </label>
-            <label class="flex flex-col gap-1 text-sm text-secondary">
-                Date range
-                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="range()" (ngModelChange)="range.set($event)">
-                    <option value="last_30">Last 30 days</option>
-                    <option value="this_month">This month</option>
-                    <option value="last_90">Last 90 days</option>
-                </select>
-            </label>
-            <label class="flex flex-col gap-1 text-sm text-secondary">
-                Currency
-                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="currency()" (ngModelChange)="currency.set($event)">
-                    @for (c of currencies(); track c) {
-                        <option [value]="c">{{ c }}</option>
-                    }
-                </select>
-            </label>
-            <label class="flex flex-col gap-1 text-sm text-secondary">
-                Category
-                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="category()" (ngModelChange)="category.set($event)">
-                    <option value="all">All categories</option>
-                    @for (c of org.categories(); track c) {
-                        <option [value]="c">{{ c }}</option>
-                    }
-                </select>
-            </label>
-            <label class="flex flex-col gap-1 text-sm text-secondary">
-                Fund type
-                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="type()" (ngModelChange)="type.set($event)">
-                    <option value="all">All types</option>
-                    @for (t of fundTypes; track t) {
-                        <option [value]="t">{{ t }}</option>
-                    }
-                </select>
-            </label>
+        <div class="mt-6">
+            <treasury-fund-filters
+                [value]="filters()"
+                [companies]="companies()"
+                [categories]="org.categories()"
+                [types]="fundTypes"
+                [currencies]="currencies()"
+                [resultCount]="funds().length"
+                (valueChange)="setFilters($event)"
+            ></treasury-fund-filters>
         </div>
         <div class="text-secondary mt-2 text-sm">Totals are shown in {{ currency() }} only. Currencies are never added together.</div>
 
@@ -190,38 +156,34 @@
                 <div class="text-secondary border-t px-6 py-16 text-center text-md">No funds match the filters.</div>
             } @else {
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[1040px] text-left text-md">
-                        <thead class="bg-gray-50 text-sm text-secondary dark:bg-gray-800">
+                    <table class="app-table min-w-[880px] text-md">
+                        <thead>
                             <tr>
-                                <th scope="col" class="px-6 py-3 font-medium">Fund</th>
-                                <th scope="col" class="px-3 py-3 font-medium">Category</th>
-                                <th scope="col" class="px-3 py-3 font-medium">Company</th>
-                                <th scope="col" class="px-3 py-3 font-medium">Branch</th>
-                                <th scope="col" class="px-3 py-3 font-medium">Department</th>
-                                <th scope="col" class="px-3 py-3 font-medium">Type</th>
-                                <th scope="col" class="px-3 py-3 font-medium">Currency</th>
-                                <th scope="col" class="px-3 py-3 text-right font-medium">Current</th>
-                                <th scope="col" class="px-3 py-3 text-right font-medium">Reserved</th>
-                                <th scope="col" class="px-3 py-3 text-right font-medium">Available</th>
-                                <th scope="col" class="px-6 py-3 font-medium">Status</th>
+                                <th scope="col" class="font-medium">Fund</th>
+                                <th scope="col" class="font-medium">Category</th>
+                                <th scope="col" class="font-medium">Company</th>
+                                <th scope="col" class="font-medium">Type</th>
+                                <th scope="col" class="font-medium">Currency</th>
+                                <th scope="col" class="text-right font-medium">Current</th>
+                                <th scope="col" class="text-right font-medium">Reserved</th>
+                                <th scope="col" class="text-right font-medium">Available</th>
+                                <th scope="col" class="font-medium">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y">
+                        <tbody>
                             @for (f of funds(); track f.id) {
-                                <tr class="hover:bg-hover">
-                                    <td class="px-6 py-3.5">
+                                <tr>
+                                    <td>
                                         <button type="button" class="font-medium text-primary hover:underline" (click)="selectedId.set(f.id)">{{ f.name }}</button>
                                     </td>
-                                    <td class="px-3 py-3.5">{{ f.category }}</td>
-                                    <td class="px-3 py-3.5">{{ f.company }}</td>
-                                    <td class="px-3 py-3.5">{{ f.branch }}</td>
-                                    <td class="px-3 py-3.5">{{ f.department }}</td>
-                                    <td class="px-3 py-3.5">{{ f.type }}</td>
-                                    <td class="px-3 py-3.5">{{ f.currency }}</td>
-                                    <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ f.balance | number: '1.0-0' }}</td>
-                                    <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ f.reserved | number: '1.0-0' }}</td>
-                                    <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ org.available(f) | number: '1.0-0' }}</td>
-                                    <td class="px-6 py-3.5">
+                                    <td>{{ f.category }}</td>
+                                    <td>{{ f.company }}</td>
+                                    <td>{{ f.type }}</td>
+                                    <td>{{ f.currency }}</td>
+                                    <td class="whitespace-nowrap text-right">{{ f.balance | number: '1.0-0' }}</td>
+                                    <td class="whitespace-nowrap text-right">{{ f.reserved | number: '1.0-0' }}</td>
+                                    <td class="whitespace-nowrap text-right">{{ org.available(f) | number: '1.0-0' }}</td>
+                                    <td>
                                         <span class="whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-medium" [class]="statusClasses[org.status(f)]">{{ statusLabels[org.status(f)] }}</span>
                                     </td>
                                 </tr>
@@ -242,30 +204,30 @@
                 <div class="text-secondary border-t px-6 py-12 text-center text-md">No activity in the selected period.</div>
             } @else {
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[800px] text-left text-md">
-                        <thead class="bg-gray-50 text-sm text-secondary dark:bg-gray-800">
+                    <table class="app-table min-w-[800px] text-md">
+                        <thead>
                             <tr>
-                                <th scope="col" class="px-6 py-3 font-medium">Date</th>
-                                <th scope="col" class="px-3 py-3 font-medium">Company</th>
-                                <th scope="col" class="px-3 py-3 font-medium">Fund</th>
-                                <th scope="col" class="px-3 py-3 font-medium">Type</th>
-                                <th scope="col" class="px-3 py-3 font-medium">Reference</th>
-                                <th scope="col" class="px-3 py-3 text-right font-medium">Amount</th>
-                                <th scope="col" class="px-6 py-3 font-medium">Recorded by</th>
+                                <th scope="col" class="font-medium">Date</th>
+                                <th scope="col" class="font-medium">Company</th>
+                                <th scope="col" class="font-medium">Fund</th>
+                                <th scope="col" class="font-medium">Type</th>
+                                <th scope="col" class="font-medium">Reference</th>
+                                <th scope="col" class="text-right font-medium">Amount</th>
+                                <th scope="col" class="font-medium">Recorded by</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y">
+                        <tbody>
                             @for (a of recentActivity(); track a.movement.id) {
                                 <tr>
-                                    <td class="whitespace-nowrap px-6 py-3.5">{{ a.movement.date | date: 'dd MMM y' }}</td>
-                                    <td class="px-3 py-3.5">{{ a.fund?.company }}</td>
-                                    <td class="px-3 py-3.5">{{ a.fund?.name }}</td>
-                                    <td class="px-3 py-3.5">{{ movementLabels[a.movement.type] }}</td>
-                                    <td class="px-3 py-3.5">{{ a.movement.reference }}</td>
-                                    <td class="whitespace-nowrap px-3 py-3.5 text-right" [class]="a.movement.direction === 'in' ? 'text-green-700' : ''">
+                                    <td class="whitespace-nowrap">{{ a.movement.date | date: 'dd MMM y' }}</td>
+                                    <td>{{ a.fund?.company }}</td>
+                                    <td>{{ a.fund?.name }}</td>
+                                    <td>{{ movementLabels[a.movement.type] }}</td>
+                                    <td>{{ a.movement.reference }}</td>
+                                    <td class="whitespace-nowrap text-right" [class]="a.movement.direction === 'in' ? 'text-green-700' : ''">
                                         {{ a.movement.direction === 'in' ? '+' : '-' }}{{ a.fund?.currency }} {{ a.movement.amount | number: '1.0-0' }}
                                     </td>
-                                    <td class="px-6 py-3.5">{{ a.movement.by }}</td>
+                                    <td>{{ a.movement.by }}</td>
                                 </tr>
                             }
                         </tbody>

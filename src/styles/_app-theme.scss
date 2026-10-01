@@ -131,3 +131,235 @@ fuse-vertical-navigation.app-sidebar {
 .mat-button-toggle-checked {
     --mat-standard-button-toggle-selected-state-background-color: rgba(var(--fuse-primary-rgb), 0.12) !important;
 }
+
+/* ----------------------------------------------------------------------------------------------------- */
+/*  Organization Funds filters: chips, segmented controls, panel and phone sheet.
+/* ----------------------------------------------------------------------------------------------------- */
+.fund-filter-label {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(var(--fuse-text-secondary-rgb));
+}
+
+.fund-filter-panel {
+    position: relative;
+    padding: 1.25rem 1.5rem;
+    border-radius: 1.25rem;
+    background: rgb(var(--fuse-bg-card-rgb));
+    border: 1px solid rgba(var(--fuse-primary-rgb), 0.28);
+    box-shadow:
+        0 0 0 1px rgba(var(--fuse-primary-rgb), 0.05),
+        0 12px 40px -18px rgba(var(--fuse-primary-rgb), 0.45);
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 2px;
+        background: linear-gradient(90deg, rgb(var(--fuse-primary-rgb)), rgb(var(--fuse-accent-rgb)), transparent);
+    }
+}
+
+.fund-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0 0.95rem;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--fuse-border-rgb));
+    background: transparent;
+    color: rgb(var(--fuse-text-default-rgb));
+    font-size: 0.875rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s, color 0.15s;
+
+    &:hover {
+        border-color: rgba(var(--fuse-primary-rgb), 0.6);
+    }
+
+    &.fund-chip-on {
+        border-color: rgb(var(--fuse-primary-rgb));
+        background: rgba(var(--fuse-primary-rgb), 0.14);
+        color: rgb(var(--fuse-primary-rgb));
+        font-weight: 600;
+        box-shadow: 0 0 14px -2px rgba(var(--fuse-primary-rgb), 0.5);
+    }
+}
+
+@media (max-width: 1023px) {
+    .fund-chip {
+        min-height: 2.75rem;
+    }
+}
+
+.fund-segment {
+    display: inline-flex;
+    padding: 0.25rem;
+    border-radius: 999px;
+    border: 1px solid rgb(var(--fuse-border-rgb));
+    background: var(--fuse-bg-hover);
+
+    &.flex-auto {
+        display: flex;
+    }
+
+    button {
+        flex: 1 1 0;
+        min-height: 2.5rem;
+        padding: 0 1rem;
+        border-radius: 999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: rgb(var(--fuse-text-secondary-rgb));
+        cursor: pointer;
+        transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+
+        &.fund-segment-on {
+            background: rgb(var(--fuse-primary-rgb));
+            color: rgb(var(--fuse-on-primary-rgb));
+            box-shadow: 0 0 16px -2px rgba(var(--fuse-primary-rgb), 0.6);
+        }
+    }
+}
+
+.fund-filter-open {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--fuse-primary-rgb), 0.5);
+    background: rgb(var(--fuse-bg-card-rgb));
+    color: rgb(var(--fuse-text-default-rgb));
+    font-weight: 600;
+    box-shadow: 0 0 18px -6px rgba(var(--fuse-primary-rgb), 0.55);
+}
+
+.fund-filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: rgb(var(--fuse-primary-rgb));
+    color: rgb(var(--fuse-on-primary-rgb));
+    font-size: 0.75rem;
+}
+
+.fund-sheet {
+    border-radius: 1.5rem 1.5rem 0 0;
+    background: rgb(var(--fuse-bg-card-rgb));
+    border-top: 1px solid rgba(var(--fuse-primary-rgb), 0.45);
+    box-shadow: 0 -20px 60px -20px rgba(var(--fuse-primary-rgb), 0.5);
+}
+
+.fund-apply {
+    flex: 1 1 auto;
+    min-height: 3rem;
+    border-radius: 0.75rem;
+    background: rgb(var(--fuse-primary-rgb));
+    color: rgb(var(--fuse-on-primary-rgb));
+    font-weight: 700;
+    box-shadow: 0 0 22px -4px rgba(var(--fuse-primary-rgb), 0.6);
+}
+
+/* ----------------------------------------------------------------------------------------------------- */
+/*  Data tables. Add class "app-table"; style, density and colours come from the theme.
+/* ----------------------------------------------------------------------------------------------------- */
+body {
+    --app-table-pad-y: 0.9rem;
+    --app-table-pad-x: 0.75rem;
+}
+
+body[data-table-density='compact'] {
+    --app-table-pad-y: 0.4rem;
+    --app-table-pad-x: 0.6rem;
+}
+
+.app-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    text-align: left;
+
+    th,
+    td {
+        padding: var(--app-table-pad-y) var(--app-table-pad-x);
+        border-bottom: 1px solid var(--fuse-app-table-border);
+    }
+
+    th:first-child,
+    td:first-child {
+        padding-left: 1.5rem;
+    }
+
+    th:last-child,
+    td:last-child {
+        padding-right: 1.5rem;
+    }
+
+    th {
+        text-align: inherit;
+    }
+
+    thead th {
+        padding-top: calc(var(--app-table-pad-y) * 0.75);
+        padding-bottom: calc(var(--app-table-pad-y) * 0.75);
+        background: var(--fuse-app-table-header-bg);
+        color: var(--fuse-app-table-header-text);
+        font-size: 0.8125rem;
+        font-weight: 500;
+    }
+
+    tbody td {
+        background: var(--fuse-app-table-row-bg);
+    }
+
+    tbody tr:last-child td {
+        border-bottom-color: transparent;
+    }
+
+    tbody tr:hover td {
+        background: var(--fuse-app-table-hover-bg);
+    }
+}
+
+body[data-table-style='striped'] .app-table {
+    th,
+    td {
+        border-bottom-color: transparent;
+    }
+
+    tbody tr:nth-child(even) td {
+        background: var(--fuse-app-table-stripe-bg);
+    }
+
+    tbody tr:nth-child(even):hover td {
+        background: var(--fuse-app-table-hover-bg);
+    }
+}
+
+body[data-table-style='grid'] .app-table {
+    th,
+    td {
+        border-right: 1px solid var(--fuse-app-table-border);
+        border-bottom: 1px solid var(--fuse-app-table-border);
+    }
+
+    th:last-child,
+    td:last-child {
+        border-right-color: transparent;
+    }
+
+    tbody tr:last-child td {
+        border-bottom-color: var(--fuse-app-table-border);
+    }
+}

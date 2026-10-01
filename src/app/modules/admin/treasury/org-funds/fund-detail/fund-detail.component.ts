@@ -80,8 +80,6 @@ export class FundDetailComponent {
                         ['Minimum balance', money(f.minBalance)],
                         ['Category', f.category],
                         ['Type', f.type],
-                        ['Branch', f.branch],
-                        ['Department', f.department],
                     ],
                 },
             ],

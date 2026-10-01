@@ -1,0 +1,125 @@
+<!-- One set of chip groups, used by the wide panel and by the phone sheet -->
+<ng-template #groups let-inSheet="inSheet">
+    <div class="grid gap-5" [class]="inSheet ? 'grid-cols-1' : 'lg:grid-cols-2 xl:grid-cols-4'">
+        <fieldset class="min-w-0">
+            <legend class="fund-filter-label">Company</legend>
+            <div class="mt-2 flex flex-wrap gap-2">
+                <button type="button" class="fund-chip" [class.fund-chip-on]="value.company === 'all'" [attr.aria-pressed]="value.company === 'all'" (click)="set('company', 'all')">All</button>
+                @for (c of companies; track c) {
+                    <button type="button" class="fund-chip" [class.fund-chip-on]="value.company === c" [attr.aria-pressed]="value.company === c" (click)="set('company', c)">{{ c }}</button>
+                }
+            </div>
+        </fieldset>
+
+        <fieldset class="min-w-0">
+            <legend class="fund-filter-label">Category</legend>
+            <div class="mt-2 flex flex-wrap gap-2">
+                <button type="button" class="fund-chip" [class.fund-chip-on]="value.category === 'all'" [attr.aria-pressed]="value.category === 'all'" (click)="set('category', 'all')">All</button>
+                @for (c of categories; track c) {
+                    <button type="button" class="fund-chip" [class.fund-chip-on]="value.category === c" [attr.aria-pressed]="value.category === c" (click)="set('category', c)">{{ c }}</button>
+                }
+            </div>
+        </fieldset>
+
+        <fieldset class="min-w-0">
+            <legend class="fund-filter-label">Fund type</legend>
+            <div class="mt-2 flex flex-wrap gap-2">
+                <button type="button" class="fund-chip" [class.fund-chip-on]="value.type === 'all'" [attr.aria-pressed]="value.type === 'all'" (click)="set('type', 'all')">All</button>
+                @for (t of types; track t) {
+                    <button type="button" class="fund-chip" [class.fund-chip-on]="value.type === t" [attr.aria-pressed]="value.type === t" (click)="set('type', t)">{{ t }}</button>
+                }
+            </div>
+        </fieldset>
+
+        <div class="grid min-w-0 gap-5" [class]="inSheet ? 'grid-cols-1' : 'sm:grid-cols-2 lg:col-span-2 xl:col-span-1 xl:grid-cols-1'">
+            <fieldset class="min-w-0">
+                <legend class="fund-filter-label">Date range</legend>
+                <div class="fund-segment mt-2" role="group">
+                    @for (r of ranges; track r.value) {
+                        <button type="button" [class.fund-segment-on]="value.range === r.value" [attr.aria-pressed]="value.range === r.value" (click)="set('range', r.value)">{{ r.short }}</button>
+                    }
+                </div>
+            </fieldset>
+            <fieldset class="min-w-0">
+                <legend class="fund-filter-label">Currency</legend>
+                <div class="fund-segment mt-2" role="group">
+                    @for (c of currencies; track c) {
+                        <button type="button" [class.fund-segment-on]="value.currency === c" [attr.aria-pressed]="value.currency === c" (click)="set('currency', c)">{{ c }}</button>
+                    }
+                </div>
+            </fieldset>
+        </div>
+    </div>
+</ng-template>
+
+<!-- Wide screens: full panel -->
+<section class="fund-filter-panel hidden lg:block" aria-label="Filters">
+    <div class="mb-4 flex items-center justify-between">
+        <div class="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-secondary">
+            <span class="inline-block h-2 w-2 rounded-full bg-primary"></span>
+            Filters
+            @if (active.length) {
+                <span class="rounded-full bg-primary/15 px-2 py-0.5 text-primary">{{ active.length }} on</span>
+            }
+        </div>
+        @if (active.length) {
+            <button type="button" class="text-md font-medium text-primary hover:underline" (click)="reset()">Reset all</button>
+        }
+    </div>
+    <ng-container *ngTemplateOutlet="groups; context: { inSheet: false }"></ng-container>
+</section>
+
+<!-- Phones and tablets: compact bar -->
+<section class="lg:hidden" aria-label="Filters">
+    <div class="flex items-center gap-3">
+        <button type="button" class="fund-filter-open" aria-haspopup="dialog" [attr.aria-expanded]="sheetOpen" (click)="sheetOpen = true">
+            <mat-icon class="icon-size-5" [svgIcon]="'heroicons_outline:adjustments-horizontal'"></mat-icon>
+            Filters
+            @if (active.length) {
+                <span class="fund-filter-count">{{ active.length }}</span>
+            }
+        </button>
+        <div class="fund-segment flex-auto" role="group" aria-label="Date range">
+            @for (r of ranges; track r.value) {
+                <button type="button" [class.fund-segment-on]="value.range === r.value" [attr.aria-pressed]="value.range === r.value" (click)="set('range', r.value)">{{ r.short }}</button>
+            }
+        </div>
+    </div>
+
+    @if (active.length) {
+        <div class="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
+            @for (a of active; track a.key) {
+                <button type="button" class="fund-chip fund-chip-on flex-none !h-9 gap-1.5" [attr.aria-label]="'Remove filter ' + a.label" (click)="clear(a.key)">
+                    {{ a.label }}
+                    <mat-icon class="icon-size-4" [svgIcon]="'heroicons_mini:x-mark'"></mat-icon>
+                </button>
+            }
+            <button type="button" class="flex-none px-2 text-md font-medium text-primary" (click)="reset()">Reset</button>
+        </div>
+    }
+</section>
+
+<!-- Phone bottom sheet -->
+@if (sheetOpen) {
+    <div class="fixed inset-0 z-[999] flex items-end lg:hidden">
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" (click)="sheetOpen = false"></div>
+        <div class="fund-sheet relative flex max-h-[88vh] w-full flex-col" role="dialog" aria-modal="true" aria-label="Filters">
+            <div class="mx-auto mt-3 h-1.5 w-12 rounded-full bg-primary/40" aria-hidden="true"></div>
+            <div class="flex items-center justify-between px-5 pb-2 pt-3">
+                <div class="font-mono text-xs uppercase tracking-[0.18em] text-secondary">Filters</div>
+                <button type="button" class="flex h-11 w-11 items-center justify-center rounded-full hover:bg-hover" aria-label="Close filters" (click)="sheetOpen = false">
+                    <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+                </button>
+            </div>
+            <div class="flex-auto overflow-y-auto px-5 pb-4">
+                <ng-container *ngTemplateOutlet="groups; context: { inSheet: true }"></ng-container>
+            </div>
+            <div class="flex gap-3 border-t px-5 py-4" style="padding-bottom: max(1rem, env(safe-area-inset-bottom))">
+                <button type="button" class="h-12 flex-none rounded-xl border px-5 text-md font-medium" (click)="reset()">Reset</button>
+                <button type="button" class="fund-apply" (click)="sheetOpen = false">
+                    Show {{ resultCount }} {{ resultCount === 1 ? 'fund' : 'funds' }}
+                </button>
+            </div>
+        </div>
+    </div>
+}

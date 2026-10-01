@@ -1,6 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
 import chroma from 'chroma-js';
-import { AppTheme, DEFAULT_LOGO, DEFAULT_THEME } from './theme.types';
+import { AppTheme, DEFAULT_LOGO, DEFAULT_THEME, TableColorKey } from './theme.types';
 
 const STORAGE_KEY = 'encore.theme';
 const HUES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
@@ -54,6 +54,19 @@ export class ThemeService {
     restoreDefaults(): void {
         this.theme.set({ ...DEFAULT_THEME });
         this._apply(DEFAULT_THEME);
+    }
+
+    /** Table colours that suit the given page colours. Used by presets and "Match table to theme". */
+    deriveTable(c: { cardBg: string; text: string; primary: string }): Record<TableColorKey, string> {
+        const mix = (a: string, b: string, amount: number) => chroma.mix(a, b, amount, 'lab').hex();
+        return {
+            tableHeaderBg: mix(c.cardBg, c.text, 0.05),
+            tableHeaderText: mix(c.text, c.cardBg, 0.4),
+            tableRowBg: c.cardBg,
+            tableStripeBg: mix(c.cardBg, c.text, 0.03),
+            tableHoverBg: mix(c.cardBg, c.primary, 0.1),
+            tableBorder: mix(c.cardBg, c.text, 0.12),
+        };
     }
 
     isValidColor(value: string): boolean {
@@ -159,6 +172,17 @@ export class ThemeService {
         set('auth-link', this._readable(t.primary, t.sidebarBg));
         set('auth-accent', t.accent);
         vars['--fuse-auth-glow'] = chroma(t.primary).alpha(0.25).css();
+
+        // Tables
+        for (const [name, value] of [
+            ['table-header-bg', t.tableHeaderBg], ['table-header-text', t.tableHeaderText],
+            ['table-row-bg', t.tableRowBg], ['table-stripe-bg', t.tableStripeBg],
+            ['table-hover-bg', t.tableHoverBg], ['table-border', t.tableBorder],
+        ]) {
+            set(`app-${name}`, value);
+        }
+        document.body.dataset['tableStyle'] = t.tableStyle;
+        document.body.dataset['tableDensity'] = t.tableDensity;
 
         const style = document.body.style;
         for (const [name, value] of Object.entries(vars)) {

@@ -138,6 +138,74 @@
                         <div class="mt-3 text-sm text-amber-700" role="status">{{ w }}</div>
                     }
                 </section>
+
+                <!-- Tables -->
+                <section class="rounded-2xl bg-card p-6 shadow" aria-labelledby="tables-title">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h2 id="tables-title" class="text-xl font-semibold">Tables</h2>
+                            <p class="text-secondary text-md">Design and colours of every data table.</p>
+                        </div>
+                        <button mat-stroked-button type="button" (click)="matchTable()">Match table to theme</button>
+                    </div>
+
+                    <fieldset class="mt-5">
+                        <legend class="text-sm font-medium uppercase tracking-wide text-secondary">Style</legend>
+                        <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                            @for (st of tableStyles; track st.id) {
+                                <button
+                                    type="button"
+                                    class="rounded-xl border p-3 text-left hover:bg-hover"
+                                    [class]="t.tableStyle === st.id ? 'border-primary ring-2 ring-primary' : ''"
+                                    [attr.aria-pressed]="t.tableStyle === st.id"
+                                    (click)="set({ tableStyle: st.id })"
+                                >
+                                    <div class="overflow-hidden rounded-md border text-[10px] leading-none" [style.border-color]="t.tableBorder">
+                                        <div class="px-2 py-1.5" [style.background]="t.tableHeaderBg" [style.color]="t.tableHeaderText">Name</div>
+                                        @for (n of [0, 1, 2]; track n) {
+                                            <div
+                                                class="px-2 py-1.5"
+                                                [style.background]="st.id === 'striped' && n % 2 === 1 ? t.tableStripeBg : t.tableRowBg"
+                                                [style.border-top]="st.id === 'striped' ? 'none' : '1px solid ' + t.tableBorder"
+                                                [style.border-left]="st.id === 'grid' ? '1px solid ' + t.tableBorder : 'none'"
+                                            >Row {{ n + 1 }}</div>
+                                        }
+                                    </div>
+                                    <div class="mt-2 text-md font-medium">{{ st.name }}</div>
+                                    <div class="text-secondary text-xs">{{ st.hint }}</div>
+                                </button>
+                            }
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="mt-5">
+                        <legend class="text-sm font-medium uppercase tracking-wide text-secondary">Row height</legend>
+                        <div class="mt-3 flex flex-wrap gap-5">
+                            @for (d of densities; track d.id) {
+                                <label class="flex items-center gap-2 text-md">
+                                    <input type="radio" name="table-density" [value]="d.id" [checked]="t.tableDensity === d.id" (change)="set({ tableDensity: d.id })" />
+                                    {{ d.name }}
+                                </label>
+                            }
+                        </div>
+                    </fieldset>
+
+                    <h3 class="mt-7 text-sm font-medium uppercase tracking-wide text-secondary">Colours</h3>
+                    <div class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                        <theme-color-field label="Header background" [value]="t.tableHeaderBg" (valueChange)="set({ tableHeaderBg: $event })"></theme-color-field>
+                        <theme-color-field label="Header text" [value]="t.tableHeaderText" (valueChange)="set({ tableHeaderText: $event })"></theme-color-field>
+                        <theme-color-field label="Row background" [value]="t.tableRowBg" (valueChange)="set({ tableRowBg: $event })"></theme-color-field>
+                        <theme-color-field label="Striped row" hint="Used by the Striped style" [value]="t.tableStripeBg" (valueChange)="set({ tableStripeBg: $event })"></theme-color-field>
+                        <theme-color-field label="Row hover" [value]="t.tableHoverBg" (valueChange)="set({ tableHoverBg: $event })"></theme-color-field>
+                        <theme-color-field label="Lines" [value]="t.tableBorder" (valueChange)="set({ tableBorder: $event })"></theme-color-field>
+                    </div>
+                    @if (contrastWarning(t.tableHeaderText, t.tableHeaderBg, 'Table header text'); as w) {
+                        <div class="mt-3 text-sm text-amber-700" role="status">{{ w }}</div>
+                    }
+                    @if (contrastWarning(t.text, t.tableRowBg, 'Text in table rows'); as w) {
+                        <div class="mt-1 text-sm text-amber-700" role="status">{{ w }}</div>
+                    }
+                </section>
             </div>
 
             <!-- Preview -->
@@ -165,6 +233,19 @@
                         <div class="mt-3 h-2 overflow-hidden rounded-full bg-primary-100">
                             <div class="h-full w-2/3 bg-primary"></div>
                         </div>
+                    </div>
+
+                    <div class="mt-5 overflow-hidden rounded-xl border">
+                        <table class="app-table text-md">
+                            <thead>
+                                <tr><th scope="col">Request</th><th scope="col" class="text-right">Amount</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>FR-1024</td><td class="text-right">7,500</td></tr>
+                                <tr><td>FR-1023</td><td class="text-right">5,000</td></tr>
+                                <tr><td>FR-1022</td><td class="text-right">8,000</td></tr>
+                            </tbody>
+                        </table>
                     </div>
 
                     <div class="mt-6 border-t pt-4">

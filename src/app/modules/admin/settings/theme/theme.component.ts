@@ -17,6 +17,15 @@ const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
 })
 export class ThemeSettingsComponent implements OnDestroy {
     readonly presets = THEME_PRESETS;
+    readonly tableStyles: { id: AppTheme['tableStyle']; name: string; hint: string }[] = [
+        { id: 'lines', name: 'Lines', hint: 'A thin line between rows' },
+        { id: 'striped', name: 'Striped', hint: 'Every second row tinted' },
+        { id: 'grid', name: 'Grid', hint: 'Lines around every cell' },
+    ];
+    readonly densities: { id: AppTheme['tableDensity']; name: string }[] = [
+        { id: 'comfortable', name: 'Comfortable' },
+        { id: 'compact', name: 'Compact' },
+    ];
     logoError: string | null = null;
     savedMessage = false;
 
@@ -37,7 +46,7 @@ export class ThemeSettingsComponent implements OnDestroy {
     }
 
     applyPreset(preset: ThemePreset): void {
-        this.set(preset.colors);
+        this.set({ ...preset.colors, ...this.theme.deriveTable(preset.colors) });
     }
 
     isActive(preset: ThemePreset): boolean {
@@ -45,6 +54,10 @@ export class ThemeSettingsComponent implements OnDestroy {
         return (Object.keys(preset.colors) as (keyof ThemePreset['colors'])[]).every(
             (key) => preset.colors[key].toLowerCase() === t[key].toLowerCase()
         );
+    }
+
+    matchTable(): void {
+        this.set(this.theme.deriveTable(this.t));
     }
 
     save(): void {

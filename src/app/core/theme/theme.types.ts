@@ -23,9 +23,21 @@ export interface AppTheme {
 
     headerBg: string;
     headerText: string;
+
+    /** Look of the lines between rows. */
+    tableStyle: 'lines' | 'striped' | 'grid';
+    tableDensity: 'comfortable' | 'compact';
+    tableHeaderBg: string;
+    tableHeaderText: string;
+    tableRowBg: string;
+    /** Background of every second row in the striped style. */
+    tableStripeBg: string;
+    tableHoverBg: string;
+    tableBorder: string;
 }
 
-export type ThemeColorKey = Exclude<keyof AppTheme, 'companyName' | 'logo' | 'logoBadge'>;
+export const TABLE_COLOR_KEYS = ['tableHeaderBg', 'tableHeaderText', 'tableRowBg', 'tableStripeBg', 'tableHoverBg', 'tableBorder'] as const;
+export type TableColorKey = (typeof TABLE_COLOR_KEYS)[number];
 
 export const DEFAULT_THEME: AppTheme = {
     companyName: 'Encore Engineering Ltd.',
@@ -42,6 +54,14 @@ export const DEFAULT_THEME: AppTheme = {
     sidebarActive: '#39a935',
     headerBg: '#ffffff',
     headerText: '#1e293b',
+    tableStyle: 'lines',
+    tableDensity: 'comfortable',
+    tableHeaderBg: '#f8fafc',
+    tableHeaderText: '#64748b',
+    tableRowBg: '#ffffff',
+    tableStripeBg: '#f8fafc',
+    tableHoverBg: '#f1f5f9',
+    tableBorder: '#e2e8f0',
 };
 
 export const DEFAULT_LOGO = 'images/logo/encore-logo.png';
@@ -49,7 +69,7 @@ export const DEFAULT_LOGO = 'images/logo/encore-logo.png';
 export interface ThemePreset {
     id: string;
     name: string;
-    colors: Omit<AppTheme, 'companyName' | 'logo' | 'logoBadge'>;
+    colors: Omit<AppTheme, 'companyName' | 'logo' | 'logoBadge' | 'tableStyle' | 'tableDensity' | TableColorKey>;
 }
 
 export const THEME_PRESETS: ThemePreset[] = [

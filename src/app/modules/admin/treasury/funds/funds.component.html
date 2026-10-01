@@ -118,37 +118,37 @@
                     </div>
                 } @else {
                     <div class="overflow-x-auto">
-                        <table class="w-full min-w-[720px] text-left text-md">
-                            <thead class="bg-gray-50 text-sm text-secondary dark:bg-gray-800">
+                        <table class="app-table min-w-[720px] text-md">
+                            <thead>
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 font-medium">Request / Date</th>
+                                    <th scope="col" class="font-medium">Request / Date</th>
                                     @if (role() === 'accounts') {
-                                        <th scope="col" class="px-3 py-3 font-medium">Employee</th>
+                                        <th scope="col" class="font-medium">Employee</th>
                                     }
-                                    <th scope="col" class="px-3 py-3 font-medium">Purpose</th>
-                                    <th scope="col" class="px-3 py-3 text-right font-medium">Amount</th>
-                                    <th scope="col" class="px-3 py-3 text-right font-medium">Paid</th>
-                                    <th scope="col" class="px-3 py-3 font-medium">Status</th>
-                                    <th scope="col" class="px-6 py-3"><span class="sr-only">Action</span></th>
+                                    <th scope="col" class="font-medium">Purpose</th>
+                                    <th scope="col" class="text-right font-medium">Amount</th>
+                                    <th scope="col" class="text-right font-medium">Paid</th>
+                                    <th scope="col" class="font-medium">Status</th>
+                                    <th scope="col"><span class="sr-only">Action</span></th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y">
+                            <tbody>
                                 @for (r of requests(); track r.id) {
-                                    <tr class="hover:bg-hover">
-                                        <td class="px-6 py-3.5">
+                                    <tr>
+                                        <td>
                                             <button type="button" class="font-medium text-primary hover:underline" (click)="openRequest(r.id)">{{ r.id }}</button>
                                             <div class="text-secondary text-sm">{{ r.submittedAt | date: 'dd MMM y' }}</div>
                                         </td>
                                         @if (role() === 'accounts') {
-                                            <td class="px-3 py-3.5">{{ r.employee }}</td>
+                                            <td>{{ r.employee }}</td>
                                         }
-                                        <td class="px-3 py-3.5">{{ r.purpose }}</td>
-                                        <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ r.currency }} {{ r.amount | number: '1.0-2' }}</td>
-                                        <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ r.currency }} {{ r.paidAmount | number: '1.0-2' }}</td>
-                                        <td class="px-3 py-3.5">
+                                        <td>{{ r.purpose }}</td>
+                                        <td class="whitespace-nowrap text-right">{{ r.currency }} {{ r.amount | number: '1.0-2' }}</td>
+                                        <td class="whitespace-nowrap text-right">{{ r.currency }} {{ r.paidAmount | number: '1.0-2' }}</td>
+                                        <td>
                                             <span class="whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-medium" [class]="classes[r.status]">{{ labels[r.status] }}</span>
                                         </td>
-                                        <td class="px-6 py-3.5 text-right">
+                                        <td class="text-right">
                                             <button type="button" class="font-medium text-primary hover:underline" (click)="openRequest(r.id)">
                                                 {{ role() === 'accounts' && (r.status === 'pending' || r.status === 'approved' || r.status === 'partially_paid') ? 'Review' : 'View' }}
                                             </button>
@@ -167,32 +167,32 @@
                     </div>
                 } @else {
                     <div class="overflow-x-auto">
-                        <table class="w-full min-w-[720px] text-left text-md">
-                            <thead class="bg-gray-50 text-sm text-secondary dark:bg-gray-800">
+                        <table class="app-table min-w-[720px] text-md">
+                            <thead>
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 font-medium">Transaction / Date</th>
-                                    <th scope="col" class="px-3 py-3 font-medium">Request</th>
-                                    <th scope="col" class="px-3 py-3 font-medium">Method</th>
-                                    <th scope="col" class="px-3 py-3 font-medium">Reference</th>
-                                    <th scope="col" class="px-3 py-3 text-right font-medium">{{ role() === 'employee' ? 'Received' : 'Paid' }}</th>
-                                    <th scope="col" class="px-6 py-3"><span class="sr-only">Action</span></th>
+                                    <th scope="col" class="font-medium">Transaction / Date</th>
+                                    <th scope="col" class="font-medium">Request</th>
+                                    <th scope="col" class="font-medium">Method</th>
+                                    <th scope="col" class="font-medium">Reference</th>
+                                    <th scope="col" class="text-right font-medium">{{ role() === 'employee' ? 'Received' : 'Paid' }}</th>
+                                    <th scope="col"><span class="sr-only">Action</span></th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y">
+                            <tbody>
                                 @for (t of transactions(); track t.id) {
-                                    <tr class="hover:bg-hover">
-                                        <td class="px-6 py-3.5">
+                                    <tr>
+                                        <td>
                                             <div class="font-medium">{{ t.id }}</div>
                                             <div class="text-secondary text-sm">{{ t.date | date: 'dd MMM y' }}</div>
                                         </td>
-                                        <td class="px-3 py-3.5">
+                                        <td>
                                             <div>{{ t.requestId }}</div>
                                             <div class="text-secondary text-sm">{{ funds.requestById().get(t.requestId)?.purpose }}</div>
                                         </td>
-                                        <td class="px-3 py-3.5">{{ t.method }}</td>
-                                        <td class="px-3 py-3.5">{{ t.reference || '-' }}</td>
-                                        <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ t.currency }} {{ t.amount | number: '1.0-2' }}</td>
-                                        <td class="px-6 py-3.5 text-right">
+                                        <td>{{ t.method }}</td>
+                                        <td>{{ t.reference || '-' }}</td>
+                                        <td class="whitespace-nowrap text-right">{{ t.currency }} {{ t.amount | number: '1.0-2' }}</td>
+                                        <td class="text-right">
                                             <button type="button" class="font-medium text-primary hover:underline" (click)="openRequest(t.requestId)">Details</button>
                                         </td>
                                     </tr>
