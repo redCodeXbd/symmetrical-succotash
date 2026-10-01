@@ -33,24 +33,6 @@
                 </select>
             </label>
             <label class="flex flex-col gap-1 text-sm text-secondary">
-                Branch
-                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="branch()" (ngModelChange)="branch.set($event)">
-                    <option value="all">All branches</option>
-                    @for (b of branches(); track b) {
-                        <option [value]="b">{{ b }}</option>
-                    }
-                </select>
-            </label>
-            <label class="flex flex-col gap-1 text-sm text-secondary">
-                Department
-                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="department()" (ngModelChange)="department.set($event)">
-                    <option value="all">All departments</option>
-                    @for (d of departments(); track d) {
-                        <option [value]="d">{{ d }}</option>
-                    }
-                </select>
-            </label>
-            <label class="flex flex-col gap-1 text-sm text-secondary">
                 Currency
                 <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="currency()" (ngModelChange)="currency.set($event)">
                     @for (c of currencies(); track c) {
