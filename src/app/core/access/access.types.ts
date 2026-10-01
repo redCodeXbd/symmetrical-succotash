@@ -117,6 +117,7 @@ export const FEATURES: FeatureDef[] = [
             { key: 'assign_user', label: 'Assign user', description: 'Give a user login access to a vendor' },
             { key: 'create_po', label: 'Create purchase orders', description: 'Send purchase orders to product vendors' },
             { key: 'approve_invoice', label: 'Approve invoices', description: 'Approve or reject vendor invoices and answer due payment requests' },
+            { key: 'approve_any', label: 'Approve any step', description: 'Approve vendor invoices at any step of the approval tree' },
             { key: 'pay', label: 'Record payments', description: 'Record payments made to vendors' },
             { key: 'submit', label: 'Submit', description: 'Submit invoices and due payment requests, and keep own product list (vendor side)' },
         ],
@@ -177,6 +178,10 @@ export interface AppUser {
     clientId?: string | null;
     /** Set for a vendor user: they only see this vendor's orders, invoices and payments. */
     vendorId?: string | null;
+    /** Profile details the person keeps up to date themselves. */
+    phone?: string;
+    title?: string;
+    about?: string;
 }
 
 /**

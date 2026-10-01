@@ -268,6 +268,13 @@ export class AccessService {
         return null;
     }
 
+    /** Lets the signed-in person keep their own contact details up to date. */
+    updateProfile(details: { phone: string; title: string; about: string }): void {
+        const id = this.userId();
+        this.users.update((list) => list.map((u) => (u.id === id ? { ...u, phone: details.phone.trim(), title: details.title.trim(), about: details.about.trim() } : u)));
+        this._save();
+    }
+
     /** Gives a user login access to one vendor (or removes it with null). */
     setUserVendor(userId: string, vendorId: string | null): void {
         this.users.update((list) =>

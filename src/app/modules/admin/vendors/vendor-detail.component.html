@@ -237,13 +237,18 @@
                                             <td>
                                                 <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="invClasses[i.status]">{{ invLabels[i.status] }}</span>
                                                 @if (i.decisionNote) { <div class="text-secondary text-sm">{{ i.decisionNote }}</div> }
+                                                <div class="mt-1 flex flex-wrap items-center gap-1 text-xs" [attr.aria-label]="'Approval flow for ' + i.number">
+                                                    @for (s of i.approvals; track $index) {
+                                                        <span class="rounded-full px-2 py-0.5" [class]="s.status === 'approved' ? 'bg-green-100 text-green-800' : s.status === 'rejected' ? 'bg-red-100 text-red-800' : s.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-200 text-gray-600'" [attr.title]="s.by ? s.status + ' by ' + s.by : s.status">{{ $index + 1 }}. {{ s.roleName }}</span>
+                                                    }
+                                                </div>
                                             </td>
                                             <td class="whitespace-nowrap text-right">
                                                 @if (i.image) { <button type="button" class="mr-3 font-medium text-primary hover:underline" (click)="preview.set(i)">View image</button> }
-                                                @if (i.status === 'submitted' && access.can('vendors.approve_invoice')) {
+                                                @if (service.canApproveInvoice(i)) {
                                                     <input class="mr-2 h-9 w-40 rounded-lg border bg-transparent px-2 text-sm" placeholder="Reason if rejecting" [attr.aria-label]="'Decision note for ' + i.number" [(ngModel)]="decisionNote[i.id]" />
                                                     <button type="button" class="mr-3 font-medium text-red-600 hover:underline" (click)="decideInvoice(i, false)">Reject</button>
-                                                    <button type="button" class="font-medium text-primary hover:underline" (click)="decideInvoice(i, true)">Approve</button>
+                                                    <button type="button" class="font-medium text-primary hover:underline" (click)="decideInvoice(i, true)">{{ isLastStep(i) ? 'Approve' : 'Approve step' }}</button>
                                                 }
                                             </td>
                                         </tr>

@@ -1,6 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { DateTime } from 'luxon';
 import { AccessService } from 'app/core/access/access.service';
+import { ApprovalStep } from 'app/core/access/access.types';
 import {
     DueRequest,
     HistoryEvent,
@@ -283,20 +284,62 @@ export class VendorsService {
             by: this._access.user().name,
             decisionNote: '',
             projectId: this._access.can('vendors.edit') ? (input.projectId ?? null) : null,
+            approvals: this._pathFor(input.amount),
         };
         this._invoices.update((list) => [invoice, ...list]);
         return null;
     }
 
+    /** The step an invoice is waiting on, or null once it is decided. */
+    currentStep(invoice: VendorInvoice): ApprovalStep | null {
+        return invoice.status === 'submitted' ? (invoice.approvals.find((s) => s.status === 'pending') ?? null) : null;
+    }
+
+    /** Whether the acting user may approve or reject the invoice at its current step of the approval tree. */
+    canApproveInvoice(invoice: VendorInvoice): boolean {
+        const step = this.currentStep(invoice);
+        if (!step) {
+            return false;
+        }
+        if (this._access.can('vendors.approve_any')) {
+            return true;
+        }
+        return this._access.can('vendors.approve_invoice') && this._access.hasRole(step.roleId);
+    }
+
+    /** Invoices waiting for the acting user. */
+    invoicesAwaitingMe(): VendorInvoice[] {
+        return this._invoices().filter((i) => this.canApproveInvoice(i));
+    }
+
+    /** Passes the current step; the last step approves the invoice. A rejection at any step ends it. */
     decideInvoice(id: string, approve: boolean, note: string): string | null {
-        if (!this._access.can('vendors.approve_invoice')) {
-            return 'You do not have permission to approve invoices.';
+        const invoice = this._invoices().find((i) => i.id === id);
+        if (!invoice || invoice.status !== 'submitted') {
+            return 'This invoice has already been decided.';
+        }
+        if (!this.canApproveInvoice(invoice)) {
+            return `This invoice is waiting for ${this.currentStep(invoice)?.roleName ?? 'another approver'}.`;
         }
         if (!approve && !note.trim()) {
             return 'Give a reason when rejecting an invoice.';
         }
+        const by = this._access.user().name;
+        const at = DateTime.now().toISO();
         this._invoices.update((list) =>
-            list.map((i) => (i.id === id && i.status === 'submitted' ? { ...i, status: approve ? 'approved' : 'rejected', decisionNote: note.trim() } : i))
+            list.map((i) => {
+                if (i.id !== id) {
+                    return i;
+                }
+                const index = i.approvals.findIndex((s) => s.status === 'pending');
+                if (!approve) {
+                    const approvals = i.approvals.map((s, n) => (n === index ? { ...s, status: 'rejected' as const, by, at } : s));
+                    return { ...i, approvals, status: 'rejected' as const, decisionNote: note.trim() };
+                }
+                const approvals = i.approvals.map((s, n) => (n === index ? { ...s, status: 'approved' as const, by, at } : n === index + 1 ? { ...s, status: 'pending' as const } : s));
+                const last = index === i.approvals.length - 1;
+                return { ...i, approvals, status: last ? ('approved' as const) : i.status, decisionNote: note.trim() || i.decisionNote };
+            })
         );
         return null;
     }
@@ -367,6 +410,17 @@ export class VendorsService {
     // -----------------------------------------------------------------------------------------------------
     // @ Private
     // -----------------------------------------------------------------------------------------------------
+
+    /** A fresh approval path for an invoice of this amount, from the approval tree. */
+    private _pathFor(amount: number): ApprovalStep[] {
+        return this._access.ruleFor(amount).steps.map((roleId, i) => ({
+            roleId,
+            roleName: this._access.roleName(roleId),
+            status: i === 0 ? 'pending' : 'waiting',
+            by: null,
+            at: null,
+        }));
+    }
 
     private _isOwnVendor(vendorId: string, permission: string): boolean {
         return this._access.can(permission) && this._access.user().vendorId === vendorId;
@@ -441,12 +495,20 @@ export class VendorsService {
         const i = (id: string, vendorId: string, poId: string | null, number: string, days: number, amount: number, status: VendorInvoice['status'], by: string, note = ''): VendorInvoice => ({
             id, vendorId, poId, number, date: this._daysAgo(days), dueDate: this._daysAgo(days - 30), amount, status, note, image: null, imageName: null, by, decisionNote: '',
             projectId: id === 'INV-9003' ? 'P-2001' : null,
+            approvals: [],
         });
-        return [
+        const invoices = [
             i('INV-9001', 'V-1001', 'PO-7001', 'ST-2210', 26, 205000, 'approved', 'Jahid Hasan'),
             i('INV-9002', 'V-1001', 'PO-7002', 'ST-2244', 2, 154000, 'submitted', 'Jahid Hasan', 'Advance for panel enclosures'),
             i('INV-9003', 'V-1002', null, 'SG-0526', 12, 90000, 'approved', 'Tania Akter', 'May guard service'),
         ];
+        return invoices.map((inv) => ({ ...inv, approvals: this._seedPath(inv) }));
+    }
+
+    /** Seed invoices follow the current tree; finished ones show every step passed. */
+    private _seedPath(inv: VendorInvoice): ApprovalStep[] {
+        const steps = this._pathFor(inv.amount);
+        return inv.status === 'approved' ? steps.map((s) => ({ ...s, status: 'approved' as const, by: 'Accounts', at: inv.date })) : steps;
     }
 
     private _seedPayments(): VendorPayment[] {

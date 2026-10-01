@@ -118,6 +118,11 @@ export class VendorDetailComponent {
         this.message.set(null);
     }
 
+    /** The last step of an invoice's approval path. */
+    isLastStep(i: VendorInvoice): boolean {
+        return i.approvals.findIndex((s) => s.status === 'pending') === i.approvals.length - 1;
+    }
+
     poOf(id: string | null): string {
         return this.service.ordersOf(this.id).find((o) => o.id === id)?.number ?? '-';
     }

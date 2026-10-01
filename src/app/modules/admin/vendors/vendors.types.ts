@@ -1,3 +1,5 @@
+import { ApprovalStep } from 'app/core/access/access.types';
+
 export type VendorType = 'product' | 'service' | 'other';
 
 export const VENDOR_TYPES: { id: VendorType; label: string; description: string }[] = [
@@ -84,6 +86,8 @@ export interface VendorInvoice {
     decisionNote: string;
     /** The project this invoice is a cost of. Defaults to the project of its purchase order. */
     projectId: string | null;
+    /** The approval path this invoice follows, copied from the approval tree when it was submitted. */
+    approvals: ApprovalStep[];
 }
 
 export interface VendorPayment {

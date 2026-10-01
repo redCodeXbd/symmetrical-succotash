@@ -1,6 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { DateTime } from 'luxon';
 import { AccessService } from 'app/core/access/access.service';
+import { VendorsService } from 'app/modules/admin/vendors/vendors.service';
 import { FundsService } from 'app/modules/admin/treasury/funds/funds.service';
 import { FundEventType, FundRequest, FundRequestEvent } from 'app/modules/admin/treasury/funds/funds.types';
 import { Notification } from './notifications.types';
@@ -54,7 +55,7 @@ export class FundNotificationsService {
         const dismissed = new Set(state.dismissed);
         const cutoff = DateTime.now().minus({ days: UNREAD_WITHIN_DAYS });
 
-        return this._funds
+        const events = this._funds
             .requests()
             .flatMap((r) => r.events.map((e) => ({ r, e })))
             .filter(({ r, e }) => this._visible(r, e))
@@ -76,13 +77,44 @@ export class FundNotificationsService {
             .filter((n) => !dismissed.has(n.id))
             .sort((a, b) => b.time.localeCompare(a.time))
             .slice(0, MAX_ITEMS);
+
+        // What is waiting for this person's approval comes first, so it is hard to miss.
+        const waiting: Notification[] = [
+            ...this._funds
+                .requests()
+                .filter((r) => this._funds.canApprove(r))
+                .map((r) => ({
+                    id: `wait|${r.id}|${r.approvals.findIndex((s) => s.status === 'pending')}`,
+                    icon: 'heroicons_solid:clock',
+                    title: `Your approval: request <strong>${escape(r.id)}</strong>`,
+                    description: `${escape(r.employee)} asks BDT ${r.amount.toLocaleString('en-US')} for ${escape(r.purpose)}`,
+                    time: r.submittedAt,
+                    link: '/treasury/funds',
+                    queryParams: { request: r.id },
+                    useRouter: true,
+                    read: read.has(`wait|${r.id}|${r.approvals.findIndex((s) => s.status === 'pending')}`),
+                })),
+            ...this._vendors.invoicesAwaitingMe().map((i) => ({
+                id: `wait|${i.id}|${i.approvals.findIndex((s) => s.status === 'pending')}`,
+                icon: 'heroicons_solid:clock',
+                title: `Your approval: invoice <strong>${escape(i.number)}</strong>`,
+                description: `Vendor invoice of BDT ${i.amount.toLocaleString('en-US')}`,
+                time: i.date,
+                link: `/vendors/${i.vendorId}`,
+                useRouter: true,
+                read: read.has(`wait|${i.id}|${i.approvals.findIndex((s) => s.status === 'pending')}`),
+            })),
+        ].filter((n) => !dismissed.has(n.id)) as Notification[];
+
+        return [...waiting, ...events];
     });
 
     readonly unreadCount = computed(() => this.notifications().filter((n) => !n.read).length);
 
     constructor(
         private _funds: FundsService,
-        private _access: AccessService
+        private _access: AccessService,
+        private _vendors: VendorsService
     ) {}
 
     markRead(id: string): void {
