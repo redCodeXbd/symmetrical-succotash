@@ -121,6 +121,25 @@ fuse-vertical-navigation.app-sidebar {
     }
 }
 
+/* Sidebar opened over the page (phones and tablets): about 75% see-through blue glass, page visible behind it */
+fuse-vertical-navigation.app-sidebar.fuse-vertical-navigation-mode-over {
+    background-color: transparent !important;
+    background-image: none;
+    /* The glass is dark blue, so keep the text light whatever the theme text colour is. */
+    --fuse-app-sidebar-text-rgb: 255, 255, 255;
+    color: #ffffff;
+
+    &::before {
+        background: linear-gradient(160deg, rgba(59, 130, 246, 0.28), rgba(30, 58, 138, 0.22));
+        -webkit-backdrop-filter: blur(26px) saturate(170%) brightness(0.5);
+        backdrop-filter: blur(26px) saturate(170%) brightness(0.5);
+        border-right: 1px solid rgba(147, 197, 253, 0.4);
+        box-shadow:
+            inset -1px 0 0 rgba(255, 255, 255, 0.08),
+            30px 0 80px -30px rgba(37, 99, 235, 0.6);
+    }
+}
+
 /* Neon glow: the active item and a soft edge light. Turn it off in Theme > Sidebar. */
 body[data-sidebar-glow='on'] fuse-vertical-navigation.app-sidebar {
     box-shadow: 24px 0 60px -30px rgba(0, 0, 0, 0.7);
