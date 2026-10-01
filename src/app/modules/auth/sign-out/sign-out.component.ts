@@ -1,3 +1,4 @@
+import { BrandMarkComponent } from 'app/shared/brand-mark/brand-mark.component';
 import { I18nPluralPipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
@@ -9,7 +10,7 @@ import { Subject, finalize, takeUntil, takeWhile, tap, timer } from 'rxjs';
     templateUrl: './sign-out.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [RouterLink, I18nPluralPipe],
+    imports: [BrandMarkComponent, RouterLink, I18nPluralPipe],
 })
 export class AuthSignOutComponent implements OnInit, OnDestroy {
     countdown: number = 5;

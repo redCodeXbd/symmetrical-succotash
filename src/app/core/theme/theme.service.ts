@@ -105,6 +105,18 @@ export class ThemeService {
         return { ...DEFAULT_THEME };
     }
 
+    /** The site icon follows the theme: one E in the primary colour, the other in the accent. */
+    private _setFavicon(primary: string, accent: string): void {
+        const link = document.getElementById('app-favicon') as HTMLLinkElement | null;
+        if (!link) {
+            return;
+        }
+        const svg =
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120"><g fill="none" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">' +
+            `<path d="M50 10H14V82H50M14 46H42" stroke="${primary}"/><path d="M50 38H86V110H50M86 74H58" stroke="${accent}"/></g></svg>`;
+        link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    }
+
     private _palette(base: string): Record<number, string> {
         const c = chroma(base);
         const light = (t: number) => chroma.mix('#ffffff', c, t, 'lab').hex();
@@ -184,6 +196,7 @@ export class ThemeService {
         vars['--app-sidebar-wallpaper'] = this._wallpaper(t);
         vars['--app-sidebar-blur'] = `${t.sidebarBlur}px`;
         vars['--app-sidebar-tint'] = String(t.sidebarTint / 100);
+        this._setFavicon(t.primary, t.accent);
         document.body.dataset['sidebarGlow'] = t.sidebarGlow ? 'on' : 'off';
         document.body.dataset['tableStyle'] = t.tableStyle;
         document.body.dataset['tableDensity'] = t.tableDensity;

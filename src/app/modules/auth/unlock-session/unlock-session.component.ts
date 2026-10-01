@@ -1,3 +1,4 @@
+import { BrandMarkComponent } from 'app/shared/brand-mark/brand-mark.component';
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import {
     FormsModule,
@@ -24,7 +25,7 @@ import { UserService } from 'app/core/user/user.service';
     encapsulation: ViewEncapsulation.None,
     animations: fuseAnimations,
     standalone: true,
-    imports: [
+    imports: [BrandMarkComponent, 
         FuseAlertComponent,
         FormsModule,
         ReactiveFormsModule,
