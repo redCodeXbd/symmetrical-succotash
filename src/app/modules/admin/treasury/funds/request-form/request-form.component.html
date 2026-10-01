@@ -5,36 +5,14 @@
 >
     <form id="request-funds-form" class="flex flex-col" [formGroup]="form" (ngSubmit)="submit()">
         <mat-form-field class="w-full">
-            <mat-label>Company</mat-label>
-            <input matInput [value]="funds.company" disabled />
+            <mat-label>Amount</mat-label>
+            <input matInput type="number" min="0" step="0.01" placeholder="0.00" formControlName="amount" />
+            @if (form.controls.amount.hasError('required')) {
+                <mat-error>Amount is required</mat-error>
+            } @else if (form.controls.amount.hasError('min')) {
+                <mat-error>Enter an amount above zero</mat-error>
+            }
         </mat-form-field>
-
-        <div class="grid grid-cols-2 gap-4">
-            <mat-form-field>
-                <mat-label>Department</mat-label>
-                <input matInput [value]="funds.department" disabled />
-            </mat-form-field>
-            <mat-form-field>
-                <mat-label>Branch</mat-label>
-                <input matInput [value]="funds.branch" disabled />
-            </mat-form-field>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-            <mat-form-field>
-                <mat-label>Amount</mat-label>
-                <input matInput type="number" min="0" step="0.01" placeholder="0.00" formControlName="amount" />
-                @if (form.controls.amount.hasError('required')) {
-                    <mat-error>Amount is required</mat-error>
-                } @else if (form.controls.amount.hasError('min')) {
-                    <mat-error>Enter an amount above zero</mat-error>
-                }
-            </mat-form-field>
-            <mat-form-field>
-                <mat-label>Currency</mat-label>
-                <input matInput [value]="funds.currency" disabled />
-            </mat-form-field>
-        </div>
 
         <mat-form-field class="w-full">
             <mat-label>Purpose</mat-label>

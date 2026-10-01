@@ -18,6 +18,10 @@ const CURRENCY = 'BDT';
  */
 @Injectable({ providedIn: 'root' })
 export class FundsService {
+    /**
+     * Company, branch, department and currency come from the signed-in user's profile,
+     * never from the request form. Hard-coded here until the user profile carries them.
+     */
     /** Name of the signed-in employee (matches the mock auth user). */
     readonly currentEmployee = 'Brian Hughes';
     readonly department = 'Procurement';
