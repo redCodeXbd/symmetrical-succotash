@@ -79,6 +79,13 @@ const SEED_ROLES: Role[] = [
         permissions: perms('clients.view', 'clients.submit', 'projects.view'),
     },
     {
+        id: 'customer',
+        name: 'Customer',
+        description: 'Someone who buys from us. Starts with no access beyond the dashboard and their profile; add permissions as customer features arrive.',
+        locked: false,
+        permissions: [],
+    },
+    {
         id: 'vendor',
         name: 'Vendor',
         description: 'An outside supplier or service provider. Sees only their own orders, invoices and payments and can submit invoices.',
@@ -96,6 +103,8 @@ const SEED_USERS: AppUser[] = [
     { id: 'u-rahim', phone: '01711000006', name: 'Rahim Ahmed', email: 'rahim.ahmed@company.com', roleIds: ['employee', 'data-entry'] },
     { id: 'u-karim', phone: '01711000007', name: 'Karim Chowdhury', email: 'karim@bengalsteel.example', roleIds: ['client'], clientId: 'C-1001' },
     { id: 'u-farhana', phone: '01711000008', name: 'Farhana Islam', email: 'farhana@deltapower.example', roleIds: ['client'], clientId: 'C-1002' },
+    { id: 'u-nusrat', phone: '01711000011', name: 'Nusrat Jahan', email: 'nusrat@example.com', roleIds: ['customer'], customer: true, address: 'Mirpur, Dhaka' },
+    { id: 'u-tarek', phone: '01711000012', name: 'Tarek Aziz', email: 'tarek@example.com', roleIds: ['customer'], customer: true, address: 'Agrabad, Chattogram' },
     { id: 'u-jahid', phone: '01711000009', name: 'Jahid Hasan', email: 'jahid@steelcraft.example', roleIds: ['vendor'], vendorId: 'V-1001' },
     { id: 'u-tania', phone: '01711000010', name: 'Tania Akter', email: 'tania@safeguard.example', roleIds: ['vendor'], vendorId: 'V-1002' },
 ];
@@ -279,7 +288,7 @@ export class AccessService {
     }
 
     /** Edits who a person is. Returns an error message, or null on success. */
-    updateUser(id: string, patch: { name?: string; email?: string; phone?: string; active?: boolean }): string | null {
+    updateUser(id: string, patch: { name?: string; email?: string; phone?: string; active?: boolean; address?: string }): string | null {
         const user = this.users().find((u) => u.id === id);
         if (!user) {
             return 'This user no longer exists.';
@@ -295,7 +304,7 @@ export class AccessService {
         if (this.users().some((u) => u.id !== id && (u.email.toLowerCase() === email || u.name.toLowerCase() === name.toLowerCase()))) {
             return 'Another user already has this name or email.';
         }
-        const next = this.users().map((u) => (u.id === id ? { ...u, name, email, phone: (patch.phone ?? u.phone ?? '').trim(), active: patch.active ?? u.active } : u));
+        const next = this.users().map((u) => (u.id === id ? { ...u, name, email, phone: (patch.phone ?? u.phone ?? '').trim(), address: (patch.address ?? u.address ?? '').trim(), active: patch.active ?? u.active } : u));
         if (patch.active === false) {
             if (id === this.userId()) {
                 return 'You cannot deactivate the user you are acting as.';
@@ -328,6 +337,18 @@ export class AccessService {
         const id = this.userId();
         this.users.update((list) => list.map((u) => (u.id === id ? { ...u, phone: details.phone.trim(), title: details.title.trim(), about: details.about.trim() } : u)));
         this._save();
+    }
+
+    /** Creates a customer login: a user with the Customer role and no company. */
+    addCustomerUser(name: string, email: string): string | null {
+        const error = this.addUser(name, email);
+        if (error) {
+            return error;
+        }
+        const created = this.users()[this.users().length - 1];
+        this.users.update((list) => list.map((u) => (u.id === created.id ? { ...u, roleIds: ['customer'], customer: true } : u)));
+        this._save();
+        return null;
     }
 
     /** Gives a user login access to one vendor (or removes it with null). */
@@ -490,7 +511,7 @@ export class AccessService {
         });
         SEED_ROLES.filter((r) => !roles.some((x) => x.id === r.id)).forEach((r) => roles.push(r));
         const users = [...stored.users];
-        SEED_USERS.filter((u) => (u.clientId || u.vendorId) && !users.some((x) => x.id === u.id)).forEach((u) => users.push(u));
+        SEED_USERS.filter((u) => (u.clientId || u.vendorId || u.customer) && !users.some((x) => x.id === u.id)).forEach((u) => users.push(u));
         return { ...stored, roles, users };
     }
 }

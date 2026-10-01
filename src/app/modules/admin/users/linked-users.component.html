@@ -4,12 +4,14 @@
             <div>
                 <div class="text-secondary text-md">Users</div>
                 <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">{{ noun }}s</h1>
-                <div class="text-secondary mt-0.5 text-lg">Logins for {{ noun.toLowerCase() }} companies. Each person sees only their own {{ noun.toLowerCase() }}.</div>
+                <div class="text-secondary mt-0.5 text-lg">
+                    @if (needsCompany) { Logins for {{ noun.toLowerCase() }} companies. Each person sees only their own {{ noun.toLowerCase() }}. } @else { People who buy from us. }
+                </div>
             </div>
             <div class="flex flex-wrap items-center gap-4">
                 <treasury-user-switch></treasury-user-switch>
                 @if (access.can('users.add')) {
-                    <treasury-add-button [label]="'Add ' + noun + ' login'" (pressed)="openAdd()"></treasury-add-button>
+                    <treasury-add-button [label]="needsCompany ? 'Add ' + noun + ' login' : 'Add Customer'" (pressed)="openAdd()"></treasury-add-button>
                 }
             </div>
         </div>
@@ -29,7 +31,7 @@
                             <th scope="col" class="text-left font-medium">Name</th>
                             <th scope="col" class="text-left font-medium">Email</th>
                             <th scope="col" class="text-left font-medium">Phone</th>
-                            <th scope="col" class="text-left font-medium">{{ noun }}</th>
+                            <th scope="col" class="text-left font-medium">{{ needsCompany ? noun : 'Address' }}</th>
                             <th scope="col" class="text-center font-medium">Active</th>
                             <th scope="col" class="text-right font-medium">Actions</th>
                         </tr>
@@ -40,12 +42,14 @@
                                 <td class="font-medium">{{ u.name }}</td>
                                 <td>{{ u.email }}</td>
                                 <td>{{ u.phone || '-' }}</td>
-                                <td><a class="text-primary hover:underline" [routerLink]="link(u)">{{ company(u) }}</a></td>
+                                <td>
+                                    @if (needsCompany) { <a class="text-primary hover:underline" [routerLink]="link(u)">{{ company(u) }}</a> } @else { {{ u.address || '-' }} }
+                                </td>
                                 <td class="text-center">@if (u.active !== false) { <span class="font-semibold text-green-600" aria-label="Active">&#10003;</span> } @else { <span class="text-secondary" aria-label="Inactive">&#8212;</span> }</td>
                                 <td class="whitespace-nowrap text-right">
                                     @if (access.can('users.edit')) {
                                         <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="openEdit(u)">Edit</button>
-                                        <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="unlink(u)">Remove access</button>
+                                        @if (needsCompany) { <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="unlink(u)">Remove access</button> }
                                     }
                                     @if (access.can('users.delete')) { <button type="button" class="font-medium text-red-600 hover:underline" (click)="openDelete(u)">Delete</button> }
                                 </td>
@@ -67,12 +71,16 @@
             <label class="block"><span class="text-sm font-medium">Name *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="nm" [(ngModel)]="form.name" /></label>
             <label class="block"><span class="text-sm font-medium">Email *</span><input type="email" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="em" [(ngModel)]="form.email" /></label>
             <label class="block"><span class="text-sm font-medium">Phone</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ph" [(ngModel)]="form.phone" /></label>
+            @if (!needsCompany) {
+                <label class="block"><span class="text-sm font-medium">Address</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ad" [(ngModel)]="form.address" /></label>
+            } @else {
             <label class="block"><span class="text-sm font-medium">{{ noun }} *</span>
                 <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="co" [(ngModel)]="form.companyId">
                     <option value="">Choose...</option>
                     @for (c of companies(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
                 </select>
             </label>
+            }
             <label class="flex items-center gap-3"><input type="checkbox" class="h-5 w-5" name="ac" [(ngModel)]="form.active" />Active</label>
             @if (error) { <div class="rounded-lg bg-red-50 p-3 text-md text-red-800" role="alert">{{ error }}</div> }
         </form>
@@ -85,7 +93,7 @@
 
 @if (panel() === 'delete') {
     <treasury-slide-over [heading]="'Delete ' + noun.toLowerCase() + ' login'" [subheading]="target()?.name ?? ''" (closed)="close()">
-        <p class="text-md">This removes the login. The {{ noun.toLowerCase() }} company and its records stay.</p>
+        <p class="text-md">This removes the login.{{ needsCompany ? ' The ' + noun.toLowerCase() + ' company and its records stay.' : '' }}</p>
         @if (error) { <div class="mt-4 rounded-lg bg-red-50 p-3 text-md text-red-800" role="alert">{{ error }}</div> }
         <ng-container footer>
             <button mat-stroked-button type="button" (click)="close()">Cancel</button>

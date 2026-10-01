@@ -62,7 +62,7 @@ export class ClientDetailComponent {
     documents = computed(() => this.service.documentsOf(this._id()));
     linkedUsers = computed(() => this.service.usersOf(this._id()));
     /** Users who can still be linked: not already attached to a client. */
-    freeUsers = computed(() => this.access.users().filter((u) => !u.clientId && !u.vendorId));
+    freeUsers = computed(() => this.access.users().filter((u) => !u.clientId && !u.vendorId && !u.customer));
 
     docType = signal<'all' | DocumentType>('all');
     docProject = signal('all');

@@ -9,4 +9,5 @@ export default [
     { path: 'admins', component: AdminsComponent },
     { path: 'vendors', component: LinkedUsersComponent, data: { kind: 'vendor' } },
     { path: 'clients', component: LinkedUsersComponent, data: { kind: 'client' } },
+    { path: 'customers', component: LinkedUsersComponent, data: { kind: 'customer' } },
 ] as Routes;
