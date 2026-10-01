@@ -10,14 +10,7 @@
                 </div>
             </div>
             <div class="flex flex-wrap items-center gap-4">
-                <mat-button-toggle-group
-                    aria-label="Preview as"
-                    [value]="role()"
-                    (change)="setRole($event.value)"
-                >
-                    <mat-button-toggle value="employee">Employee view</mat-button-toggle>
-                    <mat-button-toggle value="accounts">Accounts view</mat-button-toggle>
-                </mat-button-toggle-group>
+                <treasury-role-switch></treasury-role-switch>
                 @if (role() === 'employee') {
                     <treasury-add-button label="Request Funds" (pressed)="openNew()"></treasury-add-button>
                 }

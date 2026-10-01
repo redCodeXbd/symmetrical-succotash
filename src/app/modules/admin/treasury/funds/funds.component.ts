@@ -2,9 +2,10 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { DateTime } from 'luxon';
+import { RoleService } from 'app/core/role/role.service';
+import { RoleSwitchComponent } from '../shared/role-switch/role-switch.component';
 import { FundsService } from './funds.service';
 import { FundRequest, FundRequestStatus, FundRole, STATUS_CLASSES, STATUS_LABELS } from './funds.types';
 import { AddButtonComponent } from '../shared/add-button/add-button.component';
@@ -26,9 +27,9 @@ type Range = 'this_month' | 'last_30' | 'all';
         DecimalPipe,
         FormsModule,
         MatButtonModule,
-        MatButtonToggleModule,
         MatIconModule,
         ExportMenuComponent,
+        RoleSwitchComponent,
         RequestDetailComponent,
         RequestFormComponent,
         AddButtonComponent,
@@ -40,7 +41,7 @@ export class FundsComponent {
     readonly statuses = Object.keys(STATUS_LABELS) as FundRequestStatus[];
 
     /** Preview switch between the two audiences; real permissions will drive this later. */
-    role = signal<FundRole>('employee');
+    role = computed<FundRole>(() => (this.roles.canSeeAll() ? 'accounts' : 'employee'));
     tab = signal<Tab>('requests');
     search = signal('');
     status = signal<'all' | FundRequestStatus>('all');
@@ -157,12 +158,10 @@ export class FundsComponent {
             .join(', ');
     }
 
-    constructor(public funds: FundsService) {}
-
-    setRole(role: FundRole): void {
-        this.role.set(role);
-        this.selectedId.set(null);
-    }
+    constructor(
+        public funds: FundsService,
+        public roles: RoleService
+    ) {}
 
     setTab(tab: Tab): void {
         this.tab.set(tab);

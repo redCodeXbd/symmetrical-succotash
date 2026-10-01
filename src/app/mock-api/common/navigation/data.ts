@@ -19,6 +19,12 @@ export const defaultNavigation: FuseNavigationItem[] = [
                 title: 'Funds',
                 type : 'basic',
                 link : '/treasury/funds'
+            },
+            {
+                id   : 'treasury.transactions',
+                title: 'Transactions',
+                type : 'basic',
+                link : '/treasury/transactions'
             }
         ]
     },
@@ -55,6 +61,12 @@ export const compactNavigation: FuseNavigationItem[] = [
                 title: 'Funds',
                 type : 'basic',
                 link : '/treasury/funds'
+            },
+            {
+                id   : 'treasury.transactions',
+                title: 'Transactions',
+                type : 'basic',
+                link : '/treasury/transactions'
             }
         ]
     }
@@ -77,6 +89,12 @@ export const futuristicNavigation: FuseNavigationItem[] = [
                 title: 'Funds',
                 type : 'basic',
                 link : '/treasury/funds'
+            },
+            {
+                id   : 'treasury.transactions',
+                title: 'Transactions',
+                type : 'basic',
+                link : '/treasury/transactions'
             }
         ]
     }
@@ -99,6 +117,12 @@ export const horizontalNavigation: FuseNavigationItem[] = [
                 title: 'Funds',
                 type : 'basic',
                 link : '/treasury/funds'
+            },
+            {
+                id   : 'treasury.transactions',
+                title: 'Transactions',
+                type : 'basic',
+                link : '/treasury/transactions'
             }
         ]
     }
