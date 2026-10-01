@@ -1,3 +1,5 @@
+export type SidebarWallpaper = 'aurora' | 'ocean' | 'sunset' | 'mono' | 'solid' | 'image';
+
 export interface AppTheme {
     companyName: string;
     /** Data URL of an uploaded logo, or null to use the Encore logo. */
@@ -20,6 +22,16 @@ export interface AppTheme {
     sidebarText: string;
     /** Background of the active menu item. */
     sidebarActive: string;
+    /** The picture behind the frosted-glass sidebar. */
+    sidebarWallpaper: SidebarWallpaper;
+    /** Uploaded wallpaper (data URL), used when `sidebarWallpaper` is 'image'. */
+    sidebarImage: string | null;
+    /** Blur of the glass in px (0-40). */
+    sidebarBlur: number;
+    /** How strongly the sidebar colour tints the glass, in percent (0-90). */
+    sidebarTint: number;
+    /** Neon glow on the active item and the sidebar edge. */
+    sidebarGlow: boolean;
 
     headerBg: string;
     headerText: string;
@@ -52,6 +64,11 @@ export const DEFAULT_THEME: AppTheme = {
     sidebarBg: '#06110a',
     sidebarText: '#eef6ef',
     sidebarActive: '#39a935',
+    sidebarWallpaper: 'aurora',
+    sidebarImage: null,
+    sidebarBlur: 28,
+    sidebarTint: 42,
+    sidebarGlow: true,
     headerBg: '#ffffff',
     headerText: '#1e293b',
     tableStyle: 'lines',
@@ -69,7 +86,7 @@ export const DEFAULT_LOGO = 'images/logo/encore-logo.png';
 export interface ThemePreset {
     id: string;
     name: string;
-    colors: Omit<AppTheme, 'companyName' | 'logo' | 'logoBadge' | 'tableStyle' | 'tableDensity' | TableColorKey>;
+    colors: Omit<AppTheme, 'companyName' | 'logo' | 'logoBadge' | 'tableStyle' | 'tableDensity' | TableColorKey | 'sidebarWallpaper' | 'sidebarImage' | 'sidebarBlur' | 'sidebarTint' | 'sidebarGlow'>;
 }
 
 export const THEME_PRESETS: ThemePreset[] = [

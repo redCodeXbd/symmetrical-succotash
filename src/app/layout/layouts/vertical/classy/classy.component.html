@@ -26,38 +26,24 @@
             <!-- Components -->
             <div class="ml-auto flex items-center">
                 <notifications></notifications>
-                <user [showAvatar]="false"></user>
             </div>
         </div>
-        <!-- User -->
-        <div class="flex w-full flex-col items-center p-4">
-            <div class="relative h-24 w-24">
-                @if (user.avatar) {
-                    <img
-                        class="h-full w-full rounded-full"
-                        [src]="user.avatar"
-                        alt="User avatar"
-                    />
-                }
-                @if (!user.avatar) {
-                    <mat-icon
-                        class="icon-size-24"
-                        [svgIcon]="'heroicons_solid:user-circle'"
-                    ></mat-icon>
-                }
-            </div>
-            <div class="mt-6 flex w-full flex-col items-center justify-center">
-                <div
-                    class="w-full overflow-hidden text-ellipsis whitespace-nowrap text-center font-medium leading-normal"
-                >
-                    {{ user.name }}
+    </ng-container>
+    <!-- Navigation footer hook: user card -->
+    <ng-container fuseVerticalNavigationContentFooter>
+        <div class="app-sidebar-user">
+            @if (user.avatar) {
+                <img class="h-10 w-10 flex-none rounded-full object-cover" [src]="user.avatar" alt="User avatar" />
+            } @else {
+                <div class="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-primary text-sm font-bold text-on-primary">
+                    {{ user.name?.charAt(0) }}
                 </div>
-                <div
-                    class="text-secondary mt-0.5 w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-md font-medium leading-normal"
-                >
-                    {{ user.email }}
-                </div>
+            }
+            <div class="min-w-0 flex-auto">
+                <div class="truncate text-md font-semibold">{{ user.name }}</div>
+                <div class="truncate text-sm opacity-65">{{ user.email }}</div>
             </div>
+            <user [showAvatar]="false"></user>
         </div>
     </ng-container>
 </fuse-vertical-navigation>

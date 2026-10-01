@@ -1,6 +1,10 @@
-/* Sidebar */
+/* Sidebar: frosted glass over a wallpaper (Aurora Glass) */
 fuse-vertical-navigation.app-sidebar {
+    isolation: isolate;
     background-color: rgb(var(--fuse-app-sidebar-bg-rgb)) !important;
+    background-image: var(--app-sidebar-wallpaper);
+    background-size: cover;
+    background-position: center;
     /* Re-point the dark-scheme text colours so every item, icon and label follows the sidebar text colour. */
     --fuse-text-default-rgb: var(--fuse-app-sidebar-text-rgb);
     --fuse-text-default: rgb(var(--fuse-app-sidebar-text-rgb));
@@ -10,6 +14,30 @@ fuse-vertical-navigation.app-sidebar {
     --fuse-bg-hover: rgba(var(--fuse-app-sidebar-text-rgb), 0.08);
     color: rgb(var(--fuse-app-sidebar-text-rgb));
 
+    /* The glass pane: blurs the wallpaper behind it and tints it with the sidebar colour. */
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background: rgba(var(--fuse-app-sidebar-bg-rgb), var(--app-sidebar-tint));
+        backdrop-filter: blur(var(--app-sidebar-blur)) saturate(160%);
+        -webkit-backdrop-filter: blur(var(--app-sidebar-blur)) saturate(160%);
+        border-right: 1px solid rgba(var(--fuse-app-sidebar-text-rgb), 0.16);
+        box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.04);
+    }
+
+    > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .fuse-vertical-navigation-wrapper,
+    .fuse-vertical-navigation-content {
+        background: transparent !important;
+    }
+
     .fuse-vertical-navigation-item-title,
     .fuse-vertical-navigation-item-subtitle,
     .fuse-vertical-navigation-item-icon,
@@ -18,16 +46,101 @@ fuse-vertical-navigation.app-sidebar {
         color: rgb(var(--fuse-app-sidebar-text-rgb)) !important;
     }
 
-    .fuse-vertical-navigation-item-active,
-    .fuse-vertical-navigation-item-active-forced {
-        background-color: rgb(var(--fuse-app-sidebar-active-rgb)) !important;
+    .fuse-vertical-navigation-item-title {
+        font-size: 15px;
+        font-weight: 500;
+    }
 
-        .fuse-vertical-navigation-item-title,
-        .fuse-vertical-navigation-item-icon,
-        .mat-icon {
-            color: rgb(var(--fuse-app-sidebar-active-text-rgb)) !important;
+    /* Rounded, inset items */
+    .fuse-vertical-navigation-item-wrapper {
+        margin: 2px 14px;
+    }
+
+    .fuse-vertical-navigation-item {
+        position: relative;
+        min-height: 46px;
+        padding: 0 14px !important;
+        border-radius: 14px;
+        border: 1px solid transparent;
+        transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+
+        &:hover {
+            background: rgba(var(--fuse-app-sidebar-text-rgb), 0.08) !important;
         }
     }
+
+    /* Sub-menu hangs off a thin guide line */
+    .fuse-vertical-navigation-item-children {
+        margin: 0 14px 0 41px;
+        border-left: 1px solid rgba(var(--fuse-app-sidebar-text-rgb), 0.18);
+
+        > * {
+            margin-top: 0 !important;
+        }
+
+        .fuse-vertical-navigation-item-wrapper {
+            margin: 2px 0 2px 14px;
+        }
+
+        .fuse-vertical-navigation-item {
+            min-height: 44px;
+            padding: 0 16px !important;
+        }
+
+        .fuse-vertical-navigation-item-title {
+            font-size: 14.5px;
+        }
+    }
+
+    .fuse-vertical-navigation-item-active,
+    .fuse-vertical-navigation-item-active-forced {
+        background: linear-gradient(
+            90deg,
+            rgba(var(--fuse-app-sidebar-active-rgb), 0.42),
+            rgba(var(--fuse-app-sidebar-active-rgb), 0.06)
+        ) !important;
+        border-color: rgba(var(--fuse-app-sidebar-active-rgb), 0.6);
+
+        .fuse-vertical-navigation-item-title {
+            font-weight: 600;
+        }
+    }
+}
+
+/* Neon glow: the active item and a soft edge light. Turn it off in Theme > Sidebar. */
+body[data-sidebar-glow='on'] fuse-vertical-navigation.app-sidebar {
+    box-shadow: 24px 0 60px -30px rgba(0, 0, 0, 0.7);
+
+    .fuse-vertical-navigation-item-active,
+    .fuse-vertical-navigation-item-active-forced {
+        box-shadow:
+            0 0 22px -4px rgba(var(--fuse-app-sidebar-active-rgb), 0.7),
+            inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+        &::before {
+            content: '';
+            position: absolute;
+            left: -15px;
+            top: 10px;
+            bottom: 10px;
+            width: 3px;
+            border-radius: 3px;
+            background: rgb(var(--fuse-app-sidebar-active-rgb));
+            box-shadow: 0 0 10px rgb(var(--fuse-app-sidebar-active-rgb));
+        }
+    }
+}
+
+/* Sidebar footer: user card */
+.app-sidebar-user {
+    margin: 12px 16px 18px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 18px;
+    background: rgba(var(--fuse-app-sidebar-text-rgb), 0.08);
+    border: 1px solid rgba(var(--fuse-app-sidebar-text-rgb), 0.14);
 }
 
 /* Header */
