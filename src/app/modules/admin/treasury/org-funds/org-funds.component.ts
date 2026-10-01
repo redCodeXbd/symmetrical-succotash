@@ -41,8 +41,6 @@ export class OrgFundsComponent {
 
     company = signal('all');
     range = signal<Range>('last_30');
-    branch = signal('all');
-    department = signal('all');
     currency = signal('BDT');
     type = signal('all');
     category = signal('all');
@@ -51,8 +49,6 @@ export class OrgFundsComponent {
     selectedId = signal<string | null>(null);
 
     companies = computed(() => this._unique((f) => f.company));
-    branches = computed(() => this._unique((f) => f.branch));
-    departments = computed(() => this._unique((f) => f.department));
     currencies = computed(() => this._unique((f) => f.currency));
     selected = computed(() => this.org.funds().find((f) => f.id === this.selectedId()) ?? null);
 
@@ -64,8 +60,6 @@ export class OrgFundsComponent {
                 (f) =>
                     f.currency === this.currency() &&
                     (this.company() === 'all' || f.company === this.company()) &&
-                    (this.branch() === 'all' || f.branch === this.branch()) &&
-                    (this.department() === 'all' || f.department === this.department()) &&
                     (this.type() === 'all' || f.type === this.type()) &&
                     (this.category() === 'all' || f.category === this.category())
             )
@@ -192,8 +186,6 @@ export class OrgFundsComponent {
         // Show the new fund even if the current filters would hide it.
         this.currency.set(fund.currency);
         this.company.set('all');
-        this.branch.set('all');
-        this.department.set('all');
         this.type.set('all');
         this.category.set('all');
         this.selectedId.set(fund.id);
