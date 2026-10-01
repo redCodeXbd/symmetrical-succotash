@@ -8,7 +8,7 @@ export interface Category {
 
 /**
  * The features that have categories. To give a new feature categories, add an entry here, then add a
- * matching section in Settings > Categories (its "used by" count and rename hook) and read the names
+ * matching section in Configuration > Categories (its "used by" count and rename hook) and read the names
  * from `CategoryService.names(groupId)` wherever the feature offers a category choice.
  */
 export interface CategoryGroup {

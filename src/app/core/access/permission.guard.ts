@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AccessService } from './access.service';
 
-/** Lets a route open only for someone with the permission; everyone else goes to the first page they may see. */
+/** Lets a route open only for someone with the permission; everyone else goes to the dashboard. */
 export const permissionGuard = (permission: string): CanActivateFn => {
     return () => {
         const access = inject(AccessService);
@@ -10,6 +10,6 @@ export const permissionGuard = (permission: string): CanActivateFn => {
             return true;
         }
         const router = inject(Router);
-        return router.createUrlTree([access.can('fund-requests.view') ? '/treasury/funds' : '/treasury/transactions']);
+        return router.createUrlTree(['/dashboard']);
     };
 };

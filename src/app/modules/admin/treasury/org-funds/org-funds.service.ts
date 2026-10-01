@@ -39,7 +39,7 @@ export class OrgFundsService {
     private _outgoing = signal<ScheduledOutgoing[]>(this._seedOutgoing());
 
     readonly funds = this._funds.asReadonly();
-    /** Category names, managed in Settings > Categories. */
+    /** Category names, managed in Configuration > Categories. */
     readonly categories = computed(() => this._cats.names('org-funds'));
     readonly movements = this._movements.asReadonly();
     readonly expectedIncoming = this._incoming.asReadonly();

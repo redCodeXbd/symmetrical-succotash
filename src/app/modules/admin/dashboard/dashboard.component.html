@@ -1,0 +1,64 @@
+<div class="dash relative flex min-w-0 flex-auto flex-col overflow-hidden">
+    <div class="dash-glow dash-glow-1"></div>
+    <div class="dash-glow dash-glow-2"></div>
+
+    <div class="relative z-10 flex-auto p-6 sm:p-10">
+        <div class="text-secondary text-md">Dashboard</div>
+
+        <!-- Pointer to the side menu -->
+        <div class="dash-pointer mt-3" role="note">
+            <span class="dash-arrow" aria-hidden="true">
+                <mat-icon [svgIcon]="'heroicons_solid:arrow-long-left'"></mat-icon>
+            </span>
+            <span class="dash-pointer-text">
+                <span class="hidden lg:inline">Start here: pick a menu on the left</span>
+                <span class="lg:hidden">Start here: open the menu at the top left</span>
+            </span>
+        </div>
+
+        <div class="mt-8 grid grid-cols-1 items-center gap-10 xl:grid-cols-2">
+            <div>
+                <span class="dash-badge">Coming soon</span>
+                <h1 class="mt-4 text-5xl font-extrabold leading-tight tracking-tight">Dashboard is on its way</h1>
+                <p class="text-secondary mt-4 max-w-xl text-xl">
+                    Red Codex developer is working on it. Charts and live numbers for funds, requests and approvals will appear here.
+                </p>
+                <p class="mt-6 max-w-xl text-lg">
+                    Until then, use the <strong>side menu</strong> to open Treasury, Configuration and the other pages. Click a menu item to continue.
+                </p>
+                <div class="mt-8 flex items-center gap-3" aria-hidden="true">
+                    <span class="dash-progress"><span></span></span>
+                    <span class="text-secondary text-sm font-medium uppercase tracking-widest">Building</span>
+                </div>
+            </div>
+
+            <!-- Chart preview with a reflection -->
+            <div class="dash-stage" aria-hidden="true">
+                <div class="dash-panel">
+                    <div class="dash-panel-head">
+                        <span class="dash-dot"></span><span class="dash-dot"></span><span class="dash-dot"></span>
+                        <span class="dash-panel-title">Overview preview</span>
+                    </div>
+                    <div class="dash-charts">
+                        <div class="dash-bars">
+                            @for (h of bars; track $index) {
+                                <span class="dash-bar" [style.--h]="h + '%'" [style.animation-delay]="$index * 0.12 + 's'"></span>
+                            }
+                        </div>
+                        <div class="dash-right">
+                            <svg class="dash-donut" viewBox="0 0 42 42">
+                                <circle cx="21" cy="21" r="15.9" fill="none" stroke="rgba(148,163,184,.25)" stroke-width="5" />
+                                <circle class="dash-ring dash-ring-1" cx="21" cy="21" r="15.9" fill="none" stroke-width="5" pathLength="100" />
+                                <circle class="dash-ring dash-ring-2" cx="21" cy="21" r="15.9" fill="none" stroke-width="5" pathLength="100" />
+                            </svg>
+                            <svg class="dash-line" viewBox="0 0 200 70" preserveAspectRatio="none">
+                                <path class="dash-line-fill" d="M0 58 L25 46 L50 52 L80 30 L110 38 L140 16 L170 24 L200 6 L200 70 L0 70 Z" />
+                                <path class="dash-line-path" d="M0 58 L25 46 L50 52 L80 30 L110 38 L140 16 L170 24 L200 6" pathLength="100" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

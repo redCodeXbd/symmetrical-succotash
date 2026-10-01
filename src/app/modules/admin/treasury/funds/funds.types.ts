@@ -38,7 +38,7 @@ export interface FundRequest {
     branch: string;
     department: string;
     purpose: string;
-    /** What the money is for. The list is managed in Settings > Categories. */
+    /** What the money is for. The list is managed in Configuration > Categories. */
     category: string;
     amount: number;
     currency: string;
