@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { DateTime } from 'luxon';
+import { ThemeService } from 'app/core/theme/theme.service';
 import { FundsService } from '../funds/funds.service';
 import { ExportMenuComponent } from '../shared/export-menu/export-menu.component';
 import { ReportDoc } from '../shared/report.types';
@@ -172,13 +173,14 @@ export class OrgFundsComponent {
         return {
             series,
             categories: days.map((d) => d.toFormat('dd MMM')),
-            colors: ['#39a935', '#d5af36', '#0ea5e9', '#8b5cf6'],
+            colors: [this._theme.theme().primary, this._theme.theme().accent, '#0ea5e9', '#8b5cf6'],
         };
     });
 
     constructor(
         public org: OrgFundsService,
-        private funds$: FundsService
+        private funds$: FundsService,
+        private _theme: ThemeService
     ) {}
 
     fmtAxis = (n: number): string => this._n(n);

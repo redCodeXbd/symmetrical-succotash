@@ -12,6 +12,7 @@ import {
 import { provideFuse } from '@fuse';
 import { TranslocoService, provideTransloco } from '@ngneat/transloco';
 import { appRoutes } from 'app/app.routes';
+import { ThemeService } from 'app/core/theme/theme.service';
 import { provideAuth } from 'app/core/auth/auth.provider';
 import { provideIcons } from 'app/core/icons/icons.provider';
 import { mockApiServices } from 'app/mock-api';
@@ -77,6 +78,16 @@ export const appConfig: ApplicationConfig = {
                 translocoService.setActiveLang(defaultLang);
 
                 return () => firstValueFrom(translocoService.load(defaultLang));
+            },
+            multi: true,
+        },
+
+        {
+            // Apply the saved theme before the first render so there is no flash of the default colours
+            provide: APP_INITIALIZER,
+            useFactory: () => {
+                const theme = inject(ThemeService);
+                return () => theme.init();
             },
             multi: true,
         },

@@ -1,0 +1,178 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <!-- Header -->
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div class="text-secondary text-md">Settings / Theme</div>
+                <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Theme</h1>
+                <div class="text-secondary mt-0.5 text-lg">
+                    Company logo and colours for the whole interface. Changes preview live; save to keep them.
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                @if (savedMessage && !theme.dirty()) {
+                    <span class="text-md font-medium text-primary" role="status">Theme saved</span>
+                }
+                @if (theme.dirty()) {
+                    <button mat-stroked-button type="button" (click)="discard()">Discard changes</button>
+                }
+                <button mat-flat-button color="primary" class="fuse-mat-button-large" type="button" [disabled]="!theme.dirty()" (click)="save()">
+                    Save theme
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <div class="flex flex-col gap-6 xl:col-span-2">
+                <!-- Presets -->
+                <section class="rounded-2xl bg-card p-6 shadow" aria-labelledby="presets-title">
+                    <h2 id="presets-title" class="text-xl font-semibold">Presets</h2>
+                    <p class="text-secondary text-md">Start from a ready-made scheme, then adjust any colour.</p>
+                    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        @for (p of presets; track p.id) {
+                            <button
+                                type="button"
+                                class="rounded-xl border p-3 text-left hover:bg-hover"
+                                [class]="isActive(p) ? 'border-primary ring-2 ring-primary' : ''"
+                                [attr.aria-pressed]="isActive(p)"
+                                (click)="applyPreset(p)"
+                            >
+                                <div class="flex overflow-hidden rounded-md border">
+                                    <span class="h-8 w-1/4" [style.background]="p.colors.sidebarBg"></span>
+                                    <span class="h-8 w-1/4" [style.background]="p.colors.pageBg"></span>
+                                    <span class="h-8 w-1/4" [style.background]="p.colors.primary"></span>
+                                    <span class="h-8 w-1/4" [style.background]="p.colors.accent"></span>
+                                </div>
+                                <div class="mt-2 text-md font-medium">{{ p.name }}</div>
+                            </button>
+                        }
+                    </div>
+                </section>
+
+                <!-- Company -->
+                <section class="rounded-2xl bg-card p-6 shadow" aria-labelledby="company-title">
+                    <h2 id="company-title" class="text-xl font-semibold">Company</h2>
+                    <p class="text-secondary text-md">Shown in the sidebar, on the sign-in page and in downloaded reports.</p>
+                    <div class="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div class="flex flex-col gap-1.5">
+                            <label for="company-name" class="text-sm font-medium">Company name</label>
+                            <input
+                                id="company-name"
+                                type="text"
+                                class="h-11 rounded-lg border bg-transparent px-3 text-md"
+                                [value]="t.companyName"
+                                (input)="set({ companyName: $any($event.target).value })"
+                            />
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <span class="text-sm font-medium" id="logo-label">Logo</span>
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="flex h-16 w-40 flex-none items-center justify-center rounded-lg border p-2"
+                                    [style.background]="t.logoBadge ? '#ffffff' : t.sidebarBg"
+                                >
+                                    <img class="max-h-full max-w-full object-contain" [src]="theme.logoUrl()" [alt]="t.companyName" />
+                                </div>
+                                <div class="flex flex-col items-start gap-2">
+                                    <label class="mat-mdc-stroked-button mdc-button mdc-button--outlined cursor-pointer" for="logo-file" style="cursor: pointer">
+                                        <span class="mdc-button__label px-4">Upload logo</span>
+                                    </label>
+                                    <input id="logo-file" type="file" class="sr-only" accept="image/png,image/jpeg,image/webp,image/svg+xml" (change)="onLogo($event)" />
+                                    @if (t.logo) {
+                                        <button type="button" class="text-md text-primary hover:underline" (click)="removeLogo()">Use the Encore logo</button>
+                                    }
+                                </div>
+                            </div>
+                            <div class="text-secondary text-xs">PNG, JPG, WebP or SVG, up to 1 MB. A transparent background works best.</div>
+                            @if (logoError) {
+                                <div class="text-xs text-red-600" role="alert">{{ logoError }}</div>
+                            }
+                            <label class="mt-1 flex items-center gap-2 text-md">
+                                <input type="checkbox" [checked]="t.logoBadge" (change)="set({ logoBadge: $any($event.target).checked })" />
+                                Put the logo on a white badge (for dark logos on a dark sidebar)
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Colours -->
+                <section class="rounded-2xl bg-card p-6 shadow" aria-labelledby="colors-title">
+                    <h2 id="colors-title" class="text-xl font-semibold">Colours</h2>
+
+                    <h3 class="mt-5 text-sm font-medium uppercase tracking-wide text-secondary">Buttons and links</h3>
+                    <div class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                        <theme-color-field label="Primary" hint="Main buttons, links, active states" [value]="t.primary" (valueChange)="set({ primary: $event })"></theme-color-field>
+                        <theme-color-field label="Accent" hint="Secondary highlights" [value]="t.accent" (valueChange)="set({ accent: $event })"></theme-color-field>
+                        <theme-color-field label="Danger" hint="Reject, cancel, errors" [value]="t.danger" (valueChange)="set({ danger: $event })"></theme-color-field>
+                    </div>
+
+                    <h3 class="mt-7 text-sm font-medium uppercase tracking-wide text-secondary">Page</h3>
+                    <div class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                        <theme-color-field label="Page background" [value]="t.pageBg" (valueChange)="set({ pageBg: $event })"></theme-color-field>
+                        <theme-color-field label="Card background" hint="Cards, tables, drawers, dialogs" [value]="t.cardBg" (valueChange)="set({ cardBg: $event })"></theme-color-field>
+                        <theme-color-field label="Text" [value]="t.text" (valueChange)="set({ text: $event })"></theme-color-field>
+                    </div>
+                    @if (contrastWarning(t.text, t.cardBg, 'Text on cards'); as w) {
+                        <div class="mt-3 text-sm text-amber-700" role="status">{{ w }}</div>
+                    }
+                    @if (contrastWarning(t.text, t.pageBg, 'Text on the page background'); as w) {
+                        <div class="mt-1 text-sm text-amber-700" role="status">{{ w }}</div>
+                    }
+
+                    <h3 class="mt-7 text-sm font-medium uppercase tracking-wide text-secondary">Sidebar</h3>
+                    <div class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                        <theme-color-field label="Sidebar background" hint="Also used on the sign-in page" [value]="t.sidebarBg" (valueChange)="set({ sidebarBg: $event })"></theme-color-field>
+                        <theme-color-field label="Sidebar text" [value]="t.sidebarText" (valueChange)="set({ sidebarText: $event })"></theme-color-field>
+                        <theme-color-field label="Active menu item" [value]="t.sidebarActive" (valueChange)="set({ sidebarActive: $event })"></theme-color-field>
+                    </div>
+                    @if (contrastWarning(t.sidebarText, t.sidebarBg, 'Sidebar text'); as w) {
+                        <div class="mt-3 text-sm text-amber-700" role="status">{{ w }}</div>
+                    }
+
+                    <h3 class="mt-7 text-sm font-medium uppercase tracking-wide text-secondary">Header</h3>
+                    <div class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                        <theme-color-field label="Header background" [value]="t.headerBg" (valueChange)="set({ headerBg: $event })"></theme-color-field>
+                        <theme-color-field label="Header text and icons" [value]="t.headerText" (valueChange)="set({ headerText: $event })"></theme-color-field>
+                    </div>
+                    @if (contrastWarning(t.headerText, t.headerBg, 'Header text'); as w) {
+                        <div class="mt-3 text-sm text-amber-700" role="status">{{ w }}</div>
+                    }
+                </section>
+            </div>
+
+            <!-- Preview -->
+            <aside class="xl:sticky xl:top-6 xl:self-start" aria-labelledby="preview-title">
+                <section class="rounded-2xl bg-card p-6 shadow">
+                    <h2 id="preview-title" class="text-xl font-semibold">Preview</h2>
+                    <p class="text-secondary text-md">Sample controls in the current colours.</p>
+
+                    <div class="mt-4 flex flex-wrap gap-3">
+                        <button mat-flat-button color="primary" type="button">Primary</button>
+                        <button mat-flat-button color="accent" type="button">Accent</button>
+                        <button mat-flat-button color="warn" type="button">Danger</button>
+                        <button mat-stroked-button color="primary" type="button">Outline</button>
+                    </div>
+
+                    <div class="mt-5 flex items-center gap-3">
+                        <span class="rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-800">Approved</span>
+                        <span class="rounded-full bg-accent-100 px-3 py-1 text-sm font-medium text-accent-800">Pending</span>
+                        <a class="text-md font-medium text-primary hover:underline" href="javascript:void(0)">A link</a>
+                    </div>
+
+                    <div class="mt-5 rounded-xl border p-4">
+                        <div class="text-md font-medium">Card title</div>
+                        <div class="text-secondary text-md">Secondary text sits under it.</div>
+                        <div class="mt-3 h-2 overflow-hidden rounded-full bg-primary-100">
+                            <div class="h-full w-2/3 bg-primary"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 border-t pt-4">
+                        <button mat-stroked-button type="button" (click)="restoreDefaults()">Restore Encore defaults</button>
+                        <div class="text-secondary mt-2 text-xs">Resets every colour and the logo; Save to keep it.</div>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+</div>

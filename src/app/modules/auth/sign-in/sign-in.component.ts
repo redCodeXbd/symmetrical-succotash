@@ -12,6 +12,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { fuseAnimations } from '@fuse/animations';
 import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
 import { AuthService } from 'app/core/auth/auth.service';
+import { ThemeService } from 'app/core/theme/theme.service';
 import { AuthBrandPanelComponent } from 'app/modules/auth/brand-panel/brand-panel.component';
 
 @Component({
@@ -45,6 +46,7 @@ export class AuthSignInComponent implements OnInit {
     constructor(
         private _activatedRoute: ActivatedRoute,
         private _authService: AuthService,
+        public theme: ThemeService,
         private _formBuilder: UntypedFormBuilder,
         private _router: Router
     ) {}

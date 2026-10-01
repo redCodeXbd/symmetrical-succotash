@@ -2,3 +2,8 @@
 /*  @ Import/write your custom styles here.
 /*  @ Styles from this file will override 'vendors.scss' and Fuse's base styles.
 /* ----------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------- */
+/*  @ Runtime theme. The colours come from CSS variables that ThemeService writes on <body>.
+/* ----------------------------------------------------------------------------------------------------- */
+@import 'app-theme';

@@ -12,6 +12,7 @@ import { RouterLink } from '@angular/router';
 import { fuseAnimations } from '@fuse/animations';
 import { FuseAlertComponent, FuseAlertType } from '@fuse/components/alert';
 import { AuthService } from 'app/core/auth/auth.service';
+import { ThemeService } from 'app/core/theme/theme.service';
 import { AuthBrandPanelComponent } from 'app/modules/auth/brand-panel/brand-panel.component';
 import { finalize } from 'rxjs';
 
@@ -45,6 +46,7 @@ export class AuthForgotPasswordComponent implements OnInit {
      */
     constructor(
         private _authService: AuthService,
+        public theme: ThemeService,
         private _formBuilder: UntypedFormBuilder
     ) {}
 

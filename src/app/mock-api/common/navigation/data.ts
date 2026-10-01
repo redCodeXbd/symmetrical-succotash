@@ -21,6 +21,20 @@ export const defaultNavigation: FuseNavigationItem[] = [
                 link : '/treasury/funds'
             }
         ]
+    },
+    {
+        id      : 'settings',
+        title   : 'Settings',
+        type    : 'collapsable',
+        icon    : 'heroicons_outline:cog-6-tooth',
+        children: [
+            {
+                id   : 'settings.theme',
+                title: 'Theme',
+                type : 'basic',
+                link : '/settings/theme'
+            }
+        ]
     }
 ];
 export const compactNavigation: FuseNavigationItem[] = [

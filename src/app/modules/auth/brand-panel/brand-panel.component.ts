@@ -1,4 +1,5 @@
 import { Component, ViewEncapsulation } from '@angular/core';
+import { ThemeService } from 'app/core/theme/theme.service';
 
 @Component({
     selector: 'auth-brand-panel',
@@ -8,6 +9,8 @@ import { Component, ViewEncapsulation } from '@angular/core';
     standalone: true,
 })
 export class AuthBrandPanelComponent {
+    constructor(public theme: ThemeService) {}
+
     modules: string[] = [
         'Work Orders',
         'Sales',
