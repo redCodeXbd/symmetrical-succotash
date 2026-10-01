@@ -1,0 +1,223 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <!-- Header -->
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div class="text-secondary text-md">Treasury / Funds</div>
+                <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Funds</h1>
+                <div class="text-secondary mt-0.5 text-lg">
+                    {{ role() === 'employee' ? 'Request funds and keep track of your payments.' : 'Review employee requests and record disbursements.' }}
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-4">
+                <mat-button-toggle-group
+                    aria-label="Preview as"
+                    [value]="role()"
+                    (change)="setRole($event.value)"
+                >
+                    <mat-button-toggle value="employee">Employee view</mat-button-toggle>
+                    <mat-button-toggle value="accounts">Accounts view</mat-button-toggle>
+                </mat-button-toggle-group>
+                @if (role() === 'employee') {
+                    <button mat-flat-button color="primary" class="fuse-mat-button-large" (click)="openNew()">
+                        <mat-icon [svgIcon]="'heroicons_mini:plus'"></mat-icon>
+                        <span class="ml-2">Request Funds</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
+            <div class="rounded-2xl bg-card p-6 shadow">
+                <div class="text-secondary text-md font-medium">Awaiting approval</div>
+                <div class="mt-2 text-3xl font-semibold tracking-tight">{{ funds.currency }} {{ awaitingApprovalTotal() | number: '1.0-2' }}</div>
+                <div class="text-secondary mt-1 text-sm">{{ awaitingApproval().length }} {{ awaitingApproval().length === 1 ? 'request' : 'requests' }} under review</div>
+            </div>
+            <div class="rounded-2xl bg-card p-6 shadow">
+                <div class="text-secondary text-md font-medium">Awaiting payment</div>
+                <div class="mt-2 text-3xl font-semibold tracking-tight">{{ funds.currency }} {{ awaitingPaymentTotal() | number: '1.0-2' }}</div>
+                <div class="text-secondary mt-1 text-sm">Approved for disbursement</div>
+            </div>
+            <div class="rounded-2xl bg-card p-6 shadow">
+                <div class="text-secondary text-md font-medium">{{ role() === 'employee' ? 'Received this month' : 'Paid out this month' }}</div>
+                <div class="mt-2 text-3xl font-semibold tracking-tight">{{ funds.currency }} {{ receivedTotal() | number: '1.0-2' }}</div>
+                <div class="text-secondary mt-1 text-sm">{{ receivedThisMonth().length }} {{ receivedThisMonth().length === 1 ? 'payment' : 'payments' }} recorded</div>
+            </div>
+        </div>
+
+        <!-- Tabs and table -->
+        <div class="mt-8 overflow-hidden rounded-2xl bg-card shadow">
+            <div class="flex border-b px-4" role="tablist">
+                @for (t of [{ id: 'requests', label: role() === 'employee' ? 'My Requests' : 'Requests' }, { id: 'transactions', label: role() === 'employee' ? 'My Transactions' : 'Transactions' }]; track t.id) {
+                    <button
+                        type="button"
+                        role="tab"
+                        class="-mb-px h-14 border-b-2 px-4 text-lg font-medium"
+                        [class]="tab() === t.id ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'"
+                        [attr.aria-selected]="tab() === t.id"
+                        (click)="setTab($any(t.id))"
+                    >
+                        {{ t.label }}
+                    </button>
+                }
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-3 p-4">
+                <input
+                    type="search"
+                    class="h-11 min-w-60 flex-auto rounded-lg border bg-transparent px-3 text-md"
+                    [placeholder]="tab() === 'requests' ? 'Search by purpose, request ID or employee...' : 'Search by transaction, request or reference...'"
+                    aria-label="Search"
+                    [ngModel]="search()"
+                    (ngModelChange)="search.set($event)"
+                />
+                @if (tab() === 'requests') {
+                    <select
+                        class="h-11 rounded-lg border bg-card px-3 text-md"
+                        aria-label="Filter by status"
+                        [ngModel]="status()"
+                        (ngModelChange)="status.set($event)"
+                    >
+                        <option value="all">All statuses</option>
+                        @for (s of statuses; track s) {
+                            <option [value]="s">{{ labels[s] }}</option>
+                        }
+                    </select>
+                }
+                <select
+                    class="h-11 rounded-lg border bg-card px-3 text-md"
+                    aria-label="Filter by date"
+                    [ngModel]="range()"
+                    (ngModelChange)="range.set($event)"
+                >
+                    <option value="last_30">Last 30 days</option>
+                    <option value="this_month">This month</option>
+                    <option value="all">All time</option>
+                </select>
+            </div>
+
+            @if (tab() === 'requests') {
+                @if (requests().length === 0) {
+                    <div class="px-6 py-16 text-center">
+                        <div class="text-xl font-semibold">No fund requests yet</div>
+                        <div class="text-secondary mt-1 text-md">
+                            {{ scopedRequests().length === 0 ? 'Requests will appear here once they are submitted.' : 'No requests match the current filters.' }}
+                        </div>
+                        @if (role() === 'employee' && scopedRequests().length === 0) {
+                            <button mat-flat-button color="primary" class="mt-5" (click)="openNew()">Request Funds</button>
+                        }
+                    </div>
+                } @else {
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[720px] text-left text-md">
+                            <thead class="bg-gray-50 text-sm text-secondary dark:bg-gray-800">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 font-medium">Request / Date</th>
+                                    @if (role() === 'accounts') {
+                                        <th scope="col" class="px-3 py-3 font-medium">Employee</th>
+                                    }
+                                    <th scope="col" class="px-3 py-3 font-medium">Purpose</th>
+                                    <th scope="col" class="px-3 py-3 text-right font-medium">Amount</th>
+                                    <th scope="col" class="px-3 py-3 text-right font-medium">Paid</th>
+                                    <th scope="col" class="px-3 py-3 font-medium">Status</th>
+                                    <th scope="col" class="px-6 py-3"><span class="sr-only">Action</span></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                @for (r of requests(); track r.id) {
+                                    <tr class="hover:bg-hover">
+                                        <td class="px-6 py-3.5">
+                                            <button type="button" class="font-medium text-primary hover:underline" (click)="openRequest(r.id)">{{ r.id }}</button>
+                                            <div class="text-secondary text-sm">{{ r.submittedAt | date: 'dd MMM y' }}</div>
+                                        </td>
+                                        @if (role() === 'accounts') {
+                                            <td class="px-3 py-3.5">{{ r.employee }}</td>
+                                        }
+                                        <td class="px-3 py-3.5">{{ r.purpose }}</td>
+                                        <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ r.currency }} {{ r.amount | number: '1.0-2' }}</td>
+                                        <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ r.currency }} {{ r.paidAmount | number: '1.0-2' }}</td>
+                                        <td class="px-3 py-3.5">
+                                            <span class="whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-medium" [class]="classes[r.status]">{{ labels[r.status] }}</span>
+                                        </td>
+                                        <td class="px-6 py-3.5 text-right">
+                                            <button type="button" class="font-medium text-primary hover:underline" (click)="openRequest(r.id)">
+                                                {{ role() === 'accounts' && (r.status === 'pending' || r.status === 'approved' || r.status === 'partially_paid') ? 'Review' : 'View' }}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            } @else {
+                @if (transactions().length === 0) {
+                    <div class="px-6 py-16 text-center">
+                        <div class="text-xl font-semibold">No transactions yet</div>
+                        <div class="text-secondary mt-1 text-md">Only recorded payments appear here. A submitted or approved request is not a payment.</div>
+                    </div>
+                } @else {
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[720px] text-left text-md">
+                            <thead class="bg-gray-50 text-sm text-secondary dark:bg-gray-800">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 font-medium">Transaction / Date</th>
+                                    <th scope="col" class="px-3 py-3 font-medium">Request</th>
+                                    <th scope="col" class="px-3 py-3 font-medium">Method</th>
+                                    <th scope="col" class="px-3 py-3 font-medium">Reference</th>
+                                    <th scope="col" class="px-3 py-3 text-right font-medium">{{ role() === 'employee' ? 'Received' : 'Paid' }}</th>
+                                    <th scope="col" class="px-6 py-3"><span class="sr-only">Action</span></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                @for (t of transactions(); track t.id) {
+                                    <tr class="hover:bg-hover">
+                                        <td class="px-6 py-3.5">
+                                            <div class="font-medium">{{ t.id }}</div>
+                                            <div class="text-secondary text-sm">{{ t.date | date: 'dd MMM y' }}</div>
+                                        </td>
+                                        <td class="px-3 py-3.5">
+                                            <div>{{ t.requestId }}</div>
+                                            <div class="text-secondary text-sm">{{ funds.requestById().get(t.requestId)?.purpose }}</div>
+                                        </td>
+                                        <td class="px-3 py-3.5">{{ t.method }}</td>
+                                        <td class="px-3 py-3.5">{{ t.reference || '-' }}</td>
+                                        <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ t.currency }} {{ t.amount | number: '1.0-2' }}</td>
+                                        <td class="px-6 py-3.5 text-right">
+                                            <button type="button" class="font-medium text-primary hover:underline" (click)="openRequest(t.requestId)">Details</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+
+            <div class="text-secondary border-t px-6 py-3 text-sm">
+                {{ tab() === 'requests' ? requests().length + (requests().length === 1 ? ' request' : ' requests') : transactions().length + (transactions().length === 1 ? ' transaction' : ' transactions') }}
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (formOpen()) {
+    <funds-request-form
+        [request]="editing()"
+        (closed)="formOpen.set(false)"
+        (saved)="onSaved($event)"
+    ></funds-request-form>
+}
+
+@if (selected(); as request) {
+    @if (!formOpen()) {
+        <funds-request-detail
+            [request]="request"
+            [role]="role()"
+            (closed)="selectedId.set(null)"
+            (edit)="openEdit($event)"
+        ></funds-request-detail>
+    }
+}

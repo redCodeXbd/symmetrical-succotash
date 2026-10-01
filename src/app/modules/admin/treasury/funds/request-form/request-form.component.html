@@ -1,0 +1,62 @@
+<funds-slide-over
+    [heading]="request ? 'Edit request ' + request.id : 'Request Funds'"
+    subheading="Submit a request to your accounts team."
+    (closed)="closed.emit()"
+>
+    <form id="request-funds-form" class="flex flex-col" [formGroup]="form" (ngSubmit)="submit()">
+        <mat-form-field class="w-full">
+            <mat-label>Amount</mat-label>
+            <input matInput type="number" min="0" step="0.01" placeholder="0.00" formControlName="amount" />
+            @if (form.controls.amount.hasError('required')) {
+                <mat-error>Amount is required</mat-error>
+            } @else if (form.controls.amount.hasError('min')) {
+                <mat-error>Enter an amount above zero</mat-error>
+            }
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+            <mat-label>Purpose</mat-label>
+            <textarea
+                matInput
+                rows="3"
+                placeholder="What will these funds be used for?"
+                formControlName="purpose"
+            ></textarea>
+            <mat-error>Purpose is required</mat-error>
+        </mat-form-field>
+
+        <div class="grid grid-cols-2 gap-4">
+            <mat-form-field>
+                <mat-label>Needed by</mat-label>
+                <input matInput [matDatepicker]="neededByPicker" [min]="minDate" formControlName="neededBy" />
+                <mat-datepicker-toggle matIconSuffix [for]="neededByPicker"></mat-datepicker-toggle>
+                <mat-datepicker #neededByPicker></mat-datepicker>
+                <mat-error>Choose a date</mat-error>
+            </mat-form-field>
+            <mat-form-field>
+                <mat-label>Work order (optional)</mat-label>
+                <mat-select formControlName="workOrder">
+                    <mat-option [value]="null">None</mat-option>
+                    @for (wo of funds.workOrders; track wo) {
+                        <mat-option [value]="wo">{{ wo }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label for="attachment" class="text-secondary text-sm">Supporting attachment (optional)</label>
+            <input id="attachment" type="file" class="text-md" (change)="onFile($event)" />
+            @if (attachment) {
+                <div class="text-secondary text-sm">Attached: {{ attachment }}</div>
+            }
+        </div>
+    </form>
+
+    <ng-container footer>
+        <button mat-stroked-button type="button" (click)="closed.emit()">Cancel</button>
+        <button mat-flat-button color="primary" type="submit" form="request-funds-form">
+            {{ request ? 'Save changes' : 'Submit Request' }}
+        </button>
+    </ng-container>
+</funds-slide-over>

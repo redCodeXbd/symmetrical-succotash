@@ -13,6 +13,7 @@ const generatePalette = require(
  */
 const customPalettes = {
     brand: generatePalette('#2196F3'),
+    encore: generatePalette('#39a935'),
 };
 
 /**
@@ -41,6 +42,9 @@ const themes = {
     // theme and will extend it with their given configuration.
     brand: {
         primary: customPalettes.brand,
+    },
+    encore: {
+        primary: customPalettes.encore,
     },
     teal: {
         primary: {
