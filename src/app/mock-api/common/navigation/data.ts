@@ -60,6 +60,13 @@ export const defaultNavigation: FuseNavigationItem[] = [
                 link : '/treasury/transactions'
             }
         ]
+    },
+    {
+        id   : 'clients',
+        title: 'Clients',
+        type : 'basic',
+        icon : 'heroicons_outline:user-group',
+        link : '/clients'
     }
 ];
 export const compactNavigation: FuseNavigationItem[] = [

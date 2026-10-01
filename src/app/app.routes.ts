@@ -77,6 +77,7 @@ export const appRoutes: Route[] = [
         },
         children: [
             {path: 'dashboard', loadChildren: () => import('app/modules/admin/dashboard/dashboard.routes')},
+            {path: 'clients', canActivate: [permissionGuard('clients.view')], loadChildren: () => import('app/modules/admin/clients/clients.routes')},
             {path: 'example', loadChildren: () => import('app/modules/admin/example/example.routes')},
             {path: 'settings/categories', canActivate: [permissionGuard('categories.view')], loadChildren: () => import('app/modules/admin/settings/categories/categories.routes')},
             {path: 'settings/theme', canActivate: [permissionGuard('theme.view')], loadChildren: () => import('app/modules/admin/settings/theme/theme.routes')},

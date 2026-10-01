@@ -1,7 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { ALL_PERMISSIONS, AppUser, ApprovalRule, Role } from './access.types';
 
-const STORAGE_KEY = 'encore.access.v1';
+const STORAGE_KEY = 'encore.access.v2';
 
 const slug = (name: string): string =>
     name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -20,7 +20,8 @@ const SEED_ROLES: Role[] = [
             'fund-requests.confirm_return', 'fund-requests.export',
             'org-funds.view', 'org-funds.add', 'org-funds.export',
             'transactions.view', 'transactions.view_all', 'transactions.export',
-            'categories.view', 'notifications.view_employee', 'approvals.view'
+            'categories.view', 'notifications.view_employee', 'approvals.view',
+            'clients.view', 'clients.view_all'
         ),
     },
     {
@@ -32,7 +33,8 @@ const SEED_ROLES: Role[] = [
             'fund-requests.view', 'fund-requests.view_all', 'fund-requests.add', 'fund-requests.edit',
             'fund-requests.approve', 'fund-requests.close', 'fund-requests.return', 'fund-requests.export',
             'org-funds.view', 'transactions.view', 'transactions.view_all', 'transactions.export',
-            'notifications.view_employee', 'approvals.view'
+            'notifications.view_employee', 'approvals.view',
+            'clients.view', 'clients.view_all', 'clients.add', 'clients.edit', 'clients.assign_user', 'clients.share'
         ),
     },
     {
@@ -43,7 +45,8 @@ const SEED_ROLES: Role[] = [
         permissions: perms(
             'fund-requests.view', 'fund-requests.add', 'fund-requests.edit',
             'org-funds.view', 'org-funds.add',
-            'transactions.view', 'categories.view', 'categories.add', 'categories.edit'
+            'transactions.view', 'categories.view', 'categories.add', 'categories.edit',
+            'clients.view', 'clients.view_all', 'clients.add', 'clients.edit'
         ),
     },
     {
@@ -56,6 +59,13 @@ const SEED_ROLES: Role[] = [
             'fund-requests.return', 'transactions.view'
         ),
     },
+    {
+        id: 'client',
+        name: 'Client',
+        description: "An outside client. Sees only their own projects and documents and can send requirements and orders.",
+        locked: false,
+        permissions: perms('clients.view', 'clients.submit'),
+    },
 ];
 
 const SEED_USERS: AppUser[] = [
@@ -65,6 +75,8 @@ const SEED_USERS: AppUser[] = [
     { id: 'u-imran', name: 'Imran Hossain', email: 'imran.hossain@company.com', roleIds: ['data-entry'] },
     { id: 'u-mehedi', name: 'Mehedi Hasan', email: 'mehedi.hasan@company.com', roleIds: ['employee'] },
     { id: 'u-rahim', name: 'Rahim Ahmed', email: 'rahim.ahmed@company.com', roleIds: ['employee', 'data-entry'] },
+    { id: 'u-karim', name: 'Karim Chowdhury', email: 'karim@bengalsteel.example', roleIds: ['client'], clientId: 'C-1001' },
+    { id: 'u-farhana', name: 'Farhana Islam', email: 'farhana@deltapower.example', roleIds: ['client'], clientId: 'C-1002' },
 ];
 
 /** Small requests need one approver; larger ones climb the tree. */
@@ -208,6 +220,32 @@ export class AccessService {
         }
         const roleIds = this.roles().some((r) => r.id === 'employee') ? ['employee'] : [];
         this.users.update((list) => [...list, { id: `u-${slug(cleanName)}-${list.length + 1}`, name: cleanName, email: cleanEmail, roleIds }]);
+        this._save();
+        return null;
+    }
+
+    /** Gives a user login access to one client (or removes it with null). Linked users get the Client role if they have none. */
+    setUserClient(userId: string, clientId: string | null): void {
+        this.users.update((list) =>
+            list.map((u) => {
+                if (u.id !== userId) {
+                    return u;
+                }
+                const roleIds = clientId && u.roleIds.length === 0 ? ['client'] : u.roleIds;
+                return { ...u, clientId, roleIds };
+            })
+        );
+        this._save();
+    }
+
+    /** Creates a client login: a user with the Client role linked to the client. */
+    addClientUser(name: string, email: string, clientId: string): string | null {
+        const error = this.addUser(name, email);
+        if (error) {
+            return error;
+        }
+        const created = this.users()[this.users().length - 1];
+        this.users.update((list) => list.map((u) => (u.id === created.id ? { ...u, roleIds: ['client'], clientId } : u)));
         this._save();
         return null;
     }

@@ -92,6 +92,20 @@ export const FEATURES: FeatureDef[] = [
         ],
     },
     {
+        id: 'clients',
+        title: 'Clients',
+        permissions: [
+            { key: 'view', label: 'View', description: "Open Clients. Without \"View all\", only the user's own client is shown" },
+            { key: 'view_all', label: 'View all', description: 'See every client, project and document' },
+            { key: 'add', label: 'Add', description: 'Create clients and projects' },
+            { key: 'edit', label: 'Edit', description: 'Edit clients, post project updates and add company documents' },
+            { key: 'delete', label: 'Delete', description: 'Delete clients and documents' },
+            { key: 'assign_user', label: 'Assign user', description: 'Give a user login access to a client' },
+            { key: 'share', label: 'Share', description: 'Share documents and projects by link or email' },
+            { key: 'submit', label: 'Submit', description: 'Send requirements, purchase orders and other documents (client side)' },
+        ],
+    },
+    {
         id: 'notifications',
         title: 'Notifications',
         permissions: [
@@ -118,6 +132,8 @@ export interface AppUser {
     email: string;
     /** An employee can hold several roles; their permissions add together. */
     roleIds: string[];
+    /** Set for a client user: they only see this client's projects and documents. */
+    clientId?: string | null;
 }
 
 /**
