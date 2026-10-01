@@ -82,6 +82,7 @@ export const appRoutes: Route[] = [
             {path: 'projects', canActivate: [permissionGuard('projects.view')], loadChildren: () => import('app/modules/admin/projects/projects.routes')},
             {path: 'store', canActivate: [permissionGuard('store.view')], loadChildren: () => import('app/modules/admin/store/store.routes')},
             {path: 'profile', loadChildren: () => import('app/modules/admin/profile/profile.routes')},
+            {path: 'users', canActivate: [permissionGuard('users.view')], loadChildren: () => import('app/modules/admin/users/users.routes')},
             {path: 'example', loadChildren: () => import('app/modules/admin/example/example.routes')},
             {path: 'settings/categories', canActivate: [permissionGuard('categories.view')], loadChildren: () => import('app/modules/admin/settings/categories/categories.routes')},
             {path: 'settings/theme', canActivate: [permissionGuard('theme.view')], loadChildren: () => import('app/modules/admin/settings/theme/theme.routes')},
