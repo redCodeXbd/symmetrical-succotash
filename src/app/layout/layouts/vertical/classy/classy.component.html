@@ -24,26 +24,26 @@
                 />
             </div>
             <!-- Components -->
-            <div class="ml-auto flex items-center">
+            <div class="app-sidebar-actions ml-auto flex items-center gap-2">
                 <notifications></notifications>
+                <user [showAvatar]="true"></user>
             </div>
         </div>
     </ng-container>
     <!-- Navigation footer hook: user card -->
     <ng-container fuseVerticalNavigationContentFooter>
         <div class="app-sidebar-user">
-            @if (user.avatar) {
-                <img class="h-10 w-10 flex-none rounded-full object-cover" [src]="user.avatar" alt="User avatar" />
-            } @else {
-                <div class="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-primary text-sm font-bold text-on-primary">
-                    {{ user.name?.charAt(0) }}
-                </div>
-            }
-            <div class="min-w-0 flex-auto">
-                <div class="truncate text-md font-semibold">{{ user.name }}</div>
-                <div class="truncate text-sm opacity-65">{{ user.email }}</div>
+            <div class="relative flex-none">
+                @if (user.avatar) {
+                    <img class="h-11 w-11 rounded-full object-cover" [src]="user.avatar" alt="" />
+                } @else {
+                    <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-base font-bold text-on-primary">
+                        {{ user.name?.charAt(0) }}
+                    </div>
+                }
+                <span class="app-sidebar-user-dot" aria-hidden="true"></span>
             </div>
-            <user [showAvatar]="false"></user>
+            <div class="min-w-0 flex-auto truncate text-base font-semibold">{{ user.name }}</div>
         </div>
     </ng-container>
 </fuse-vertical-navigation>
