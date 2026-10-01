@@ -75,6 +75,7 @@ export const appRoutes: Route[] = [
         },
         children: [
             {path: 'example', loadChildren: () => import('app/modules/admin/example/example.routes')},
+            {path: 'treasury/organization-funds', loadChildren: () => import('app/modules/admin/treasury/org-funds/org-funds.routes')},
             {path: 'treasury/funds', loadChildren: () => import('app/modules/admin/treasury/funds/funds.routes')},
         ]
     }

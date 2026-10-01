@@ -58,6 +58,7 @@ export interface FundTransaction {
 export interface SourceFund {
     id: string;
     name: string;
+    category: string;
     currency: string;
     balance: number;
 }
@@ -71,6 +72,7 @@ export interface FundRequestInput {
 }
 
 export interface PaymentInput {
+    category: string;
     fundId: string;
     amount: number;
     date: string;

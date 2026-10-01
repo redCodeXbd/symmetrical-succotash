@@ -1,4 +1,5 @@
 import { computed, Injectable, signal } from '@angular/core';
+import { OrgFundsService } from '../org-funds/org-funds.service';
 import { DateTime } from 'luxon';
 import {
     FundRequest,
@@ -18,6 +19,8 @@ const CURRENCY = 'BDT';
  */
 @Injectable({ providedIn: 'root' })
 export class FundsService {
+    constructor(private _org: OrgFundsService) {}
+
     /**
      * Company, branch, department and currency come from the signed-in user's profile,
      * never from the request form. Hard-coded here until the user profile carries them.
@@ -36,15 +39,16 @@ export class FundsService {
 
     private _requests = signal<FundRequest[]>(this._seedRequests());
     private _transactions = signal<FundTransaction[]>(this._seedTransactions());
-    private _funds = signal<SourceFund[]>([
-        { id: 'F-01', name: 'Head Office Cash Fund', currency: CURRENCY, balance: 150000 },
-        { id: 'F-02', name: 'Operating Bank Fund', currency: CURRENCY, balance: 800000 },
-        { id: 'F-03', name: 'Project Fund', currency: CURRENCY, balance: 300000 },
-    ]);
 
     readonly requests = this._requests.asReadonly();
     readonly transactions = this._transactions.asReadonly();
-    readonly funds = this._funds.asReadonly();
+    /** Active BDT funds a payment can be taken from, with their available balance. */
+    readonly funds = computed<SourceFund[]>(() =>
+        this._org
+            .funds()
+            .filter((f) => f.active && f.currency === CURRENCY)
+            .map((f) => ({ id: f.id, name: f.name, category: f.category, currency: f.currency, balance: this._org.available(f) }))
+    );
     readonly requestById = computed(
         () => new Map(this._requests().map((r) => [r.id, r]))
     );
@@ -141,12 +145,15 @@ export class FundsService {
 
     recordPayment(id: string, input: PaymentInput, by: string): string | null {
         const request = this.requestById().get(id);
-        const fund = this._funds().find((f) => f.id === input.fundId);
+        const fund = this.funds().find((f) => f.id === input.fundId);
         if (!request || !['approved', 'partially_paid'].includes(request.status)) {
             return 'Payments can only be recorded against approved requests.';
         }
-        if (!fund) {
-            return 'Select a source fund.';
+        if (!input.category) {
+            return 'Select a fund category.';
+        }
+        if (!fund || fund.category !== input.category) {
+            return 'Select a source fund from the chosen category.';
         }
         if (!(input.amount > 0)) {
             return 'Enter a payment amount above zero.';
@@ -171,8 +178,13 @@ export class FundsService {
             recordedBy: by,
         };
         this._transactions.update((list) => [transaction, ...list]);
-        this._funds.update((list) =>
-            list.map((f) => (f.id === fund.id ? { ...f, balance: f.balance - input.amount } : f))
+        this._org.disburse(
+            fund.id,
+            input.amount,
+            input.date,
+            transaction.id,
+            `${request.id} ${request.purpose}`,
+            by
         );
         this._patch(id, (r) => {
             const paidAmount = r.paidAmount + input.amount;

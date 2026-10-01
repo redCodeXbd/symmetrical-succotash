@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { DateTime } from 'luxon';
+import { OrgFundsService } from '../../org-funds/org-funds.service';
 import { FundsService } from '../funds.service';
 import {
     FundRequest,
@@ -16,7 +17,7 @@ import {
     STATUS_CLASSES,
     STATUS_LABELS,
 } from '../funds.types';
-import { SlideOverComponent } from '../slide-over/slide-over.component';
+import { SlideOverComponent } from '../../shared/slide-over/slide-over.component';
 
 type Mode = 'view' | 'approve' | 'reject' | 'pay';
 
@@ -54,6 +55,7 @@ export class RequestDetailComponent {
     approveForm = this._fb.group({ amount: [null as number | null, [Validators.required, Validators.min(0.01)]] });
     rejectForm = this._fb.group({ reason: ['', Validators.required] });
     payForm = this._fb.group({
+        category: ['', Validators.required],
         fundId: ['', Validators.required],
         amount: [null as number | null, [Validators.required, Validators.min(0.01)]],
         date: [DateTime.now(), Validators.required],
@@ -63,7 +65,8 @@ export class RequestDetailComponent {
 
     constructor(
         private _fb: FormBuilder,
-        public funds: FundsService
+        public funds: FundsService,
+        public org: OrgFundsService
     ) {}
 
     get payments(): FundTransaction[] {
@@ -90,8 +93,23 @@ export class RequestDetailComponent {
         return this.role === 'accounts' && this.remaining > 0 && ['approved', 'partially_paid'].includes(this.request.status);
     }
 
+    /** Categories that have at least one fund a payment can be given from. */
+    get categories(): string[] {
+        return this.org.categories().filter((c) => this.funds.funds().some((f) => f.category === c));
+    }
+
+    get categoryFunds() {
+        const category = this.payForm.value.category;
+        return this.funds.funds().filter((f) => f.category === category);
+    }
+
+    onCategoryChange(): void {
+        this.payForm.patchValue({ fundId: '' });
+    }
+
     fundName(id: string): string {
-        return this.funds.funds().find((f) => f.id === id)?.name ?? id;
+        const fund = this.org.funds().find((f) => f.id === id);
+        return fund ? `${fund.category} · ${fund.name}` : id;
     }
 
     start(mode: Mode): void {
@@ -103,6 +121,7 @@ export class RequestDetailComponent {
             this.rejectForm.reset({ reason: '' });
         } else if (mode === 'pay') {
             this.payForm.reset({
+                category: '',
                 fundId: '',
                 amount: this.remaining,
                 date: DateTime.now(),
@@ -147,6 +166,7 @@ export class RequestDetailComponent {
             this.funds.recordPayment(
                 this.request.id,
                 {
+                    category: v.category,
                     fundId: v.fundId,
                     amount: Number(v.amount),
                     date: v.date.toISO(),

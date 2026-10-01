@@ -1,4 +1,4 @@
-<funds-slide-over
+<treasury-slide-over
     [heading]="request.id"
     [subheading]="request.purpose"
     (closed)="closed.emit()"
@@ -69,12 +69,24 @@
         <form class="mt-6 rounded-xl border p-4" [formGroup]="payForm" (ngSubmit)="pay()">
             <div class="mb-3 font-medium">Record payment</div>
             <mat-form-field class="w-full">
-                <mat-label>Source fund</mat-label>
-                <mat-select formControlName="fundId">
-                    @for (fund of funds.funds(); track fund.id) {
-                        <mat-option [value]="fund.id">{{ fund.name }} ({{ fund.currency }} {{ fund.balance | number: '1.0-2' }})</mat-option>
+                <mat-label>Fund category</mat-label>
+                <mat-select formControlName="category" (selectionChange)="onCategoryChange()">
+                    @for (c of categories; track c) {
+                        <mat-option [value]="c">{{ c }}</mat-option>
                     }
                 </mat-select>
+                <mat-error>Select the category this payment is given from</mat-error>
+            </mat-form-field>
+            <mat-form-field class="w-full">
+                <mat-label>Source fund</mat-label>
+                <mat-select formControlName="fundId">
+                    @for (fund of categoryFunds; track fund.id) {
+                        <mat-option [value]="fund.id">{{ fund.name }} ({{ fund.currency }} {{ fund.balance | number: '1.0-2' }} available)</mat-option>
+                    }
+                </mat-select>
+                @if (!payForm.value.category) {
+                    <mat-hint>Choose a category first</mat-hint>
+                }
                 <mat-error>Select a source fund</mat-error>
             </mat-form-field>
             <div class="grid grid-cols-2 gap-4">
@@ -173,4 +185,4 @@
             }
         }
     </ng-container>
-</funds-slide-over>
+</treasury-slide-over>

@@ -1,0 +1,300 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <!-- Header -->
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div class="text-secondary text-md">Treasury / Organization Funds</div>
+                <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Organization Funds</h1>
+                <div class="text-secondary mt-0.5 text-lg">Balances, reserved amounts and activity across company funds.</div>
+            </div>
+            <button mat-flat-button color="primary" class="fuse-mat-button-large" (click)="addOpen.set(true)">
+                <mat-icon [svgIcon]="'heroicons_mini:plus'"></mat-icon>
+                <span class="ml-2">Add fund</span>
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="mt-6 flex flex-wrap items-end gap-3">
+            <label class="flex flex-col gap-1 text-sm text-secondary">
+                Company
+                <select class="h-11 min-w-48 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="company()" (ngModelChange)="company.set($event)">
+                    <option value="all">All companies</option>
+                    @for (c of companies(); track c) {
+                        <option [value]="c">{{ c }}</option>
+                    }
+                </select>
+            </label>
+            <label class="flex flex-col gap-1 text-sm text-secondary">
+                Date range
+                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="range()" (ngModelChange)="range.set($event)">
+                    <option value="last_30">Last 30 days</option>
+                    <option value="this_month">This month</option>
+                    <option value="last_90">Last 90 days</option>
+                </select>
+            </label>
+            <label class="flex flex-col gap-1 text-sm text-secondary">
+                Branch
+                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="branch()" (ngModelChange)="branch.set($event)">
+                    <option value="all">All branches</option>
+                    @for (b of branches(); track b) {
+                        <option [value]="b">{{ b }}</option>
+                    }
+                </select>
+            </label>
+            <label class="flex flex-col gap-1 text-sm text-secondary">
+                Department
+                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="department()" (ngModelChange)="department.set($event)">
+                    <option value="all">All departments</option>
+                    @for (d of departments(); track d) {
+                        <option [value]="d">{{ d }}</option>
+                    }
+                </select>
+            </label>
+            <label class="flex flex-col gap-1 text-sm text-secondary">
+                Currency
+                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="currency()" (ngModelChange)="currency.set($event)">
+                    @for (c of currencies(); track c) {
+                        <option [value]="c">{{ c }}</option>
+                    }
+                </select>
+            </label>
+            <label class="flex flex-col gap-1 text-sm text-secondary">
+                Category
+                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="category()" (ngModelChange)="category.set($event)">
+                    <option value="all">All categories</option>
+                    @for (c of org.categories(); track c) {
+                        <option [value]="c">{{ c }}</option>
+                    }
+                </select>
+            </label>
+            <label class="flex flex-col gap-1 text-sm text-secondary">
+                Fund type
+                <select class="h-11 rounded-lg border bg-card px-3 text-md text-default" [ngModel]="type()" (ngModelChange)="type.set($event)">
+                    <option value="all">All types</option>
+                    @for (t of fundTypes; track t) {
+                        <option [value]="t">{{ t }}</option>
+                    }
+                </select>
+            </label>
+        </div>
+        <div class="text-secondary mt-2 text-sm">Totals are shown in {{ currency() }} only. Currencies are never added together.</div>
+
+        <!-- Summary cards -->
+        <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-5">
+            <div class="rounded-2xl bg-card p-6 shadow">
+                <div class="text-secondary text-md font-medium">Current balance</div>
+                <div class="mt-2 whitespace-nowrap text-xl font-semibold tracking-tight">{{ currency() }} {{ cardFmt(current()) }}</div>
+                <div class="text-secondary mt-1 text-sm">{{ activeFunds().length }} active {{ activeFunds().length === 1 ? 'fund' : 'funds' }}</div>
+            </div>
+            <div class="rounded-2xl bg-card p-6 shadow">
+                <div class="text-secondary text-md font-medium">Available balance</div>
+                <div class="mt-2 whitespace-nowrap text-xl font-semibold tracking-tight">{{ currency() }} {{ cardFmt(available()) }}</div>
+                <div class="text-secondary mt-1 text-sm">Current minus reserved</div>
+            </div>
+            <div class="rounded-2xl bg-card p-6 shadow">
+                <div class="text-secondary text-md font-medium">Reserved</div>
+                <div class="mt-2 whitespace-nowrap text-xl font-semibold tracking-tight">{{ currency() }} {{ cardFmt(reserved()) }}</div>
+                <div class="text-secondary mt-1 text-sm">Held for commitments</div>
+            </div>
+            <div class="rounded-2xl bg-card p-6 shadow">
+                <div class="text-secondary text-md font-medium">Expected incoming</div>
+                <div class="mt-2 whitespace-nowrap text-xl font-semibold tracking-tight">{{ currency() }} {{ cardFmt(incoming()) }}</div>
+                <div class="text-secondary mt-1 text-sm">Not yet received</div>
+            </div>
+            <div class="rounded-2xl bg-card p-6 shadow">
+                <div class="text-secondary text-md font-medium">Scheduled outgoing</div>
+                <div class="mt-2 whitespace-nowrap text-xl font-semibold tracking-tight">{{ currency() }} {{ cardFmt(outgoing()) }}</div>
+                <div class="text-secondary mt-1 text-sm">Due payments</div>
+            </div>
+        </div>
+
+        <!-- By category -->
+        <div class="mt-6 rounded-2xl bg-card p-6 shadow">
+            <div class="text-xl font-semibold">By category</div>
+            <div class="text-secondary text-md">Payments on the Funds page are given from one of these categories.</div>
+            @if (byCategory().length === 0) {
+                <div class="text-secondary py-6 text-md">No active funds match the filters.</div>
+            } @else {
+                <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    @for (c of byCategory(); track c.name) {
+                        <button
+                            type="button"
+                            class="rounded-xl border p-4 text-left hover:bg-hover"
+                            [class]="category() === c.name ? 'border-primary' : ''"
+                            [attr.aria-pressed]="category() === c.name"
+                            (click)="category.set(category() === c.name ? 'all' : c.name)"
+                        >
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium">{{ c.name }}</span>
+                                <span class="text-secondary text-sm">{{ c.count }} {{ c.count === 1 ? 'fund' : 'funds' }}</span>
+                            </div>
+                            <div class="mt-2 text-xl font-semibold">{{ currency() }} {{ cardFmt(c.available) }}</div>
+                            <div class="text-secondary text-sm">available of {{ cardFmt(c.current) }}</div>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Alerts -->
+        <div class="mt-6" aria-live="polite">
+            @if (alerts().length > 0) {
+                <div class="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-900">
+                    <div class="mb-2 font-semibold">Alerts ({{ alerts().length }})</div>
+                    <ul class="flex flex-col gap-1.5 text-md">
+                        @for (a of alerts(); track a.message) {
+                            <li class="flex gap-2">
+                                <span class="mt-0.5 flex-none font-semibold">
+                                    {{ a.kind === 'low' ? 'Low balance:' : a.kind === 'insufficient' ? 'Insufficient funds:' : 'Overdue:' }}
+                                </span>
+                                <span>{{ a.message }}</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            } @else {
+                <div class="text-secondary rounded-2xl border p-4 text-md">No alerts for the selected funds.</div>
+            }
+        </div>
+
+        <!-- Balance trend -->
+        <div class="mt-6 rounded-2xl bg-card p-6 shadow">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="text-xl font-semibold">Balance trend</div>
+                <div class="inline-flex rounded-lg border p-0.5" role="group" aria-label="Trend view">
+                    <button
+                        type="button"
+                        class="rounded-md px-3 py-1.5 text-md"
+                        [class]="trendMode() === 'total' ? 'bg-primary text-on-primary' : 'text-secondary'"
+                        [attr.aria-pressed]="trendMode() === 'total'"
+                        (click)="trendMode.set('total')"
+                    >
+                        Total
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded-md px-3 py-1.5 text-md"
+                        [class]="trendMode() === 'company' ? 'bg-primary text-on-primary' : 'text-secondary'"
+                        [attr.aria-pressed]="trendMode() === 'company'"
+                        (click)="trendMode.set('company')"
+                    >
+                        Compare companies
+                    </button>
+                </div>
+            </div>
+            @if (activeFunds().length === 0) {
+                <div class="text-secondary py-16 text-center text-md">No active funds match the filters.</div>
+            } @else {
+                <apx-chart
+                    class="mt-4 block"
+                    [series]="chart().series"
+                    [chart]="{ type: 'area', height: 300, toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false } }"
+                    [xaxis]="{ categories: chart().categories, tickAmount: 8, labels: { rotate: 0 } }"
+                    [yaxis]="{ labels: { formatter: fmtAxis } }"
+                    [colors]="chart().colors"
+                    [stroke]="{ curve: 'smooth', width: 2 }"
+                    [fill]="{ type: 'gradient', gradient: { opacityFrom: 0.3, opacityTo: 0.02 } }"
+                    [dataLabels]="{ enabled: false }"
+                    [legend]="{ show: trendMode() === 'company', position: 'top' }"
+                    [tooltip]="{ y: { formatter: fmtAxis } }"
+                ></apx-chart>
+            }
+        </div>
+
+        <!-- Fund table -->
+        <div class="mt-6 overflow-hidden rounded-2xl bg-card shadow">
+            <div class="px-6 py-4 text-xl font-semibold">Funds</div>
+            @if (funds().length === 0) {
+                <div class="text-secondary border-t px-6 py-16 text-center text-md">No funds match the filters.</div>
+            } @else {
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[1040px] text-left text-md">
+                        <thead class="bg-gray-50 text-sm text-secondary dark:bg-gray-800">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 font-medium">Fund</th>
+                                <th scope="col" class="px-3 py-3 font-medium">Category</th>
+                                <th scope="col" class="px-3 py-3 font-medium">Company</th>
+                                <th scope="col" class="px-3 py-3 font-medium">Branch</th>
+                                <th scope="col" class="px-3 py-3 font-medium">Department</th>
+                                <th scope="col" class="px-3 py-3 font-medium">Type</th>
+                                <th scope="col" class="px-3 py-3 font-medium">Currency</th>
+                                <th scope="col" class="px-3 py-3 text-right font-medium">Current</th>
+                                <th scope="col" class="px-3 py-3 text-right font-medium">Reserved</th>
+                                <th scope="col" class="px-3 py-3 text-right font-medium">Available</th>
+                                <th scope="col" class="px-6 py-3 font-medium">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            @for (f of funds(); track f.id) {
+                                <tr class="hover:bg-hover">
+                                    <td class="px-6 py-3.5">
+                                        <button type="button" class="font-medium text-primary hover:underline" (click)="selectedId.set(f.id)">{{ f.name }}</button>
+                                    </td>
+                                    <td class="px-3 py-3.5">{{ f.category }}</td>
+                                    <td class="px-3 py-3.5">{{ f.company }}</td>
+                                    <td class="px-3 py-3.5">{{ f.branch }}</td>
+                                    <td class="px-3 py-3.5">{{ f.department }}</td>
+                                    <td class="px-3 py-3.5">{{ f.type }}</td>
+                                    <td class="px-3 py-3.5">{{ f.currency }}</td>
+                                    <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ f.balance | number: '1.0-0' }}</td>
+                                    <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ f.reserved | number: '1.0-0' }}</td>
+                                    <td class="whitespace-nowrap px-3 py-3.5 text-right">{{ org.available(f) | number: '1.0-0' }}</td>
+                                    <td class="px-6 py-3.5">
+                                        <span class="whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-medium" [class]="statusClasses[org.status(f)]">{{ statusLabels[org.status(f)] }}</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <!-- Recent activity -->
+        <div class="mt-6 overflow-hidden rounded-2xl bg-card shadow">
+            <div class="px-6 py-4 text-xl font-semibold">Recent activity</div>
+            @if (recentActivity().length === 0) {
+                <div class="text-secondary border-t px-6 py-12 text-center text-md">No activity in the selected period.</div>
+            } @else {
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[800px] text-left text-md">
+                        <thead class="bg-gray-50 text-sm text-secondary dark:bg-gray-800">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 font-medium">Date</th>
+                                <th scope="col" class="px-3 py-3 font-medium">Company</th>
+                                <th scope="col" class="px-3 py-3 font-medium">Fund</th>
+                                <th scope="col" class="px-3 py-3 font-medium">Type</th>
+                                <th scope="col" class="px-3 py-3 font-medium">Reference</th>
+                                <th scope="col" class="px-3 py-3 text-right font-medium">Amount</th>
+                                <th scope="col" class="px-6 py-3 font-medium">Recorded by</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            @for (a of recentActivity(); track a.movement.id) {
+                                <tr>
+                                    <td class="whitespace-nowrap px-6 py-3.5">{{ a.movement.date | date: 'dd MMM y' }}</td>
+                                    <td class="px-3 py-3.5">{{ a.fund?.company }}</td>
+                                    <td class="px-3 py-3.5">{{ a.fund?.name }}</td>
+                                    <td class="px-3 py-3.5">{{ movementLabels[a.movement.type] }}</td>
+                                    <td class="px-3 py-3.5">{{ a.movement.reference }}</td>
+                                    <td class="whitespace-nowrap px-3 py-3.5 text-right" [class]="a.movement.direction === 'in' ? 'text-green-700' : ''">
+                                        {{ a.movement.direction === 'in' ? '+' : '-' }}{{ a.fund?.currency }} {{ a.movement.amount | number: '1.0-0' }}
+                                    </td>
+                                    <td class="px-6 py-3.5">{{ a.movement.by }}</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (addOpen()) {
+    <treasury-add-fund (closed)="addOpen.set(false)" (saved)="onFundAdded($event)"></treasury-add-fund>
+}
+
+@if (selected(); as fund) {
+    <treasury-fund-detail [fund]="fund" (closed)="selectedId.set(null)"></treasury-fund-detail>
+}
