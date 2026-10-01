@@ -93,7 +93,7 @@ export class ThemeService {
             if (stored && typeof stored === 'object') {
                 const theme = { ...DEFAULT_THEME };
                 for (const key of Object.keys(DEFAULT_THEME) as (keyof AppTheme)[]) {
-                    if (typeof stored[key] === typeof DEFAULT_THEME[key] || (key === 'logo' && typeof stored[key] === 'string')) {
+                    if (typeof stored[key] === typeof DEFAULT_THEME[key] || ((key === 'logo' || key === 'sidebarImage') && typeof stored[key] === 'string')) {
                         (theme as any)[key] = stored[key];
                     }
                 }
@@ -181,12 +181,47 @@ export class ThemeService {
         ]) {
             set(`app-${name}`, value);
         }
+        vars['--app-sidebar-wallpaper'] = this._wallpaper(t);
+        vars['--app-sidebar-blur'] = `${t.sidebarBlur}px`;
+        vars['--app-sidebar-tint'] = String(t.sidebarTint / 100);
+        document.body.dataset['sidebarGlow'] = t.sidebarGlow ? 'on' : 'off';
         document.body.dataset['tableStyle'] = t.tableStyle;
         document.body.dataset['tableDensity'] = t.tableDensity;
 
         const style = document.body.style;
         for (const [name, value] of Object.entries(vars)) {
             style.setProperty(name, value);
+        }
+    }
+
+    /** The CSS background behind the glass sidebar (and the sign-in side panel). */
+    private _wallpaper(t: AppTheme): string {
+        const blob = (c: string, alpha: number, pos: string) =>
+            `radial-gradient(${pos}, ${chroma(c).alpha(alpha).css()}, transparent 70%)`;
+        const flat = (c: string) => `linear-gradient(${c}, ${c})`;
+        switch (t.sidebarWallpaper) {
+            case 'solid':
+                return flat(t.sidebarBg);
+            case 'image':
+                if (t.sidebarImage) {
+                    return `url("${t.sidebarImage}")`;
+                }
+            // falls through to aurora when no image has been uploaded
+            case 'aurora': {
+                const teal = chroma(t.primary).set('hsl.h', '+55').hex();
+                return [
+                    blob(t.primary, 0.9, '130% 34% at 8% 5%'),
+                    blob(t.accent, 0.6, '120% 30% at 5% 92%'),
+                    blob(teal, 0.5, '110% 28% at 100% 45%'),
+                    flat(t.sidebarBg),
+                ].join(', ');
+            }
+            case 'ocean':
+                return [blob('#0ea5e9', 0.85, '130% 34% at 8% 5%'), blob('#6366f1', 0.6, '120% 30% at 5% 92%'), blob('#14b8a6', 0.5, '110% 28% at 100% 45%'), flat('#061a3a')].join(', ');
+            case 'sunset':
+                return [blob('#f97316', 0.85, '130% 34% at 8% 5%'), blob('#ec4899', 0.6, '120% 30% at 5% 92%'), blob('#facc15', 0.45, '110% 28% at 100% 45%'), flat('#1f0b14')].join(', ');
+            default:
+                return [blob('#ffffff', 0.28, '130% 34% at 8% 5%'), blob('#94a3b8', 0.4, '120% 30% at 5% 92%'), flat('#0b0f14')].join(', ');
         }
     }
 

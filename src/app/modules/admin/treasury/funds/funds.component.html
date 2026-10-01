@@ -19,10 +19,7 @@
                     <mat-button-toggle value="accounts">Accounts view</mat-button-toggle>
                 </mat-button-toggle-group>
                 @if (role() === 'employee') {
-                    <button mat-flat-button color="primary" class="fuse-mat-button-large" (click)="openNew()">
-                        <mat-icon [svgIcon]="'heroicons_mini:plus'"></mat-icon>
-                        <span class="ml-2">Request Funds</span>
-                    </button>
+                    <treasury-add-button label="Request Funds" (pressed)="openNew()"></treasury-add-button>
                 }
             </div>
         </div>

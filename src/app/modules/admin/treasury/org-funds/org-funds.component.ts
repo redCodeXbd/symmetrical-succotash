@@ -7,6 +7,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { DateTime } from 'luxon';
 import { ThemeService } from 'app/core/theme/theme.service';
 import { FundsService } from '../funds/funds.service';
+import { AddButtonComponent } from '../shared/add-button/add-button.component';
 import { ExportMenuComponent } from '../shared/export-menu/export-menu.component';
 import { ReportDoc } from '../shared/report.types';
 import { FundFiltersComponent, FundFilters } from './filters/fund-filters.component';
@@ -35,7 +36,7 @@ export interface Alert {
     templateUrl: './org-funds.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatIconModule, NgApexchartsModule, FundDetailComponent, AddFundComponent, ExportMenuComponent, FundFiltersComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatIconModule, NgApexchartsModule, FundDetailComponent, AddFundComponent, ExportMenuComponent, FundFiltersComponent, AddButtonComponent],
 })
 export class OrgFundsComponent {
     readonly statusLabels = STATUS_LABELS;

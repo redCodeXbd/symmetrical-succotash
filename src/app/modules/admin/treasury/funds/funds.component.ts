@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { DateTime } from 'luxon';
 import { FundsService } from './funds.service';
 import { FundRequest, FundRequestStatus, FundRole, STATUS_CLASSES, STATUS_LABELS } from './funds.types';
+import { AddButtonComponent } from '../shared/add-button/add-button.component';
 import { ExportMenuComponent } from '../shared/export-menu/export-menu.component';
 import { ReportDoc } from '../shared/report.types';
 import { RequestDetailComponent } from './request-detail/request-detail.component';
@@ -30,6 +31,7 @@ type Range = 'this_month' | 'last_30' | 'all';
         ExportMenuComponent,
         RequestDetailComponent,
         RequestFormComponent,
+        AddButtonComponent,
     ],
 })
 export class FundsComponent {

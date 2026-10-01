@@ -129,6 +129,48 @@
                         <div class="mt-3 text-sm text-amber-700" role="status">{{ w }}</div>
                     }
 
+                    <h4 class="mt-6 text-sm font-medium">Glass wallpaper</h4>
+                    <p class="text-secondary text-xs">The picture seen through the frosted sidebar. Aurora uses your primary and accent colours.</p>
+                    <div class="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-6">
+                        @for (w of wallpapers; track w.id) {
+                            <button
+                                type="button"
+                                class="rounded-xl border p-2 text-center hover:bg-hover"
+                                [class]="t.sidebarWallpaper === w.id ? 'border-primary ring-2 ring-primary' : ''"
+                                [attr.aria-pressed]="t.sidebarWallpaper === w.id"
+                                (click)="set({ sidebarWallpaper: w.id })"
+                            >
+                                <span class="block h-10 rounded-lg" [style.background]="w.id === 'image' && t.sidebarImage ? 'url(' + t.sidebarImage + ') center/cover' : w.preview"></span>
+                                <span class="mt-1.5 block text-xs font-medium">{{ w.name }}</span>
+                            </button>
+                        }
+                    </div>
+                    <div class="mt-3 flex flex-wrap items-center gap-3">
+                        <label class="mat-mdc-stroked-button mdc-button mdc-button--outlined" for="wallpaper-file" style="cursor: pointer">
+                            <span class="mdc-button__label px-4">Upload wallpaper</span>
+                        </label>
+                        <input id="wallpaper-file" type="file" class="sr-only" accept="image/png,image/jpeg,image/webp" (change)="onWallpaper($event)" />
+                        <span class="text-secondary text-xs">PNG, JPG or WebP. It is shrunk to fit the sidebar.</span>
+                    </div>
+                    @if (wallpaperError) {
+                        <div class="mt-2 text-xs text-red-600" role="alert">{{ wallpaperError }}</div>
+                    }
+
+                    <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <div class="flex flex-col gap-1.5">
+                            <label for="sb-blur" class="flex justify-between text-sm font-medium">Glass blur <span class="text-secondary">{{ t.sidebarBlur }}px</span></label>
+                            <input id="sb-blur" type="range" min="0" max="40" step="1" [value]="t.sidebarBlur" (input)="set({ sidebarBlur: +$any($event.target).value })" />
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <label for="sb-tint" class="flex justify-between text-sm font-medium">Glass tint <span class="text-secondary">{{ t.sidebarTint }}%</span></label>
+                            <input id="sb-tint" type="range" min="0" max="90" step="1" [value]="t.sidebarTint" (input)="set({ sidebarTint: +$any($event.target).value })" />
+                        </div>
+                    </div>
+                    <label class="mt-4 flex items-center gap-2 text-md">
+                        <input type="checkbox" [checked]="t.sidebarGlow" (change)="set({ sidebarGlow: $any($event.target).checked })" />
+                        Neon glow on the active item and sidebar edge
+                    </label>
+
                     <h3 class="mt-7 text-sm font-medium uppercase tracking-wide text-secondary">Header</h3>
                     <div class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-3">
                         <theme-color-field label="Header background" [value]="t.headerBg" (valueChange)="set({ headerBg: $event })"></theme-color-field>
