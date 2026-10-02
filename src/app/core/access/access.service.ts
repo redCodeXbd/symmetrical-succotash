@@ -332,6 +332,25 @@ export class AccessService {
         return null;
     }
 
+    /**
+     * The photo to show for the acting user. The demo's sign-in user keeps the mock photo until they
+     * change or remove it.
+     */
+    avatarFor(mockAvatar?: string): string | null {
+        const u = this.user();
+        if (u.avatar) {
+            return u.avatar;
+        }
+        return u.avatar === undefined && u.id === 'u-brian' ? (mockAvatar ?? null) : null;
+    }
+
+    /** Sets the acting user's photo; an empty text removes it. */
+    setAvatar(dataUrl: string): void {
+        const id = this.userId();
+        this.users.update((list) => list.map((u) => (u.id === id ? { ...u, avatar: dataUrl } : u)));
+        this._save();
+    }
+
     /** Lets the signed-in person keep their own contact details up to date. */
     updateProfile(details: { phone: string; title: string; about: string }): void {
         const id = this.userId();

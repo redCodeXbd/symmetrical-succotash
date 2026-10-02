@@ -46,8 +46,70 @@ export class ProfileComponent {
         users.user$.subscribe((u) => this.avatar.set(u?.avatar ?? null));
     }
 
-    get showAvatar(): boolean {
-        return !!this.avatar() && this.user().id === 'u-brian';
+    photoError = signal<string | null>(null);
+
+    /** The photo to show: the one the user chose, or the demo sign-in photo for Brian. */
+    get photo(): string | null {
+        return this.access.avatarFor(this.avatar() ?? undefined);
+    }
+
+    /** Reads the chosen image and shrinks it to a small square, so it is cheap to keep in the browser. */
+    async pickPhoto(event: Event): Promise<void> {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        input.value = '';
+        this.photoError.set(null);
+        if (!file) {
+            return;
+        }
+        if (!file.type.startsWith('image/')) {
+            this.photoError.set('Choose an image file (JPG, PNG or WebP).');
+            return;
+        }
+        if (file.size > 8 * 1024 * 1024) {
+            this.photoError.set('That image is larger than 8 MB. Choose a smaller one.');
+            return;
+        }
+        try {
+            this.access.setAvatar(await this._shrink(file, 256));
+        } catch {
+            this.photoError.set('That image could not be read. Try another one.');
+        }
+    }
+
+    removePhoto(): void {
+        this.photoError.set(null);
+        this.access.setAvatar('');
+    }
+
+    /** Crops to the centre square and scales to `size` pixels as a JPEG. */
+    private _shrink(file: File, size: number): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                const side = Math.min(img.width, img.height);
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    URL.revokeObjectURL(url);
+                    reject(new Error('no canvas'));
+                    return;
+                }
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, size, size);
+                ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+                URL.revokeObjectURL(url);
+                resolve(canvas.toDataURL('image/jpeg', 0.85));
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                reject(new Error('bad image'));
+            };
+            img.src = url;
+        });
     }
 
     get organization(): string | null {

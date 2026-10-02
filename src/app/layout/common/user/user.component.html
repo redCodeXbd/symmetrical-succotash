@@ -1,16 +1,16 @@
 <!-- Button -->
 <button mat-icon-button [matMenuTriggerFor]="userActions">
     <span class="relative">
-        @if (showAvatar && user.avatar && access.user().id === 'u-brian') {
-            <img class="h-7 w-7 rounded-full" [src]="user.avatar" />
+        @if (showAvatar && access.avatarFor(user.avatar); as photo) {
+            <img class="h-7 w-7 rounded-full object-cover" [src]="photo" alt="" />
         }
-        @if (!showAvatar || !user.avatar || access.user().id !== 'u-brian') {
+        @if (!showAvatar || !access.avatarFor(user.avatar)) {
             <mat-icon [svgIcon]="'heroicons_outline:user-circle'"></mat-icon>
         }
         <span
             class="absolute bottom-0 right-0 h-2 w-2 rounded-full"
             [ngClass]="{
-                'mb-px mr-px': !showAvatar || !user.avatar || access.user().id !== 'u-brian',
+                'mb-px mr-px': !showAvatar || !access.avatarFor(user.avatar),
                 'bg-green-500': user.status === 'online',
                 'bg-amber-500': user.status === 'away',
                 'bg-red-500': user.status === 'busy',

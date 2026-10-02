@@ -29,8 +29,8 @@
     <ng-container fuseVerticalNavigationContentFooter>
         <a class="app-sidebar-user" routerLink="/profile" aria-label="Open your profile">
             <div class="relative flex-none">
-                @if (user.avatar && access.user().id === 'u-brian') {
-                    <img class="h-11 w-11 rounded-full object-cover" [src]="user.avatar" alt="" />
+                @if (access.avatarFor(user.avatar); as photo) {
+                    <img class="h-11 w-11 rounded-full object-cover" [src]="photo" alt="" />
                 } @else {
                     <div class="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-base font-bold text-on-primary">
                         {{ access.user().name.charAt(0) }}
