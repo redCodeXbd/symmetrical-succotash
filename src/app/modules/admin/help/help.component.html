@@ -1,0 +1,52 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="help-hero">
+        <div class="help-hero-inner">
+            <div>
+                <div class="text-md opacity-80">Help</div>
+                <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">How can we help?</h1>
+                <p class="mt-1 max-w-xl text-lg opacity-90">Step-by-step guides with pictures. Pick who you are, then the job you want to do.</p>
+            </div>
+            <treasury-user-switch (change)="audience.set(mine[0] ?? 'all')"></treasury-user-switch>
+        </div>
+        <input type="search" class="help-search" placeholder="Search guides, for example: approve, receipt, invoice, price..." aria-label="Search help" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+    </div>
+
+    <div class="flex-auto p-6 sm:p-10">
+        <!-- Who are you -->
+        <div class="text-sm font-medium uppercase tracking-wide text-secondary">I am a</div>
+        <div class="mt-2 flex flex-wrap gap-2" role="group" aria-label="Choose who the guides are for">
+            <button type="button" class="fund-chip" [class.fund-chip-on]="audience() === 'all'" (click)="pick('all')">Everyone ({{ help.guides.length }})</button>
+            @for (a of audiences; track a.id) {
+                <button type="button" class="fund-chip" [class.fund-chip-on]="audience() === a.id" [attr.title]="a.blurb" (click)="pick(a.id)">
+                    {{ a.label }} ({{ count(a.id) }}){{ mine.includes(a.id) ? ' · you' : '' }}
+                </button>
+            }
+        </div>
+
+        <!-- Features -->
+        <div class="mt-4 flex flex-wrap gap-2" role="group" aria-label="Filter by feature">
+            <button type="button" class="help-pill" [class.help-pill-on]="feature() === 'all'" (click)="feature.set('all')">All features</button>
+            @for (f of features(); track f) {
+                <button type="button" class="help-pill" [class.help-pill-on]="feature() === f" (click)="feature.set(f)">{{ f }}</button>
+            }
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            @for (g of list(); track g.id) {
+                <a class="help-card" [routerLink]="['/help', g.id]">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="help-feature">{{ g.feature }}</span>
+                        <span class="text-secondary text-xs">{{ g.stepCount }} steps</span>
+                    </div>
+                    <div class="mt-2 text-xl font-semibold leading-snug">{{ g.title }}</div>
+                    <p class="text-secondary mt-1 text-md">{{ g.brief }}</p>
+                    <div class="mt-3 flex flex-wrap gap-1.5">
+                        @for (a of g.audiences; track a) { <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{{ a }}</span> }
+                    </div>
+                </a>
+            } @empty {
+                <div class="text-secondary col-span-full py-12 text-center text-lg">No guide matches. Try fewer words, or choose Everyone.</div>
+            }
+        </div>
+    </div>
+</div>
