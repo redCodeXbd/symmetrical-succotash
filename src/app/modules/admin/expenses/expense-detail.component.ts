@@ -11,6 +11,7 @@ import { ExportMenuComponent } from '../treasury/shared/export-menu/export-menu.
 import { ReportDoc } from '../treasury/shared/report.types';
 import { SlideOverComponent } from '../treasury/shared/slide-over/slide-over.component';
 import { VendorsService } from '../vendors/vendors.service';
+import { CompanyService } from '../settings/company/company.service';
 import { ExpensesService } from './expenses.service';
 import { Expense, KIND_FIELDS, PAYMENT_METHODS, STATUS_CLASSES, STATUS_LABELS } from './expenses.types';
 
@@ -43,8 +44,14 @@ export class ExpenseDetailComponent {
         public access: AccessService,
         private _projects: ProjectsService,
         private _vendors: VendorsService,
-        private _store: StoreService
+        private _store: StoreService,
+        private _company: CompanyService
     ) {}
+
+    get chargedTo(): string {
+        const ids = this._company.unitIdsOf(this.expense);
+        return this._company.path(ids[1] ?? ids[0]) || this.expense.branch;
+    }
 
     get category() {
         return this.service.category(this.expense.categoryId);
@@ -142,7 +149,7 @@ export class ExpenseDetailComponent {
                         ['Amount', money(e.amount)],
                         ['Paid to', e.payee || this.vendor || '-'],
                         ['Project', this.project || '-'],
-                        ['Branch', e.branch],
+                        ['Charged to', this.chargedTo],
                         ...this.metaRows,
                         ['Payment', e.paid ? `Paid by ${e.paymentMethod}${this.fundName ? ` from ${this.fundName}` : ''}` : 'Not paid yet'],
                         ['Entered by', e.createdBy],

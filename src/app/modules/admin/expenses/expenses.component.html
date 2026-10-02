@@ -94,6 +94,10 @@
                     <option value="all">All projects</option>
                     @for (p of projects.projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
                 </select>
+                <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Charged to" [ngModel]="unitFilter()" (ngModelChange)="unitFilter.set($event)">
+                    <option value="all">All branches and departments</option>
+                    @for (u of company.chargeable(); track u.id) { <option [value]="u.id">{{ company.path(u.id) }}</option> }
+                </select>
                 @if (access.can('expenses.export')) { <treasury-export-menu [build]="doc" [formats]="['xlsx', 'pdf']" [disabled]="rows().length === 0"></treasury-export-menu> }
             </div>
             @if (filtersActive) {

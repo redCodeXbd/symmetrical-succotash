@@ -85,7 +85,11 @@ export interface Expense {
     payee: string;
     vendorId: string | null;
     projectId: string | null;
+    /** Name of the branch charged; the unit itself is `branchId`. */
     branch: string;
+    /** Which part of the company this cost belongs to (Configuration > Company). */
+    branchId: string | null;
+    departmentId: string | null;
     paymentMethod: string;
     /** Details asked by the category kind, such as route or campaign. */
     meta: Record<string, string>;

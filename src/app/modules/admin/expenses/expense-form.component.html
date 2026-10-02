@@ -84,17 +84,14 @@
                     @for (p of projects.projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
                 </select>
             </label>
-            <label class="block"><span class="text-sm font-medium">Branch</span>
-                <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="branch" [(ngModel)]="model.branch">
-                    @for (b of branches; track b) { <option [value]="b">{{ b }}</option> }
-                </select>
-            </label>
             <label class="block"><span class="text-sm font-medium">Paid by</span>
                 <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="method" [(ngModel)]="model.paymentMethod">
                     @for (m of methods; track m) { <option [value]="m">{{ m }}</option> }
                 </select>
             </label>
         </div>
+
+        <company-charged-to [branchId]="model.branchId" [departmentId]="model.departmentId" (changed)="model.branchId = $event.branchId; model.departmentId = $event.departmentId; model.branch = $event.branch || model.branch" />
 
         <!-- Receipts -->
         <section>

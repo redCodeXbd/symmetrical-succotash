@@ -428,7 +428,7 @@ export class ExpensesService {
             const by = extra.createdBy ?? 'Imran Hossain';
             return {
                 id: `EX-${++n}`, date: this._daysAgo(days), categoryId, amount, description, payee: '', vendorId: null, projectId: null,
-                branch: 'Head Office', paymentMethod: 'Cash', meta: {}, items: [], receipts: [], status: 'approved', approvals: [],
+                branch: 'Head Office', branchId: null, departmentId: null, paymentMethod: 'Cash', meta: {}, items: [], receipts: [], status: 'approved', approvals: [],
                 rejectionReason: '', paid: true, paidAt: this._daysAgo(days), fundId: 'F-01', paymentReference: '', createdBy: by,
                 createdAt: DateTime.now().minus({ days }).toISO(), events: [ev(days, by, 'Expense entered'), ev(days, 'System', 'Approved automatically')],
                 ...extra,

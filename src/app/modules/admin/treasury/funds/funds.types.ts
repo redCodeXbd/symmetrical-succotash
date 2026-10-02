@@ -37,6 +37,9 @@ export interface FundRequest {
     company: string;
     branch: string;
     department: string;
+    /** The units (Configuration > Company) the request is charged to. Older requests carry only the names. */
+    branchId?: string | null;
+    departmentId?: string | null;
     purpose: string;
     /** What the money is for. The list is managed in Configuration > Categories. */
     category: string;
@@ -126,6 +129,11 @@ export interface FundRequestInput {
     neededBy: string;
     workOrder: string | null;
     attachment: string | null;
+    /** Where the cost is charged; left out, the request keeps the default branch and department. */
+    branchId?: string | null;
+    departmentId?: string | null;
+    branch?: string;
+    department?: string;
 }
 
 export interface PaymentInput {

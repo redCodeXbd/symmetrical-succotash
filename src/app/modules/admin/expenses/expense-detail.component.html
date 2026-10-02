@@ -18,7 +18,7 @@
         <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Paid to</dt><dd class="text-right">{{ expense.payee || vendor || '-' }}</dd></div>
         @if (vendor && expense.payee !== vendor) { <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Vendor</dt><dd class="text-right">{{ vendor }}</dd></div> }
         <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Project</dt><dd class="text-right">{{ project || '-' }}</dd></div>
-        <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Branch</dt><dd>{{ expense.branch }}</dd></div>
+        <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Charged to</dt><dd class="text-right">{{ chargedTo }}</dd></div>
         @for (r of metaRows; track r[0]) { <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">{{ r[0] }}</dt><dd class="text-right">{{ r[1] }}</dd></div> }
         <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Payment</dt><dd class="text-right">{{ expense.paid ? expense.paymentMethod + (fundName ? ' from ' + fundName : '') + (expense.paymentReference ? ' (' + expense.paymentReference + ')' : '') : expense.paymentMethod + ', not paid yet' }}</dd></div>
         <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Entered by</dt><dd>{{ expense.createdBy }}</dd></div>

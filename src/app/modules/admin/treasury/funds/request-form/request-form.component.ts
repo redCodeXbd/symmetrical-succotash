@@ -9,6 +9,8 @@ import { DateTime } from 'luxon';
 import { CategoryService } from 'app/core/categories/categories.service';
 import { FundsService } from '../funds.service';
 import { FundRequest } from '../funds.types';
+import { ChargedTo, ChargedToComponent } from '../../../settings/company/charged-to.component';
+import { CompanyService } from '../../../settings/company/company.service';
 import { SlideOverComponent } from '../../shared/slide-over/slide-over.component';
 
 @Component({
@@ -24,6 +26,7 @@ import { SlideOverComponent } from '../../shared/slide-over/slide-over.component
         MatInputModule,
         MatSelectModule,
         SlideOverComponent,
+        ChargedToComponent,
     ],
 })
 export class RequestFormComponent implements OnInit {
@@ -40,12 +43,14 @@ export class RequestFormComponent implements OnInit {
         workOrder: [null as string | null],
     });
     attachment: string | null = null;
+    charged: ChargedTo = { ...this._company.placement() };
     minDate = DateTime.now().startOf('day');
 
     constructor(
         private _fb: FormBuilder,
         public funds: FundsService,
-        public categories: CategoryService
+        public categories: CategoryService,
+        private _company: CompanyService
     ) {}
 
     ngOnInit(): void {
@@ -58,6 +63,12 @@ export class RequestFormComponent implements OnInit {
                 workOrder: this.request.workOrder,
             });
             this.attachment = this.request.attachment;
+            this.charged = {
+                branchId: this.request.branchId ?? this._company.byName(this.request.branch, 'branch')?.id ?? null,
+                departmentId: this.request.departmentId ?? this._company.byName(this.request.department, 'department')?.id ?? null,
+                branch: this.request.branch,
+                department: this.request.department,
+            };
         }
     }
 
@@ -79,6 +90,7 @@ export class RequestFormComponent implements OnInit {
             neededBy: v.neededBy.toISO(),
             workOrder: v.workOrder || null,
             attachment: this.attachment,
+            ...(this.charged.branchId ? this.charged : {}),
         };
         if (this.request) {
             this.funds.update(this.request.id, input);

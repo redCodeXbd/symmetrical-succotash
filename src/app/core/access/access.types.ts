@@ -72,6 +72,7 @@ export const FEATURES: FeatureDef[] = [
             { key: 'create', label: 'Create', description: 'Add companies, branches, departments, teams and warehouses' },
             { key: 'edit', label: 'Edit', description: 'Edit, move, activate or deactivate units' },
             { key: 'delete', label: 'Delete', description: 'Delete empty companies and units' },
+            { key: 'costs', label: 'View costs', description: 'See what each branch and department spent' },
         ],
     },
     {

@@ -11,6 +11,7 @@ import { ExportMenuComponent } from '../treasury/shared/export-menu/export-menu.
 import { ReportDoc } from '../treasury/shared/report.types';
 import { SlideOverComponent } from '../treasury/shared/slide-over/slide-over.component';
 import { UserSwitchComponent } from '../treasury/shared/user-switch/user-switch.component';
+import { CompanyService } from '../settings/company/company.service';
 import { ExpenseDetailComponent } from './expense-detail.component';
 import { ExpenseFormComponent } from './expense-form.component';
 import { ExpensesService } from './expenses.service';
@@ -44,6 +45,7 @@ export class ExpensesComponent {
     categoryFilter = signal('all');
     statusFilter = signal<'all' | 'pending' | 'approved' | 'rejected' | 'unpaid'>('all');
     projectFilter = signal('all');
+    unitFilter = signal('all');
     limit = signal(50);
 
     // Drawers
@@ -65,7 +67,8 @@ export class ExpensesComponent {
     constructor(
         public service: ExpensesService,
         public access: AccessService,
-        public projects: ProjectsService
+        public projects: ProjectsService,
+        public company: CompanyService
     ) {
         this.limitDraft = this.service.autoApproveLimit();
     }
@@ -99,6 +102,7 @@ export class ExpensesComponent {
                 (e) =>
                     (this.categoryFilter() === 'all' || e.categoryId === this.categoryFilter()) &&
                     (this.projectFilter() === 'all' || e.projectId === this.projectFilter()) &&
+                    (this.unitFilter() === 'all' || this.company.unitIdsOf(e).includes(this.unitFilter())) &&
                     (this.statusFilter() === 'all' ||
                         (this.statusFilter() === 'unpaid' ? e.status === 'approved' && !e.paid : e.status === this.statusFilter())) &&
                     (!q || [e.id, e.description, e.payee, e.createdBy, this.service.categoryName(e.categoryId)].some((v) => v.toLowerCase().includes(q)))
@@ -138,7 +142,7 @@ export class ExpensesComponent {
         const q = this.quick;
         const result = this.service.add({
             date: q.date, categoryId: q.categoryId, amount: Number(q.amount), description: q.description, payee: '', vendorId: null,
-            projectId: q.projectId || null, branch: 'Head Office', paymentMethod: 'Cash', meta: {}, items: [], receipts: [],
+            projectId: q.projectId || null, branch: this.company.placement().branch || 'Head Office', branchId: this.company.placement().branchId, departmentId: this.company.placement().departmentId, paymentMethod: 'Cash', meta: {}, items: [], receipts: [],
         });
         if (typeof result === 'string') {
             this.quickError = result;
@@ -176,10 +180,11 @@ export class ExpensesComponent {
         this.categoryFilter.set('all');
         this.statusFilter.set('all');
         this.projectFilter.set('all');
+        this.unitFilter.set('all');
     }
 
     get filtersActive(): boolean {
-        return !!this.search() || this.categoryFilter() !== 'all' || this.statusFilter() !== 'all' || this.projectFilter() !== 'all';
+        return !!this.search() || this.categoryFilter() !== 'all' || this.statusFilter() !== 'all' || this.projectFilter() !== 'all' || this.unitFilter() !== 'all';
     }
 
     // -----------------------------------------------------------------------------------------------------

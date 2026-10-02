@@ -2,7 +2,10 @@ import { Injectable, signal } from '@angular/core';
 import { AccessService } from 'app/core/access/access.service';
 import { StoreService } from '../../store/store.service';
 import { UsersService } from '../../users/users.service';
-import { CHILD_KIND, Company, CompanyInput, OrgUnit, UnitInput, UnitKind } from './company.types';
+import { ExpensesService } from '../../expenses/expenses.service';
+import { FundsService } from '../../treasury/funds/funds.service';
+import { ChargedTo } from './charged-to.component';
+import { CHILD_KIND, Company, CostReport, CostRow, CompanyInput, OrgUnit, UnitInput, UnitKind } from './company.types';
 
 /**
  * The organisation structure: companies, and under each the branches, departments and teams.
@@ -20,7 +23,9 @@ export class CompanyService {
     constructor(
         private _access: AccessService,
         private _users: UsersService,
-        private _store: StoreService
+        private _store: StoreService,
+        private _expenses: ExpensesService,
+        private _funds: FundsService
     ) {}
 
     company(id: string): Company | null {
@@ -52,6 +57,34 @@ export class CompanyService {
         return this._store.stores().filter((s) => s.branchId && branches.has(s.branchId));
     }
 
+    /** The branch and department the acting user sits in; empty when not placed. */
+    placement(): ChargedTo {
+        const profile = this._users.profile(this._access.user().id);
+        const branch = this.unit(profile.orgBranchId);
+        const department = this.unit(profile.orgDeptId);
+        return { branchId: branch?.id ?? null, departmentId: department?.id ?? null, branch: branch?.name ?? '', department: department?.name ?? '' };
+    }
+
+    /** Find a unit by its name, for records saved before units existed. */
+    byName(name: string | null | undefined, kind: UnitKind): OrgUnit | null {
+        const n = (name ?? '').trim().toLowerCase();
+        return n ? (this._units().find((u) => u.kind === kind && u.name.toLowerCase() === n) ?? null) : null;
+    }
+
+    /** Branch and department a cost record is charged to; names stand in for ids on older records. */
+    unitIdsOf(r: { branchId?: string | null; departmentId?: string | null; branch?: string; department?: string }): (string | null)[] {
+        const branch = this.unit(r.branchId) ?? this.byName(r.branch, 'branch');
+        const dept = this.unit(r.departmentId) ?? this.byName(r.department, 'department');
+        return [branch?.id ?? null, dept && (!branch || dept.parentId === branch.id) ? dept.id : null];
+    }
+
+    /** Branches and departments a cost can be charged to, in tree order. */
+    chargeable(): OrgUnit[] {
+        return this._companies().flatMap((c) =>
+            this.unitsOf(c.id, 'branch').flatMap((b) => [b, ...this.unitsOf(c.id, 'department', b.id)])
+        );
+    }
+
     /** Names the branch, department and team in one line, such as "Head Office / Accounts". */
     path(unitId: string | null | undefined): string {
         const parts: string[] = [];
@@ -74,6 +107,61 @@ export class CompanyService {
 
     headcount(companyId: string): number {
         return this.peopleOf(companyId).length;
+    }
+
+    /**
+     * What each branch and department cost since `from` (an ISO date, or null for all time): approved expenses,
+     * plus money actually released on fund requests less what was returned. A cost charged to a department also
+     * counts in its branch's total.
+     */
+    costs(companyId: string, from: string | null): CostReport {
+        const direct = new Map<string, { expenses: number; funds: number }>();
+        const unplaced = { expenses: 0, funds: 0, total: 0 };
+        const add = (ids: (string | null)[], kind: 'expenses' | 'funds', amount: number) => {
+            const target = this.unit(ids[1] ?? ids[0]);
+            if (!target) {
+                unplaced[kind] += amount;
+                return;
+            }
+            if (target.companyId === companyId) {
+                const cur = direct.get(target.id) ?? { expenses: 0, funds: 0 };
+                cur[kind] += amount;
+                direct.set(target.id, cur);
+            }
+        };
+        for (const e of this._expenses.expenses()) {
+            if (e.status === 'approved' && (!from || e.date >= from)) {
+                add(this.unitIdsOf(e), 'expenses', e.amount);
+            }
+        }
+        for (const r of this._funds.requests()) {
+            const net = r.paidAmount - r.returnedAmount;
+            if (net > 0 && (!from || r.submittedAt.slice(0, 10) >= from)) {
+                add(this.unitIdsOf(r), 'funds', net);
+            }
+        }
+        unplaced.total = unplaced.expenses + unplaced.funds;
+
+        const rolled = (id: string): { expenses: number; funds: number } => {
+            const own = direct.get(id) ?? { expenses: 0, funds: 0 };
+            return this.children(id).reduce((s, c) => {
+                const r = rolled(c.id);
+                return { expenses: s.expenses + r.expenses, funds: s.funds + r.funds };
+            }, { ...own });
+        };
+        const rows: CostRow[] = [];
+        const walk = (parentId: string | null, depth: number) => {
+            for (const unit of this.unitsOf(companyId, undefined, parentId).filter((u) => u.kind !== 'team')) {
+                const r = rolled(unit.id);
+                rows.push({ unit, depth, expenses: r.expenses, funds: r.funds, total: r.expenses + r.funds });
+                walk(unit.id, depth + 1);
+            }
+        };
+        walk(null, 0);
+        const top = rows.filter((r) => r.depth === 0);
+        const expenses = top.reduce((s, r) => s + r.expenses, 0);
+        const funds = top.reduce((s, r) => s + r.funds, 0);
+        return { rows, unplaced, expenses, funds, total: expenses + funds };
     }
 
     // -----------------------------------------------------------------------------------------------------
@@ -297,6 +385,8 @@ export class CompanyService {
             u('U-9', 'department', 'U-2', 'CSV', 'Site Service'),
             u('U-10', 'team', 'U-3', 'FLD', 'Field crew'),
             u('U-11', 'team', 'U-6', 'EST', 'Estimation team'),
+            u('U-12', 'branch', null, 'DHS', 'Dhaka Site', null, 'Savar, Dhaka'),
+            u('U-13', 'branch', null, 'KHL', 'Khulna Branch', null, 'Khulna'),
         ];
     }
 }
