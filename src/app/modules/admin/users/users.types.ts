@@ -57,6 +57,11 @@ export interface EmployeeProfile {
     employmentType: EmploymentType;
     department: string;
     workstation: string;
+    /** Where the person sits in Configuration > Company. Empty when not placed yet. */
+    orgCompanyId: string;
+    orgBranchId: string;
+    orgDeptId: string;
+    orgTeamId: string;
     employeeId: string;
     shift: string;
     salary: SalaryStructure;

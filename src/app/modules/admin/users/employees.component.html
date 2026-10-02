@@ -127,6 +127,12 @@
                     <label class="block"><span class="text-sm font-medium">Workstation</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ws" [(ngModel)]="form.workstation" /></label>
                     <label class="block"><span class="text-sm font-medium">Employee ID *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ei" [(ngModel)]="form.employeeId" /></label>
                 </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="block"><span class="text-sm font-medium">Company</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="oc" [(ngModel)]="form.orgCompanyId" (ngModelChange)="pickLevel('company')"><option value="">Not placed</option>@for (c of company.companies(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }</select></label>
+                    <label class="block"><span class="text-sm font-medium">Branch</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ob" [(ngModel)]="form.orgBranchId" (ngModelChange)="pickLevel('branch')" [disabled]="!form.orgCompanyId"><option value="">None</option>@for (b of branchChoices; track b.id) { <option [value]="b.id">{{ b.name }}</option> }</select></label>
+                    <label class="block"><span class="text-sm font-medium">Org department</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="od" [(ngModel)]="form.orgDeptId" (ngModelChange)="pickLevel('dept')" [disabled]="!form.orgBranchId"><option value="">None</option>@for (d of deptChoices; track d.id) { <option [value]="d.id">{{ d.name }}</option> }</select></label>
+                    <label class="block"><span class="text-sm font-medium">Team</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ot" [(ngModel)]="form.orgTeamId" [disabled]="!form.orgDeptId"><option value="">None</option>@for (t of teamChoices; track t.id) { <option [value]="t.id">{{ t.name }}</option> }</select></label>
+                </div>
                 <label class="block"><span class="text-sm font-medium">Shift *</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="sh" [(ngModel)]="form.shift">@for (s of shifts; track s) { <option [value]="s">{{ s }}</option> }</select></label>
             }
             @if (formTab() === 'salary' && access.can('users.view_salary')) {

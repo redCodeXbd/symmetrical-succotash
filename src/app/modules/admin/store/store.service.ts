@@ -227,8 +227,8 @@ export class StoreService {
     // @ Stores and catalogue
     // -----------------------------------------------------------------------------------------------------
 
-    addStore(name: string, type: StoreType, projectId: string | null, location: string): string | { id: string } {
-        if (!this._access.can('store.catalog')) {
+    addStore(name: string, type: StoreType, projectId: string | null, location: string, branchId: string | null = null, managerId: string | null = null): string | { id: string } {
+        if (!this._access.can('store.catalog') && !this._access.can('company.create')) {
             return 'You do not have permission to add stores.';
         }
         if (!name.trim()) {
@@ -240,9 +240,18 @@ export class StoreService {
         if (this._stores().some((s) => s.name.toLowerCase() === name.trim().toLowerCase())) {
             return 'A store with this name already exists.';
         }
-        const store: Store = { id: this._nextId('S-', this._stores().map((s) => s.id), 1), name: name.trim(), type, projectId: type === 'project' ? projectId : null, location: location.trim() };
+        const store: Store = { id: this._nextId('S-', this._stores().map((s) => s.id), 1), name: name.trim(), type, projectId: type === 'project' ? projectId : null, location: location.trim(), branchId, managerId };
         this._stores.update((list) => [...list, store]);
         return { id: store.id };
+    }
+
+    /** Place a warehouse under a branch and name its manager. */
+    setStoreOrg(id: string, branchId: string | null, managerId: string | null): string | null {
+        if (!this._access.can('company.edit')) {
+            return 'You do not have permission to edit warehouses.';
+        }
+        this._stores.update((list) => list.map((s) => (s.id === id ? { ...s, branchId, managerId } : s)));
+        return null;
     }
 
     addProduct(input: ProductInput): string | { id: string } {
@@ -477,8 +486,8 @@ export class StoreService {
 
     private _seedStores(): Store[] {
         return [
-            { id: 'S-1', name: 'Head Office Store', type: 'office', projectId: null, location: 'Head Office, Dhaka' },
-            { id: 'S-2', name: 'Chattogram Site Store', type: 'project', projectId: 'P-2001', location: 'BSCIC Industrial Area, Chattogram' },
+            { id: 'S-1', name: 'Head Office Store', type: 'office', projectId: null, location: 'Head Office, Dhaka', branchId: 'U-1', managerId: null },
+            { id: 'S-2', name: 'Chattogram Site Store', type: 'project', projectId: 'P-2001', location: 'BSCIC Industrial Area, Chattogram', branchId: 'U-2', managerId: null },
         ];
     }
 

@@ -9,6 +9,7 @@ import { AppUser } from 'app/core/access/access.types';
 import { AddButtonComponent } from '../treasury/shared/add-button/add-button.component';
 import { SlideOverComponent } from '../treasury/shared/slide-over/slide-over.component';
 import { UserSwitchComponent } from '../treasury/shared/user-switch/user-switch.component';
+import { CompanyService } from '../settings/company/company.service';
 import { EmployeeInput, UsersService } from './users.service';
 import { BLANK_SALARY, DEPARTMENTS, EMPLOYMENT_TYPES, EmployeeProfile, SALARY_FIELDS, SHIFTS } from './users.types';
 
@@ -57,8 +58,29 @@ export class EmployeesComponent {
 
     constructor(
         public users: UsersService,
-        public access: AccessService
+        public access: AccessService,
+        public company: CompanyService
     ) {}
+
+    /** Choices for the company > branch > department > team pickers; a change clears the levels below it. */
+    get branchChoices() {
+        return this.form.orgCompanyId ? this.company.unitsOf(this.form.orgCompanyId, 'branch', null, false) : [];
+    }
+    get deptChoices() {
+        return this.form.orgBranchId ? this.company.unitsOf(this.form.orgCompanyId, 'department', this.form.orgBranchId, false) : [];
+    }
+    get teamChoices() {
+        return this.form.orgDeptId ? this.company.unitsOf(this.form.orgCompanyId, 'team', this.form.orgDeptId, false) : [];
+    }
+    pickLevel(level: 'company' | 'branch' | 'dept'): void {
+        if (level === 'company') {
+            this.form.orgBranchId = '';
+        }
+        if (level !== 'dept') {
+            this.form.orgDeptId = '';
+        }
+        this.form.orgTeamId = '';
+    }
 
     get profile(): EmployeeProfile | null {
         const t = this.target();
@@ -101,7 +123,7 @@ export class EmployeesComponent {
         this.target.set(user);
         this.form = {
             firstName: p.firstName, lastName: p.lastName, email: user.email, phone: user.phone ?? '', designation: p.designation,
-            joiningDate: p.joiningDate.slice(0, 10), employmentType: p.employmentType, department: p.department, workstation: p.workstation,
+            joiningDate: p.joiningDate.slice(0, 10), employmentType: p.employmentType, department: p.department, workstation: p.workstation, orgCompanyId: p.orgCompanyId, orgBranchId: p.orgBranchId, orgDeptId: p.orgDeptId, orgTeamId: p.orgTeamId,
             employeeId: p.employeeId, shift: p.shift, salary: { ...p.salary }, canGenerateIdCard: p.canGenerateIdCard, syncAppUser: p.syncAppUser,
             active: user.active !== false, roleIds: [...user.roleIds],
         };
@@ -198,7 +220,7 @@ export class EmployeesComponent {
     private _blank(): EmployeeInput {
         return {
             firstName: '', lastName: '', email: '', phone: '', designation: '', joiningDate: new Date().toISOString().slice(0, 10),
-            employmentType: 'Probation', department: DEPARTMENTS[0], workstation: '', employeeId: '', shift: SHIFTS[0],
+            employmentType: 'Probation', department: DEPARTMENTS[0], workstation: '', orgCompanyId: '', orgBranchId: '', orgDeptId: '', orgTeamId: '', employeeId: '', shift: SHIFTS[0],
             salary: { ...BLANK_SALARY }, canGenerateIdCard: false, syncAppUser: true, active: true, roleIds: ['employee'],
         };
     }

@@ -65,6 +65,16 @@ export const FEATURES: FeatureDef[] = [
         ],
     },
     {
+        id: 'company',
+        title: 'Company',
+        permissions: [
+            { key: 'view', label: 'View', description: 'Open Configuration > Company and see the structure' },
+            { key: 'create', label: 'Create', description: 'Add companies, branches, departments, teams and warehouses' },
+            { key: 'edit', label: 'Edit', description: 'Edit, move, activate or deactivate units' },
+            { key: 'delete', label: 'Delete', description: 'Delete empty companies and units' },
+        ],
+    },
+    {
         id: 'theme',
         title: 'Theme',
         permissions: [

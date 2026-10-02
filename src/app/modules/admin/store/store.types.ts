@@ -7,6 +7,9 @@ export interface Store {
     /** The project a project store belongs to. */
     projectId: string | null;
     location: string;
+    /** The branch (Configuration > Company) this warehouse sits under. */
+    branchId: string | null;
+    managerId: string | null;
 }
 
 /**

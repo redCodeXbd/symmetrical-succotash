@@ -3,6 +3,7 @@ import { DateTime } from 'luxon';
 import { AccessService } from 'app/core/access/access.service';
 import { AppUser } from 'app/core/access/access.types';
 import { FundsService } from '../treasury/funds/funds.service';
+import { SEED_DEPARTMENT_IDS } from '../settings/company/company.types';
 import { BLANK_SALARY, EmployeeProfile, SalaryStructure } from './users.types';
 
 export interface EmployeeInput {
@@ -15,6 +16,10 @@ export interface EmployeeInput {
     employmentType: EmployeeProfile['employmentType'];
     department: string;
     workstation: string;
+    orgCompanyId: string;
+    orgBranchId: string;
+    orgDeptId: string;
+    orgTeamId: string;
     employeeId: string;
     shift: string;
     salary: SalaryStructure;
@@ -227,6 +232,10 @@ export class UsersService {
             employmentType: i.employmentType,
             department: i.department,
             workstation: i.workstation.trim(),
+            orgCompanyId: i.orgCompanyId,
+            orgBranchId: i.orgBranchId,
+            orgDeptId: i.orgDeptId,
+            orgTeamId: i.orgTeamId,
             employeeId: i.employeeId.trim(),
             shift: i.shift,
             salary: { ...i.salary },
@@ -238,7 +247,7 @@ export class UsersService {
     private _blank(userId: string, firstName: string, lastName: string): EmployeeProfile {
         return {
             userId, firstName, lastName, designation: '', joiningDate: DateTime.now().toISODate(), employmentType: 'Probation',
-            department: 'Service Team', workstation: '', employeeId: '', shift: 'Head Office Shift', salary: { ...BLANK_SALARY },
+            department: 'Service Team', workstation: '', orgCompanyId: '', orgBranchId: '', orgDeptId: '', orgTeamId: '', employeeId: '', shift: 'Head Office Shift', salary: { ...BLANK_SALARY },
             canGenerateIdCard: false, syncAppUser: true,
             funds: { totalSalary: 0, totalBonus: 0, securityBalance: 0, securityWithdrawn: 0, providentBalance: 0, providentWithdrawn: 0 },
             promotions: [],
@@ -252,6 +261,7 @@ export class UsersService {
             department: string, workstation: string, employeeId: string, gross: number, extra: Partial<EmployeeProfile> = {}
         ): EmployeeProfile => ({
             ...this._blank(userId, first, last),
+            orgCompanyId: 'C-1', orgBranchId: 'U-1', orgDeptId: SEED_DEPARTMENT_IDS[department] ?? '',
             designation, joiningDate: days(joined), employmentType: type, department, workstation, employeeId,
             shift: 'Head Office Shift',
             salary: {
