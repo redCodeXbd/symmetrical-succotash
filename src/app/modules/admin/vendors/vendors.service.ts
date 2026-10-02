@@ -110,6 +110,15 @@ export class VendorsService {
     }
 
     /** Every purchase order, whoever asks. Other features (store, projects) read these; they apply their own permissions. */
+    /** Every vendor's price list, whoever asks. The store compares these when it shows price history. */
+    allProducts(): { vendorId: string; vendorName: string; name: string; unit: string; price: number }[] {
+        return this._products().map((p) => ({ vendorId: p.vendorId, vendorName: this._vendors().find((v) => v.id === p.vendorId)?.name ?? p.vendorId, name: p.name, unit: p.unit, price: p.price }));
+    }
+
+    vendorName(id: string): string {
+        return this._vendors().find((v) => v.id === id)?.name ?? '';
+    }
+
     allOrders(): PurchaseOrder[] {
         return this._orders();
     }

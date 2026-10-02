@@ -61,6 +61,25 @@ export class ExpenseFormComponent implements OnInit {
         return amount > this.service.autoApproveLimit();
     }
 
+    /** What was paid for an item before, to catch a price that jumped. */
+    priceInfo(name: string) {
+        return this._store.priceStatsByName(name);
+    }
+
+    /** How the price being entered compares with the last one paid. */
+    priceNote(i: { name: string; unitCost: number }): { text: string; tone: 'up' | 'down' | 'same' } | null {
+        const s = this.priceInfo(i.name);
+        const price = Number(i.unitCost);
+        if (!s || !(price > 0)) {
+            return null;
+        }
+        const diff = ((price - s.last.price) / s.last.price) * 100;
+        if (Math.abs(diff) < 1) {
+            return { text: 'Same as the last price.', tone: 'same' };
+        }
+        return { text: `${Math.abs(diff).toFixed(0)}% ${diff > 0 ? 'higher' : 'lower'} than the last price.`, tone: diff > 0 ? 'up' : 'down' };
+    }
+
     get catalogue(): string[] {
         return this._store.products().map((p) => p.name);
     }

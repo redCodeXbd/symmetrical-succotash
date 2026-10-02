@@ -308,10 +308,24 @@ export class ExpensesService {
     // -----------------------------------------------------------------------------------------------------
 
     /** Approved purchases of goods with their items, whoever asks. The store uses it to keep its product list complete. */
-    approvedPurchases(): { id: string; categoryName: string; items: { name: string; unit: string }[] }[] {
+    approvedPurchases(): {
+        id: string;
+        categoryName: string;
+        date: string;
+        payee: string;
+        vendorId: string | null;
+        items: { name: string; unit: string; qty: number; unitCost: number }[];
+    }[] {
         return this._expenses()
             .filter((e) => this.category(e.categoryId)?.kind === 'purchase' && e.status === 'approved' && e.items.length > 0)
-            .map((e) => ({ id: e.id, categoryName: this.categoryName(e.categoryId), items: e.items.map((i) => ({ name: i.name, unit: i.unit })) }));
+            .map((e) => ({
+                id: e.id,
+                categoryName: this.categoryName(e.categoryId),
+                date: e.date,
+                payee: e.payee,
+                vendorId: e.vendorId,
+                items: e.items.map((i) => ({ name: i.name, unit: i.unit, qty: i.qty, unitCost: i.unitCost })),
+            }));
     }
 
     /** Purchases of goods that can still be received into a store. */
@@ -433,6 +447,8 @@ export class ExpensesService {
             e(7, 'expense-types-12', 3200, 'Visiting cards', { payee: 'Quick Print' }),
             e(8, 'expense-types-2', 24000, 'Cable lugs and tape for stock', { payee: 'Metro Electrics', items: [{ name: 'Copper lug 120 sq mm', qty: 100, unit: 'pcs', unitCost: 190 }, { name: 'Insulation tape', qty: 80, unit: 'roll', unitCost: 62 }], status: 'approved', paid: true, approvals: [{ roleId: 'accountant', roleName: 'Accountant', status: 'approved', by: 'Nadia Rahman', at: DateTime.now().minus({ days: 8 }).toISO() }], fundId: 'F-02', paymentMethod: 'Bank transfer' }),
             e(9, 'expense-types-13', 1500, 'Office internet', { payee: 'Link3' }),
+            e(41, 'expense-types-2', 21300, 'Lugs and trays, first lot', { payee: 'Metro Electrics', items: [{ name: 'Copper lug 120 sq mm', qty: 100, unit: 'pcs', unitCost: 178 }, { name: 'GI cable tray 300 mm', qty: 8, unit: 'pcs', unitCost: 4400 }], fundId: 'F-02' }),
+            e(52, 'expense-types-5', 9800, 'Lugs for site spares', { payee: 'City Hardware', items: [{ name: 'Copper lug 120 sq mm', qty: 50, unit: 'pcs', unitCost: 196 }], fundId: 'F-01' }),
             e(10, 'expense-types-6', 900, 'Client meeting travel', { meta: { from: 'Office', to: 'Gulshan', mode: 'Car / taxi', person: 'Brian Hughes' }, createdBy: 'Brian Hughes' }),
             e(11, 'expense-types-11', 8200, 'AC servicing', { payee: 'CoolFix', rejectionReason: 'Covered by the maintenance contract.', status: 'rejected', paid: false, fundId: null, approvals: [{ roleId: 'accountant', roleName: 'Accountant', status: 'rejected', by: 'Nadia Rahman', at: DateTime.now().minus({ days: 10 }).toISO() }] }),
             e(12, 'expense-types-8', 2600, 'Site team tea and snacks', { meta: { persons: '12', occasion: 'Site team' }, projectId: 'P-2001', createdBy: 'Mehedi Hasan' }),

@@ -45,7 +45,7 @@ export const CATEGORY_GROUPS: CategoryGroup[] = [
     },
     {
         id: 'expense-types',
-        title: 'Expenses',
+        title: 'Expense categories',
         description: 'What a cost is for in Expenses. The type decides which details the expense form asks for.',
         defaults: [
             'Office cost', 'Product purchase', 'Vendor payment', 'Service payment', 'Parts purchase', 'Conveyance & transport',

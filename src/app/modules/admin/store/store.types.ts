@@ -92,3 +92,37 @@ export const MOVEMENT_LABELS: Record<MovementType, string> = {
 
 /** Movements that put stock into a store. */
 export const INCOMING: MovementType[] = ['receive', 'transfer_in', 'adjust_in'];
+
+/** One price paid, or quoted, for a product. */
+export interface PricePoint {
+    date: string;
+    price: number;
+    qty: number;
+    unit: string;
+    source: 'expense' | 'purchase_order' | 'hand';
+    ref: string;
+    supplier: string;
+}
+
+export interface PriceStats {
+    count: number;
+    last: PricePoint;
+    previous: PricePoint | null;
+    /** Percent change from the previous price to the last one. */
+    change: number | null;
+    lowest: PricePoint;
+    highest: PricePoint;
+    average: number;
+}
+
+export interface VendorQuote {
+    vendor: string;
+    price: number;
+    unit: string;
+}
+
+export const PRICE_SOURCE_LABELS: Record<PricePoint['source'], string> = {
+    expense: 'Expense',
+    purchase_order: 'Purchase order',
+    hand: 'Received by hand',
+};
