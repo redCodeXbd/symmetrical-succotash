@@ -1108,3 +1108,39 @@ body.on-dashboard .fuse-vertical-navigation-collapsable > .fuse-vertical-navigat
     .user-switch .user-switch-select option { color: #111827; }
     .user-switch .user-switch-roles { background: rgba(255, 255, 255, 0.2); }
 }
+
+// Profile photo change button
+.profile {
+    .profile-photo { position: relative; flex: none; }
+    .profile-photo-btn {
+        position: absolute;
+        right: -0.1rem;
+        bottom: -0.1rem;
+        display: flex;
+        width: 2.25rem;
+        height: 2.25rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        cursor: pointer;
+        color: #111827;
+        background: #fff;
+        box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.5);
+        &:hover { transform: scale(1.08); }
+        &:focus-within { outline: 3px solid rgba(255, 255, 255, 0.8); outline-offset: 2px; }
+    }
+    .profile-photo-remove {
+        margin-top: 0.6rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-decoration: underline;
+        opacity: 0.9;
+    }
+    .profile-photo-error {
+        margin-top: 0.5rem;
+        padding: 0.35rem 0.7rem;
+        border-radius: 0.5rem;
+        font-size: 0.85rem;
+        background: rgba(127, 29, 29, 0.85);
+    }
+}

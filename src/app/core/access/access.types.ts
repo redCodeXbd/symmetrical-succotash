@@ -195,6 +195,8 @@ export interface AppUser {
     address?: string;
     /** Profile details the person keeps up to date themselves. */
     phone?: string;
+    /** Profile photo as a small data URL. Empty text means the photo was removed on purpose. */
+    avatar?: string;
     /** Inactive people cannot be used to sign in. Missing means active. */
     active?: boolean;
     title?: string;
