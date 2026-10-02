@@ -1,0 +1,2048 @@
+[
+  {
+    "id": "getting-started",
+    "title": "Find your way around",
+    "feature": "Getting started",
+    "audiences": [
+      "employee",
+      "data-entry",
+      "accountant",
+      "manager",
+      "admin",
+      "client",
+      "vendor",
+      "customer"
+    ],
+    "openPath": "/dashboard",
+    "brief": "After you sign in you land on the Dashboard. Everything else is reached from the side menu, and the menu shows only what your roles allow.",
+    "useCases": [
+      "You just received your login and want to know where things are.",
+      "You cannot see a page a colleague mentions: your roles do not include it, ask an admin.",
+      "You want to know what is waiting for your approval."
+    ],
+    "shots": [
+      {
+        "id": "menu",
+        "caption": "The Dashboard and the side menu",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": []
+        },
+        "steps": [
+          {
+            "text": "The side menu is your map. Click a group such as Treasury to open it, then pick a page.",
+            "target": ".fuse-vertical-navigation-item-title:text-is(\"Treasury\")"
+          },
+          {
+            "text": "The bell lists approvals waiting for you first, then what happened on your requests.",
+            "target": "notifications button"
+          },
+          {
+            "text": "Your name and roles live here. Click the card to open your profile.",
+            "target": "a.app-sidebar-user"
+          },
+          {
+            "text": "The Dashboard is a coming-soon page for now. Use the menu to do your work.",
+            "target": ".dash-pointer"
+          }
+        ]
+      },
+      {
+        "id": "profile",
+        "caption": "Your profile",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "click": "a.app-sidebar-user"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Click the camera to change your photo. It shows in the sidebar and the top bar.",
+            "target": ".profile-photo-btn"
+          },
+          {
+            "text": "These tiles count your roles, permissions and the approvals waiting for you.",
+            "target": ".stat-tile >> nth=2"
+          },
+          {
+            "text": "Items whose approval step is yours are listed here, each with a Review button.",
+            "target": "#wait-title"
+          },
+          {
+            "text": "Keep your job title, phone and about text up to date here.",
+            "target": "text=My details"
+          },
+          {
+            "text": "Demo only: \"Acting as\" lets you try the app as another person.",
+            "target": "select.user-switch-select"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Your permissions are the sum of all your roles.",
+      "Pages you cannot open send you back to the Dashboard.",
+      "The Help guides are written per role; pick yours on the Help page."
+    ],
+    "related": [
+      "approvals-everywhere"
+    ]
+  },
+  {
+    "id": "approvals-everywhere",
+    "title": "How approvals work",
+    "feature": "Getting started",
+    "audiences": [
+      "employee",
+      "accountant",
+      "manager",
+      "admin"
+    ],
+    "openPath": "/profile",
+    "brief": "Fund requests, expenses and vendor invoices are approved in steps. Which steps depends on the amount, and each step belongs to a role.",
+    "useCases": [
+      "You submitted something and want to know who must approve it next.",
+      "You are an approver and want to find what is waiting for you.",
+      "An admin wants to see how the steps are set up."
+    ],
+    "shots": [
+      {
+        "id": "inbox",
+        "caption": "Where your approvals wait",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "click": "a.app-sidebar-user"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Everything whose current step is yours appears here. Click Review to open it.",
+            "target": "#wait-title"
+          },
+          {
+            "text": "\"Where you approve\" shows the branches of the approval tree where one of your roles is a step.",
+            "target": "#path-title"
+          }
+        ]
+      },
+      {
+        "id": "flow",
+        "caption": "The approval flow of a request",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "nav": [
+                "Expenses"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"Contactor\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Each step shows its role and who approved it. The step with a yellow number is waiting.",
+            "target": "[role=dialog] ol >> nth=0"
+          },
+          {
+            "text": "Only someone with the step's role can approve at that step. Others see who it is waiting for.",
+            "target": "[role=dialog] button:has-text(\"Approve step\")"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Small amounts need one approval; bigger ones need more. Admins edit the tree in Configuration > Roles and permissions.",
+      "A request keeps the path it had when it was submitted.",
+      "The last approval finishes it; a rejection at any step stops it, with a reason."
+    ],
+    "related": [
+      "approval-tree",
+      "expense-approve-pay"
+    ]
+  },
+  {
+    "id": "fund-request",
+    "title": "Ask for money (fund request)",
+    "feature": "Treasury",
+    "audiences": [
+      "employee"
+    ],
+    "openPath": "/treasury/funds",
+    "brief": "A fund request asks the company for money for a purpose. It is approved by the approval tree and then paid by Accounts. You can follow every step.",
+    "useCases": [
+      "You need cash for a site visit, materials or an event.",
+      "You want to know if your request was approved and how much you received.",
+      "You want to correct or cancel a request that is still waiting."
+    ],
+    "shots": [
+      {
+        "id": "list",
+        "caption": "Your requests and wallet",
+        "capture": {
+          "as": "Mehedi Hasan",
+          "actions": [
+            {
+              "nav": [
+                "Treasury",
+                "Funds"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Your wallet shows what you received from funds, month by month.",
+            "target": "#wallet-title"
+          },
+          {
+            "text": "Click Request Funds to ask for money.",
+            "target": "button:has-text(\"Request Funds\")"
+          },
+          {
+            "text": "Your requests are listed with their status. Click one to see its details.",
+            "target": "tbody tr >> nth=0"
+          }
+        ]
+      },
+      {
+        "id": "form",
+        "caption": "The request form",
+        "capture": {
+          "as": "Mehedi Hasan",
+          "actions": [
+            {
+              "nav": [
+                "Treasury",
+                "Funds"
+              ]
+            },
+            {
+              "click": "button:has-text(\"Request Funds\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Enter the amount you need.",
+            "target": "[role=dialog] mat-form-field:has-text(\"Amount\")"
+          },
+          {
+            "text": "Choose the category. The list is kept in Configuration > Categories.",
+            "target": "[role=dialog] mat-form-field:has-text(\"Category\")"
+          },
+          {
+            "text": "Say what the money is for, so approvers can decide quickly.",
+            "target": "[role=dialog] mat-form-field:has-text(\"Purpose\")"
+          },
+          {
+            "text": "Add the work order if the money is for a project.",
+            "target": "[role=dialog] mat-form-field:has-text(\"Work order\")"
+          },
+          {
+            "text": "Submit. The request goes to the first approver.",
+            "target": "[role=dialog] button[type=submit]"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Company, branch, department and currency come from your profile; you do not type them.",
+      "You can edit or cancel a request while it is still pending."
+    ],
+    "related": [
+      "fund-return-close",
+      "fund-approve-pay"
+    ]
+  },
+  {
+    "id": "fund-approve-pay",
+    "title": "Approve and pay a fund request",
+    "feature": "Treasury",
+    "audiences": [
+      "manager",
+      "accountant",
+      "admin"
+    ],
+    "openPath": "/treasury/funds",
+    "brief": "Approvers pass or reject a request step by step. Once it is approved, Accounts pay it from a fund of the right category, in one or several payments.",
+    "useCases": [
+      "A request is waiting for your step in the approval tree.",
+      "Accounts need to pay an approved request.",
+      "A request is rejected because the cost is already covered."
+    ],
+    "shots": [
+      {
+        "id": "review",
+        "caption": "Review a request",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "nav": [
+                "Treasury",
+                "Funds"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"FR-1025\") button >> nth=0"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Check the amount, purpose and requester.",
+            "target": "[role=dialog] dl"
+          },
+          {
+            "text": "The approval flow shows which step is yours.",
+            "target": "[role=dialog] ol >> nth=0"
+          },
+          {
+            "text": "Approve (you set the approved amount) or reject with a reason.",
+            "target": "[role=dialog] button:has-text(\"Approve\")"
+          }
+        ]
+      },
+      {
+        "id": "pay",
+        "caption": "Record a payment",
+        "capture": {
+          "as": "Nadia Rahman",
+          "actions": [
+            {
+              "nav": [
+                "Treasury",
+                "Funds"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"FR-1022\") button >> nth=0"
+            },
+            {
+              "click": "[role=dialog] button:has-text(\"Record Payment\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Choose the fund category first, then the fund the money comes from.",
+            "target": "[role=dialog] mat-form-field:has-text(\"Category\")"
+          },
+          {
+            "text": "The amount cannot be more than what is still approved or what the fund has.",
+            "target": "[role=dialog] mat-form-field:has-text(\"Amount\")"
+          },
+          {
+            "text": "Confirm. The fund balance drops and a transaction is recorded.",
+            "target": "[role=dialog] button:has-text(\"Record payment\")"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "A request can be paid in parts; its status shows Partially paid until the approved amount is paid.",
+      "Only people with the Pay permission see Record Payment."
+    ],
+    "related": [
+      "fund-return-close",
+      "transactions"
+    ]
+  },
+  {
+    "id": "fund-return-close",
+    "title": "Return unused money or close a request",
+    "feature": "Treasury",
+    "audiences": [
+      "employee",
+      "accountant",
+      "admin"
+    ],
+    "openPath": "/treasury/funds",
+    "brief": "If you received more than you spent, give it back so Accounts can take it into a fund. If only part of an approved amount was paid and the rest is not needed, close the request.",
+    "useCases": [
+      "You spent less than you received.",
+      "The job was cancelled after a part payment.",
+      "Accounts want to confirm money they received back."
+    ],
+    "shots": [
+      {
+        "id": "actions",
+        "caption": "Return funds or close",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Treasury",
+                "Funds"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"FR-1015\") button >> nth=0"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Return funds: enter the amount you are giving back and how.",
+            "target": "[role=dialog] button:has-text(\"Return funds\")"
+          },
+          {
+            "text": "Close request: the unpaid rest of the approved amount is released.",
+            "target": "[role=dialog] button:has-text(\"Close request\")"
+          },
+          {
+            "text": "Returns appear in the request details until Accounts confirm them.",
+            "target": "[role=dialog] dl"
+          }
+        ]
+      },
+      {
+        "id": "confirm",
+        "caption": "Accounts confirm a return",
+        "capture": {
+          "as": "Nadia Rahman",
+          "actions": [
+            {
+              "nav": [
+                "Treasury",
+                "Funds"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"FR-1019\") button >> nth=0"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "A return waits here for confirmation.",
+            "target": "[role=dialog] >> text=Returns"
+          },
+          {
+            "text": "Confirm received into a fund, or reject with a reason.",
+            "target": "[role=dialog] button:has-text(\"Confirm received\")"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "A return only counts once Accounts confirm it.",
+      "Employees return only what they received and have not returned yet."
+    ],
+    "related": [
+      "fund-request",
+      "fund-approve-pay"
+    ]
+  },
+  {
+    "id": "org-funds",
+    "title": "Organization funds",
+    "feature": "Treasury",
+    "audiences": [
+      "accountant",
+      "admin"
+    ],
+    "openPath": "/treasury/organization-funds",
+    "brief": "Organization Funds shows the company's cash, bank and other funds: balance, reserved money, minimum balance and recent activity.",
+    "useCases": [
+      "You want to know how much money is available and where.",
+      "A fund is running low and needs a top-up.",
+      "You need to add a new bank or cash fund."
+    ],
+    "shots": [
+      {
+        "id": "page",
+        "caption": "Funds at a glance",
+        "capture": {
+          "as": "Nadia Rahman",
+          "actions": [
+            {
+              "nav": [
+                "Treasury",
+                "Organization Funds"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Tiles show balance, available and reserved money.",
+            "target": ".stat-tile >> nth=0"
+          },
+          {
+            "text": "Click a category to filter the funds and the chart.",
+            "target": ".stat-tile >> nth=3"
+          },
+          {
+            "text": "Add a new fund with the add button.",
+            "target": "button:has-text(\"Add fund\")"
+          },
+          {
+            "text": "Download or share the activity as Excel or PDF.",
+            "target": "button[aria-label=\"Download or share\"]"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Funds are grouped by categories managed in Configuration > Categories.",
+      "A fund below its minimum balance is flagged."
+    ],
+    "related": [
+      "transactions"
+    ]
+  },
+  {
+    "id": "transactions",
+    "title": "Transactions, returns and reports",
+    "feature": "Treasury",
+    "audiences": [
+      "employee",
+      "accountant",
+      "admin"
+    ],
+    "openPath": "/treasury/transactions",
+    "brief": "Transactions is the record of every payment, return and action on fund requests. Employees see only their own; Accounts and admins see all.",
+    "useCases": [
+      "You need a statement for a date range.",
+      "You want to send a report as an online link.",
+      "An admin wants to see every treasury movement."
+    ],
+    "shots": [
+      {
+        "id": "page",
+        "caption": "The Transactions page",
+        "capture": {
+          "as": "Nadia Rahman",
+          "actions": [
+            {
+              "nav": [
+                "Treasury",
+                "Transactions"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Tabs: payments, returns, actions and (admins) treasury movements.",
+            "target": "[role=tablist]"
+          },
+          {
+            "text": "Choose the dates you need.",
+            "target": "select >> nth=0"
+          },
+          {
+            "text": "Download Excel or PDF, or create a share link.",
+            "target": "button[aria-label=\"Download or share\"]"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Share links open only in the browser that created them until the app has a server."
+    ],
+    "related": [
+      "fund-approve-pay"
+    ]
+  },
+  {
+    "id": "expense-quick-entry",
+    "title": "Enter an expense in seconds",
+    "feature": "Expenses",
+    "audiences": [
+      "data-entry",
+      "employee",
+      "accountant"
+    ],
+    "openPath": "/expenses",
+    "brief": "Quick entry saves a cost with just a date, category, amount and a few words. Press Enter and the next one is ready.",
+    "useCases": [
+      "You have a pile of small bills to record.",
+      "A cost is small and needs no extra details.",
+      "You want to see everything you entered."
+    ],
+    "shots": [
+      {
+        "id": "quick",
+        "caption": "The quick entry bar",
+        "capture": {
+          "as": "Imran Hossain",
+          "actions": [
+            {
+              "nav": [
+                "Expenses"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Pick the date (today is filled in).",
+            "target": "form[aria-label=\"Quick entry\"] input[type=date]"
+          },
+          {
+            "text": "Choose the category; the type of category decides what details exist in the full form.",
+            "target": "form[aria-label=\"Quick entry\"] select"
+          },
+          {
+            "text": "Type the amount.",
+            "target": "form[aria-label=\"Quick entry\"] input[type=number]"
+          },
+          {
+            "text": "Say what it was for, then press Enter to save.",
+            "target": "form[aria-label=\"Quick entry\"] input[placeholder=\"What was it for?\"]"
+          },
+          {
+            "text": "Where the money goes: click a bar to filter the list by that category.",
+            "target": ".exp-bar-row >> nth=0"
+          }
+        ]
+      },
+      {
+        "id": "saved",
+        "caption": "After you save",
+        "capture": {
+          "as": "Imran Hossain",
+          "actions": [
+            {
+              "nav": [
+                "Expenses"
+              ]
+            },
+            {
+              "select": [
+                "form[aria-label=\"Quick entry\"] select",
+                "expense-types-8"
+              ]
+            },
+            {
+              "fill": [
+                "form[aria-label=\"Quick entry\"] input[type=number]",
+                "900"
+              ]
+            },
+            {
+              "fill": [
+                "form[aria-label=\"Quick entry\"] input[placeholder=\"What was it for?\"]",
+                "Tea for visitors"
+              ]
+            },
+            {
+              "press": [
+                "form[aria-label=\"Quick entry\"] input[placeholder=\"What was it for?\"]",
+                "Enter"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "A green message confirms the number of the new expense.",
+            "target": "form[aria-label=\"Quick entry\"] [role=status]"
+          },
+          {
+            "text": "The entry appears in the list. Small amounts are approved automatically.",
+            "target": "tbody tr >> nth=0"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Up to the no-approval limit an expense is approved when you save it; larger ones go to approval.",
+      "Need receipts or items? Use Add expense for the full form."
+    ],
+    "related": [
+      "expense-full-entry",
+      "expense-approve-pay"
+    ]
+  },
+  {
+    "id": "expense-full-entry",
+    "title": "Enter a purchase with items and receipts",
+    "feature": "Expenses",
+    "audiences": [
+      "data-entry",
+      "employee",
+      "accountant"
+    ],
+    "openPath": "/expenses",
+    "brief": "The full form asks for the details that belong to the category: items for a purchase, route for transport, month for rent. You can attach receipt photos.",
+    "useCases": [
+      "You bought goods and want the items and prices recorded.",
+      "You paid a vendor and want it linked to what you owe them.",
+      "A cost belongs to a project."
+    ],
+    "shots": [
+      {
+        "id": "form",
+        "caption": "The expense form",
+        "capture": {
+          "as": "Imran Hossain",
+          "actions": [
+            {
+              "nav": [
+                "Expenses"
+              ]
+            },
+            {
+              "click": "button:has-text(\"Add expense\")"
+            },
+            {
+              "click": "[role=dialog] .exp-cat-chip:has-text(\"Product purchase\")"
+            },
+            {
+              "fill": [
+                "[role=dialog] input[aria-label=\"Item 1\"]",
+                "Copper lug 120 sq mm"
+              ]
+            },
+            {
+              "fill": [
+                "[role=dialog] input[aria-label=\"Unit cost 1\"]",
+                "215"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Choose the category first. It decides which fields appear.",
+            "target": "[role=dialog] .exp-cat-chip-on"
+          },
+          {
+            "text": "Add the items bought. The amount is the sum of the lines.",
+            "target": "[role=dialog] [aria-label=\"Items bought\"]"
+          },
+          {
+            "text": "The form shows the last, lowest and average price paid, and warns if your price is higher.",
+            "target": "[role=dialog] [aria-label=\"Price history of Copper lug 120 sq mm\"]"
+          },
+          {
+            "text": "Link the expense to a project so it counts in the project costing.",
+            "target": "[role=dialog] select[name=project]"
+          },
+          {
+            "text": "Attach photos of the bill or receipt.",
+            "target": "[role=dialog] input[type=file]"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Items not in the product list are added to it once the expense is approved.",
+      "You can edit or delete your own expense while it waits for approval or after a rejection."
+    ],
+    "related": [
+      "purchase-to-stock",
+      "price-history"
+    ]
+  },
+  {
+    "id": "expense-approve-pay",
+    "title": "Approve and pay expenses",
+    "feature": "Expenses",
+    "audiences": [
+      "manager",
+      "accountant",
+      "admin"
+    ],
+    "openPath": "/expenses",
+    "brief": "Larger expenses wait for approval. Approved ones are paid by someone with the Pay permission, optionally taking the money from a fund.",
+    "useCases": [
+      "An expense above the no-approval limit needs your step.",
+      "Accounts pay an approved expense from a fund.",
+      "A payment to a vendor should reduce what is owed to that vendor."
+    ],
+    "shots": [
+      {
+        "id": "approve",
+        "caption": "Approve an expense",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "nav": [
+                "Expenses"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"Contactor\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Check the details and the receipts.",
+            "target": "[role=dialog] dl"
+          },
+          {
+            "text": "The flow shows who approves next.",
+            "target": "[role=dialog] ol >> nth=0"
+          },
+          {
+            "text": "Approve your step, or reject with a reason.",
+            "target": "[role=dialog] button:has-text(\"Approve step\")"
+          }
+        ]
+      },
+      {
+        "id": "pay",
+        "caption": "Record the payment",
+        "capture": {
+          "as": "Nadia Rahman",
+          "actions": [
+            {
+              "nav": [
+                "Expenses"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"Part payment to Steelcraft\")"
+            },
+            {
+              "click": "[role=dialog] button:has-text(\"Record payment\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Choose the fund to pay from, or leave it as record only.",
+            "target": "[role=dialog] select[name=pf]"
+          },
+          {
+            "text": "Pick the method and date; add a cheque or transaction number.",
+            "target": "[role=dialog] select[name=pm]"
+          },
+          {
+            "text": "Confirm. A payment to a vendor also lowers what you owe them.",
+            "target": "[role=dialog] button:has-text(\"Confirm payment\")"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "A vendor payment cannot be more than what is due to the vendor.",
+      "A paid expense stays on record and cannot be deleted."
+    ],
+    "related": [
+      "expense-quick-entry",
+      "vendors-staff"
+    ]
+  },
+  {
+    "id": "expense-categories",
+    "title": "Manage expense categories",
+    "feature": "Expenses",
+    "audiences": [
+      "admin"
+    ],
+    "openPath": "/settings/categories",
+    "brief": "Expense categories live in Configuration > Categories. Each has a type that decides which details the expense form asks for.",
+    "useCases": [
+      "You need a new kind of cost such as Warranty claims.",
+      "You want to rename a category.",
+      "A purchase category should ask for items."
+    ],
+    "shots": [
+      {
+        "id": "page",
+        "caption": "Expense categories",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Configuration",
+                "Categories"
+              ]
+            },
+            {
+              "click": "nav[aria-label=\"Category sections\"] button:has-text(\"Expense categories\")"
+            },
+            {
+              "wait": 900
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Use the chips to jump to a section.",
+            "target": "nav[aria-label=\"Category sections\"]"
+          },
+          {
+            "text": "Name the new category.",
+            "target": "#section-expense-types input[placeholder=\"New category name\"]"
+          },
+          {
+            "text": "Choose its type: purchase of goods, vendor payment, transport, food, rent, promotion or general.",
+            "target": "#section-expense-types select >> nth=0"
+          },
+          {
+            "text": "Edit or delete a category. One that has expenses cannot be deleted.",
+            "target": "#section-expense-types tbody tr >> nth=0"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Renames show everywhere at once.",
+      "The type of a category cannot change once expenses use it."
+    ],
+    "related": [
+      "expense-quick-entry"
+    ]
+  },
+  {
+    "id": "purchase-to-stock",
+    "title": "From a purchase to stock to a project",
+    "feature": "Store",
+    "audiences": [
+      "data-entry",
+      "accountant",
+      "manager",
+      "admin"
+    ],
+    "openPath": "/store",
+    "brief": "Goods you buy are entered as an expense with items, approved, then received into a store. When they are issued to a project, their cost reaches the project costing.",
+    "useCases": [
+      "You bought cable lugs and want them in the store.",
+      "You want the project to pay for the lugs only when they are used.",
+      "You want to avoid typing the same product twice."
+    ],
+    "shots": [
+      {
+        "id": "receive",
+        "caption": "Receive stock from an expense",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "nav": [
+                "Store"
+              ]
+            },
+            {
+              "click": "button:has-text(\"Receive stock\")"
+            },
+            {
+              "click": "[role=dialog] label:has-text(\"Expense\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Choose where the items come from: an expense, a vendor order, or by hand.",
+            "target": "[role=dialog] fieldset"
+          },
+          {
+            "text": "Pick the approved purchase; its items and prices fill in.",
+            "target": "[role=dialog] select[name=ref]"
+          },
+          {
+            "text": "Check quantities and costs, then save.",
+            "target": "[role=dialog] button[type=submit]"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Expenses that went into stock are not counted in the project cost when bought; they count when issued.",
+      "Item names are matched with the product list ignoring capitals."
+    ],
+    "related": [
+      "store-daily",
+      "price-history"
+    ]
+  },
+  {
+    "id": "store-daily",
+    "title": "Receive, issue, transfer and count stock",
+    "feature": "Store",
+    "audiences": [
+      "manager",
+      "data-entry",
+      "admin"
+    ],
+    "openPath": "/store",
+    "brief": "Each store keeps its own stock, worked out from every movement. You can receive, issue to a project, transfer between stores and correct counts.",
+    "useCases": [
+      "Goods arrive at the office store.",
+      "Material goes to a site: issue it to the project or transfer it to the project store.",
+      "A physical count differs from the system."
+    ],
+    "shots": [
+      {
+        "id": "stock",
+        "caption": "A store and its stock",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "nav": [
+                "Store"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Choose a store: office stores and project stores.",
+            "target": "[role=group][aria-label=\"Choose a store\"]"
+          },
+          {
+            "text": "These buttons are the stock actions you are allowed to use.",
+            "target": "button:has-text(\"Receive stock\")"
+          },
+          {
+            "text": "Low stock is flagged against the minimum set on the product.",
+            "target": "tbody tr >> nth=0"
+          },
+          {
+            "text": "Tabs: the catalogue, every movement, and purchases.",
+            "target": "[role=tablist]"
+          }
+        ]
+      },
+      {
+        "id": "issue",
+        "caption": "Issue stock to a project",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "nav": [
+                "Store"
+              ]
+            },
+            {
+              "click": "button:has-text(\"Issue stock\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Pick the product. Assets cannot be issued; transfer them instead.",
+            "target": "[role=dialog] select[name=ip]"
+          },
+          {
+            "text": "You cannot issue more than is in stock.",
+            "target": "[role=dialog] input[name=iq]"
+          },
+          {
+            "text": "Charge it to a project; its cost then counts in the project costing.",
+            "target": "[role=dialog] select[name=ipr]"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Value uses the running average cost of the store.",
+      "Cost columns need the View cost permission."
+    ],
+    "related": [
+      "purchase-to-stock",
+      "price-history"
+    ]
+  },
+  {
+    "id": "price-history",
+    "title": "See what you paid before",
+    "feature": "Store",
+    "audiences": [
+      "manager",
+      "accountant",
+      "data-entry"
+    ],
+    "openPath": "/store",
+    "brief": "Price history lists every price paid for a product, from expenses, vendor orders and hand receipts, with the lowest, highest and average.",
+    "useCases": [
+      "You buy the same item often at different prices.",
+      "You want to know which supplier is cheapest.",
+      "You want to spot a price that suddenly jumped."
+    ],
+    "shots": [
+      {
+        "id": "catalogue",
+        "caption": "Last price in the catalogue",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "nav": [
+                "Store"
+              ]
+            },
+            {
+              "click": "[role=tab]:has-text(\"Catalogue\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "The last price is shown with the change since the previous price.",
+            "target": "tbody tr:has-text(\"Copper lug\") button"
+          },
+          {
+            "text": "Click a price to open its history.",
+            "target": "th:has-text(\"Last price\")"
+          }
+        ]
+      },
+      {
+        "id": "history",
+        "caption": "The price history",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "nav": [
+                "Store"
+              ]
+            },
+            {
+              "click": "[role=tab]:has-text(\"Catalogue\")"
+            },
+            {
+              "click": "button[aria-label=\"Price history of Copper lug 120 sq mm\"]"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Last, average, lowest and highest price at a glance.",
+            "target": "[role=dialog] .grid >> nth=0"
+          },
+          {
+            "text": "The line shows how the price moved; hover a dot for the supplier.",
+            "target": "[role=dialog] svg"
+          },
+          {
+            "text": "Every purchase with its supplier and where it was recorded.",
+            "target": "[role=dialog] table"
+          },
+          {
+            "text": "Vendors' current price lists, cheapest first.",
+            "target": "[role=dialog] >> text=Vendor price lists now"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Prices are matched by item name; keep names consistent.",
+      "The expense form shows the same hint while you type."
+    ],
+    "related": [
+      "expense-full-entry"
+    ]
+  },
+  {
+    "id": "vendors-staff",
+    "title": "Work with vendors",
+    "feature": "Vendors",
+    "audiences": [
+      "data-entry",
+      "manager",
+      "accountant",
+      "admin"
+    ],
+    "openPath": "/vendors",
+    "brief": "Vendors are suppliers (products), service providers or others. For each you can send purchase orders, approve invoices, pay, and give them a login.",
+    "useCases": [
+      "A new supplier needs to be set up.",
+      "You are ordering goods for a project.",
+      "A vendor sent an invoice to approve and pay."
+    ],
+    "shots": [
+      {
+        "id": "list",
+        "caption": "The vendor list",
+        "capture": {
+          "as": "Imran Hossain",
+          "actions": [
+            {
+              "nav": [
+                "Vendors"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Click a type to filter: product, service or other.",
+            "target": ".stat-tile >> nth=0"
+          },
+          {
+            "text": "Add a vendor with its type and details.",
+            "target": "button:has-text(\"New vendor\")"
+          },
+          {
+            "text": "The columns show invoiced, paid and due at a glance.",
+            "target": "tbody tr >> nth=0"
+          }
+        ]
+      },
+      {
+        "id": "order",
+        "caption": "Send a purchase order",
+        "capture": {
+          "as": "Imran Hossain",
+          "actions": [
+            {
+              "nav": [
+                "Vendors"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"Steelcraft\")"
+            },
+            {
+              "click": "[role=tab]:has-text(\"Purchase orders\")"
+            },
+            {
+              "click": "button:has-text(\"New purchase order\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Pick items from the vendor's product list; the price fills in.",
+            "target": "input[aria-label=\"Item 1\"]"
+          },
+          {
+            "text": "Link the order to a project if it is bought for one.",
+            "target": "select[aria-label=\"Project this order is for\"]"
+          },
+          {
+            "text": "Send the order.",
+            "target": "button:has-text(\"Send order\")"
+          }
+        ]
+      },
+      {
+        "id": "invoice",
+        "caption": "Approve an invoice",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "nav": [
+                "Vendors"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"Steelcraft\")"
+            },
+            {
+              "click": "[role=tab]:has-text(\"Invoices\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "The chips show the approval steps for the invoice amount.",
+            "target": "tr:has-text(\"ST-2244\") [aria-label^=\"Approval flow\"]"
+          },
+          {
+            "text": "Open the photo of the invoice.",
+            "target": "tr:has-text(\"ST-2210\") button:has-text(\"View image\")"
+          },
+          {
+            "text": "Approve your step or reject with a reason.",
+            "target": "tr:has-text(\"ST-2244\") button:has-text(\"Approve step\")"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Approved invoices raise the amount due. Payments lower it.",
+      "A vendor with orders, invoices or payments cannot be deleted; mark it inactive."
+    ],
+    "related": [
+      "vendor-portal",
+      "expense-approve-pay"
+    ]
+  },
+  {
+    "id": "vendor-portal",
+    "title": "Vendor login: invoices and due payments",
+    "feature": "Vendors",
+    "audiences": [
+      "vendor"
+    ],
+    "openPath": "/vendors",
+    "brief": "As a vendor you see only your own orders, invoices and payments. You can submit invoices with a photo and ask for part of what is due.",
+    "useCases": [
+      "You delivered goods and want to get paid.",
+      "You want to know how much is due and what was already paid.",
+      "You want to ask for a part payment this week."
+    ],
+    "shots": [
+      {
+        "id": "home",
+        "caption": "Your vendor page",
+        "capture": {
+          "as": "Jahid Hasan",
+          "actions": [
+            {
+              "nav": [
+                "Vendors"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "These tiles show total invoiced, paid, due now and requested.",
+            "target": ".stat-tile >> nth=2"
+          },
+          {
+            "text": "Tabs: your products, purchase orders, invoices, payments and history.",
+            "target": "[role=tablist]"
+          }
+        ]
+      },
+      {
+        "id": "invoice",
+        "caption": "Submit an invoice",
+        "capture": {
+          "as": "Jahid Hasan",
+          "actions": [
+            {
+              "nav": [
+                "Vendors"
+              ]
+            },
+            {
+              "click": "[role=tab]:has-text(\"Invoices\")"
+            },
+            {
+              "click": "button:has-text(\"Submit invoice\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Enter the invoice number and amount.",
+            "target": "input[aria-label=\"Invoice number\"]"
+          },
+          {
+            "text": "Link the purchase order it belongs to.",
+            "target": "select[aria-label=\"Purchase order\"]"
+          },
+          {
+            "text": "Add a photo or scan of the invoice (an image, up to 2 MB).",
+            "target": "input[type=file]"
+          }
+        ]
+      },
+      {
+        "id": "request",
+        "caption": "Ask for a due payment",
+        "capture": {
+          "as": "Jahid Hasan",
+          "actions": [
+            {
+              "nav": [
+                "Vendors"
+              ]
+            },
+            {
+              "click": "[role=tab]:has-text(\"Payments\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "You can ask for up to the amount that is due and not yet requested.",
+            "target": "input[aria-label=\"Request amount\"]"
+          },
+          {
+            "text": "Staff accept or decline; you see their answer here.",
+            "target": "text=Due payment requests"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Your invoice is approved in steps; you can see its status.",
+      "You cannot see other vendors or any company-only pages."
+    ],
+    "related": [
+      "vendors-staff"
+    ]
+  },
+  {
+    "id": "clients-staff",
+    "title": "Work with clients and their documents",
+    "feature": "Clients",
+    "audiences": [
+      "data-entry",
+      "manager",
+      "admin"
+    ],
+    "openPath": "/clients",
+    "brief": "A client record holds company details, documents (requirements, purchase orders, work orders, bills, delivery challans) and the logins that follow the client's projects.",
+    "useCases": [
+      "A new client signed a work order.",
+      "You received a purchase order and need to file it.",
+      "You want to send a bill by link or email."
+    ],
+    "shots": [
+      {
+        "id": "list",
+        "caption": "The client list",
+        "capture": {
+          "as": "Imran Hossain",
+          "actions": [
+            {
+              "nav": [
+                "Clients"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Search by name, contact or city.",
+            "target": "input[aria-label=\"Search clients\"]"
+          },
+          {
+            "text": "Add a client.",
+            "target": "button:has-text(\"New client\")"
+          },
+          {
+            "text": "Open a client to see everything about it.",
+            "target": "tbody tr >> nth=0"
+          }
+        ]
+      },
+      {
+        "id": "documents",
+        "caption": "Documents of a client",
+        "capture": {
+          "as": "Imran Hossain",
+          "actions": [
+            {
+              "nav": [
+                "Clients"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"Bengal\")"
+            },
+            {
+              "click": "[role=tab]:has-text(\"Documents\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Filter by document type.",
+            "target": "[aria-label=\"Filter by type\"]"
+          },
+          {
+            "text": "Add a document; both staff and the client can send documents.",
+            "target": "button:has-text(\"Add document\")"
+          },
+          {
+            "text": "Share a document as a read-only link or by email.",
+            "target": "tbody tr >> nth=0 >> button:has-text(\"Share\")"
+          }
+        ]
+      },
+      {
+        "id": "access",
+        "caption": "Give the client a login",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Clients"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"Bengal\")"
+            },
+            {
+              "click": "[role=tab]:has-text(\"Portal access\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Link an existing user, or create a new client login.",
+            "target": "text=Give an existing user access"
+          },
+          {
+            "text": "A client login sees only its own client and projects.",
+            "target": "text=Create a client login"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Share links open only in the browser that created them until there is a server.",
+      "Projects are managed in Projects; the client page shows them read-only."
+    ],
+    "related": [
+      "client-portal",
+      "projects"
+    ]
+  },
+  {
+    "id": "client-portal",
+    "title": "Client login: follow your projects",
+    "feature": "Clients",
+    "audiences": [
+      "client"
+    ],
+    "openPath": "/clients",
+    "brief": "As a client you see your own projects with progress and updates, and the documents exchanged. You can send requirements, purchase orders and other documents.",
+    "useCases": [
+      "You want to know how far a project is.",
+      "You need to send a purchase order or requirement.",
+      "You want to find a bill or delivery challan."
+    ],
+    "shots": [
+      {
+        "id": "home",
+        "caption": "Your client page",
+        "capture": {
+          "as": "Karim Chowdhury",
+          "actions": [
+            {
+              "nav": [
+                "Clients"
+              ]
+            },
+            {
+              "click": "[role=tab]:has-text(\"Projects\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Each project shows its status, progress and dates.",
+            "target": "section[aria-label] >> nth=0"
+          },
+          {
+            "text": "Updates posted by the project manager are listed under each project.",
+            "target": "text=Updates >> nth=0"
+          }
+        ]
+      },
+      {
+        "id": "send",
+        "caption": "Send a document",
+        "capture": {
+          "as": "Karim Chowdhury",
+          "actions": [
+            {
+              "nav": [
+                "Clients"
+              ]
+            },
+            {
+              "click": "[role=tab]:has-text(\"Documents\")"
+            },
+            {
+              "click": "button:has-text(\"Send a document\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Choose the type: requirement, purchase order, work order, bill or delivery challan.",
+            "target": "select[aria-label=\"Document type\"]"
+          },
+          {
+            "text": "Give a title and, if needed, the amount and a file.",
+            "target": "input[aria-label=\"Title\"]"
+          },
+          {
+            "text": "Save. Encore staff can see it right away.",
+            "target": "button:has-text(\"Save document\")"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "You can delete only documents you sent.",
+      "You cannot see other clients."
+    ],
+    "related": [
+      "clients-staff"
+    ]
+  },
+  {
+    "id": "projects",
+    "title": "Projects, costing and profit",
+    "feature": "Projects",
+    "audiences": [
+      "manager",
+      "accountant",
+      "admin"
+    ],
+    "openPath": "/projects",
+    "brief": "A project ties a client's contract to its budget, team and costs. Cost and profit are worked out automatically from expenses, vendor invoices and store issues.",
+    "useCases": [
+      "A client signed a contract and you need to track cost against it.",
+      "You want to know if a project is making money.",
+      "You need to assign a manager and set payment terms."
+    ],
+    "shots": [
+      {
+        "id": "list",
+        "caption": "The project list",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "nav": [
+                "Projects"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Tiles total the contracts, budgets and profit.",
+            "target": ".stat-tile >> nth=0"
+          },
+          {
+            "text": "Create a project: choose the client, type, manager, branch, budget and payment terms.",
+            "target": "button:has-text(\"New project\")"
+          },
+          {
+            "text": "Cost and profit per project at a glance.",
+            "target": "tbody tr >> nth=0"
+          }
+        ]
+      },
+      {
+        "id": "costing",
+        "caption": "Costing and profit",
+        "capture": {
+          "as": "Sara Khan",
+          "actions": [
+            {
+              "nav": [
+                "Projects"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"Substation\")"
+            },
+            {
+              "click": "[role=tab]:has-text(\"Costing and profit\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Cost to date, earned from progress, profit to date and projected profit.",
+            "target": ".stat-tile >> nth=0"
+          },
+          {
+            "text": "Budget used and where the cost comes from.",
+            "target": "[aria-label=\"Budget used\"]"
+          },
+          {
+            "text": "Every cost line with its source: expense, vendor purchase or store issue.",
+            "target": "table"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Goods bought into a store count when issued to the project, never twice.",
+      "Projects are visible to managers who run them, and to clients without costs."
+    ],
+    "related": [
+      "expense-full-entry",
+      "purchase-to-stock"
+    ]
+  },
+  {
+    "id": "roles-permissions",
+    "title": "Roles and permissions",
+    "feature": "Configuration",
+    "audiences": [
+      "admin"
+    ],
+    "openPath": "/settings/roles",
+    "brief": "Roles decide what each person can do. A person can have several roles and gets the sum of their permissions.",
+    "useCases": [
+      "A new job needs its own role.",
+      "A role should stop being able to delete things.",
+      "A person needs two roles at once."
+    ],
+    "shots": [
+      {
+        "id": "roles",
+        "caption": "Roles",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Configuration",
+                "Roles and permissions"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Create a role with a name and description.",
+            "target": "input[name=role-name]"
+          },
+          {
+            "text": "Admin is built in and always has everything.",
+            "target": "tbody tr >> nth=0"
+          }
+        ]
+      },
+      {
+        "id": "matrix",
+        "caption": "The permission matrix",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Configuration",
+                "Roles and permissions"
+              ]
+            },
+            {
+              "click": "[role=tab]:has-text(\"Permissions\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Tick what each role may do.",
+            "target": "table"
+          },
+          {
+            "text": "Tick a whole group at once with its first row.",
+            "target": "tbody tr >> nth=1"
+          }
+        ]
+      },
+      {
+        "id": "people",
+        "caption": "Give a person several roles",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Configuration",
+                "Roles and permissions"
+              ]
+            },
+            {
+              "click": "[role=tab]:has-text(\"Employees\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Tick every role the person needs.",
+            "target": "li >> nth=0"
+          },
+          {
+            "text": "Someone active must always keep a role that can assign roles.",
+            "target": "text=Tick as many roles"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Roles in use cannot be deleted.",
+      "New permissions appear for all roles as features are added."
+    ],
+    "related": [
+      "approval-tree",
+      "users-hr"
+    ]
+  },
+  {
+    "id": "approval-tree",
+    "title": "Set up the approval tree",
+    "feature": "Configuration",
+    "audiences": [
+      "admin"
+    ],
+    "openPath": "/settings/roles",
+    "brief": "The approval tree says who approves what, by amount. Bigger amounts add steps.",
+    "useCases": [
+      "Large expenses should also need the Admin.",
+      "A new approver role must be added to a branch.",
+      "You want to test which path an amount takes."
+    ],
+    "shots": [
+      {
+        "id": "tree",
+        "caption": "The approval tree",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Configuration",
+                "Roles and permissions"
+              ]
+            },
+            {
+              "click": "[role=tab]:has-text(\"Approval tree\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Each branch shows the amounts it covers and its steps in order.",
+            "target": "ol >> nth=0"
+          },
+          {
+            "text": "Add a branch for larger amounts.",
+            "target": "button:has-text(\"Add a branch for larger amounts\")"
+          },
+          {
+            "text": "Try an amount to see its path.",
+            "target": "input[aria-label=\"Amount to test\"]"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "A request keeps the path it had when submitted.",
+      "The first branch always starts at zero."
+    ],
+    "related": [
+      "roles-permissions",
+      "approvals-everywhere"
+    ]
+  },
+  {
+    "id": "users-hr",
+    "title": "Employees, admins and logins",
+    "feature": "Users",
+    "audiences": [
+      "admin",
+      "data-entry"
+    ],
+    "openPath": "/users/employees",
+    "brief": "The Users menu manages people: employees (HR details, salary, promotions), admins, and logins for vendors, clients and customers.",
+    "useCases": [
+      "A new employee joined.",
+      "Someone was promoted and their salary changed.",
+      "A vendor contact needs a login."
+    ],
+    "shots": [
+      {
+        "id": "employees",
+        "caption": "Employees",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Users",
+                "Employees"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Add an employee with general, office and salary details.",
+            "target": "button:has-text(\"Add Employee\")"
+          },
+          {
+            "text": "Filter by department and employment type.",
+            "target": "select[aria-label=\"Department\"]"
+          },
+          {
+            "text": "Open the actions menu for edit, financial records, promotion and delete.",
+            "target": "button[aria-label^=\"Actions for\"] >> nth=0"
+          }
+        ]
+      },
+      {
+        "id": "menu",
+        "caption": "The actions menu",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Users",
+                "Employees"
+              ]
+            },
+            {
+              "click": "button[aria-label^=\"Actions for\"] >> nth=0"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Edit the details.",
+            "target": ".mat-mdc-menu-item >> nth=0"
+          },
+          {
+            "text": "Financial records and promotion need the matching permissions.",
+            "target": ".mat-mdc-menu-item >> nth=1"
+          }
+        ]
+      },
+      {
+        "id": "others",
+        "caption": "Admins, vendors, clients, customers",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Users",
+                "Admins"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Make someone an admin; someone active must always stay an admin.",
+            "target": "select[name=pick]"
+          },
+          {
+            "text": "Vendor, client and customer logins are managed on their own pages under Users.",
+            "target": ".fuse-vertical-navigation-item-title:text-is(\"Customers\")"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Salary details need the View salary permission.",
+      "An employee name used on fund requests cannot be changed."
+    ],
+    "related": [
+      "roles-permissions"
+    ]
+  },
+  {
+    "id": "theme",
+    "title": "Change the look of the app",
+    "feature": "Configuration",
+    "audiences": [
+      "admin"
+    ],
+    "openPath": "/settings/theme",
+    "brief": "Theme changes colours, logo, page background, sidebar and table design for everyone. Changes preview live and stay only after you save.",
+    "useCases": [
+      "The company logo or colours changed.",
+      "Tables are too crowded and need more air.",
+      "You want the sidebar glass wallpaper changed."
+    ],
+    "shots": [
+      {
+        "id": "page",
+        "caption": "Theme settings",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Configuration",
+                "Theme"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Start from a preset, then adjust.",
+            "target": "#presets-title"
+          },
+          {
+            "text": "Upload the company logo and choose colours.",
+            "target": "text=Logo >> nth=0"
+          },
+          {
+            "text": "Save to keep the changes for everyone, or discard.",
+            "target": "button:has-text(\"Save theme\")"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "The browser tab icon and the E mark follow the theme colours.",
+      "Changes are only a preview until you save."
+    ],
+    "related": [
+      "roles-permissions"
+    ]
+  },
+  {
+    "id": "customers",
+    "title": "Customers",
+    "feature": "Users",
+    "audiences": [
+      "admin"
+    ],
+    "openPath": "/users/customers",
+    "brief": "Customers are people who buy from the company. A customer login has no company link and, for now, sees only the Dashboard and its profile.",
+    "useCases": [
+      "You want to record a customer and give them a login.",
+      "You plan to give customers features later."
+    ],
+    "shots": [
+      {
+        "id": "list",
+        "caption": "The customers page",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Users",
+                "Customers"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Add a customer with name, email, phone and address.",
+            "target": "button:has-text(\"Add Customer\")"
+          },
+          {
+            "text": "Edit or delete a customer login.",
+            "target": "tbody tr >> nth=0"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Give the Customer role permissions in Roles and permissions when customer features arrive."
+    ],
+    "related": [
+      "users-hr"
+    ]
+  }
+]

@@ -108,6 +108,13 @@ export const defaultNavigation: FuseNavigationItem[] = [
         type : 'basic',
         icon : 'heroicons_outline:archive-box',
         link : '/store'
+    },
+    {
+        id   : 'help',
+        title: 'Help',
+        type : 'basic',
+        icon : 'heroicons_outline:question-mark-circle',
+        link : '/help'
     }
 ];
 export const compactNavigation: FuseNavigationItem[] = [
