@@ -7,6 +7,9 @@ import { FundsService } from '../treasury/funds/funds.service';
 import { VendorsService } from '../vendors/vendors.service';
 import {
     INCOMING,
+    PricePoint,
+    PriceStats,
+    VendorQuote,
     Movement,
     MovementType,
     Product,
@@ -99,6 +102,74 @@ export class StoreService {
 
     movementsOf(storeId: string): Movement[] {
         return this.movements().filter((m) => m.storeId === storeId);
+    }
+
+    // -----------------------------------------------------------------------------------------------------
+    // @ Price history: what we paid for a product each time, from expenses, purchase orders and stock received by hand
+    // -----------------------------------------------------------------------------------------------------
+
+    /** Every price paid for the item, newest first. Receipts from an expense or an order are not counted twice. */
+    priceHistoryByName(name: string): PricePoint[] {
+        const key = name.trim().toLowerCase();
+        if (!key) {
+            return [];
+        }
+        const product = this._products().find((p) => p.name.trim().toLowerCase() === key);
+        const points: PricePoint[] = [];
+        for (const e of this._expenses.approvedPurchases()) {
+            for (const i of e.items.filter((x) => x.name.trim().toLowerCase() === key && x.unitCost > 0)) {
+                const supplier = e.vendorId ? (this._vendors.vendorName(e.vendorId) || e.payee) : e.payee;
+                points.push({ date: e.date, price: i.unitCost, qty: i.qty, unit: i.unit, source: 'expense', ref: e.id, supplier: supplier || '-' });
+            }
+        }
+        for (const o of this._vendors.allOrders().filter((x) => x.status !== 'cancelled')) {
+            for (const l of o.lines.filter((x) => x.name.trim().toLowerCase() === key && x.price > 0)) {
+                points.push({ date: o.date.slice(0, 10), price: l.price, qty: l.qty, unit: l.unit, source: 'purchase_order', ref: o.number, supplier: this._vendors.vendorName(o.vendorId) });
+            }
+        }
+        if (product) {
+            for (const m of this._movements().filter((x) => x.productId === product.id && x.type === 'receive' && x.source === 'manual' && x.unitCost > 0)) {
+                points.push({ date: m.date.slice(0, 10), price: m.unitCost, qty: m.qty, unit: product.unit, source: 'hand', ref: m.id, supplier: '-' });
+            }
+        }
+        return points.sort((a, b) => b.date.localeCompare(a.date));
+    }
+
+    priceHistory(productId: string): PricePoint[] {
+        return this.priceHistoryByName(this.product(productId)?.name ?? '');
+    }
+
+    priceStatsByName(name: string): PriceStats | null {
+        const points = this.priceHistoryByName(name);
+        if (points.length === 0) {
+            return null;
+        }
+        const last = points[0];
+        const previous = points.find((p, i) => i > 0 && p.price !== last.price) ?? points[1] ?? null;
+        const prices = points.map((p) => p.price);
+        return {
+            count: points.length,
+            last,
+            previous,
+            change: previous ? ((last.price - previous.price) / previous.price) * 100 : null,
+            lowest: points.reduce((m, p) => (p.price < m.price ? p : m)),
+            highest: points.reduce((m, p) => (p.price > m.price ? p : m)),
+            average: prices.reduce((s, n) => s + n, 0) / prices.length,
+        };
+    }
+
+    priceStats(productId: string): PriceStats | null {
+        return this.priceStatsByName(this.product(productId)?.name ?? '');
+    }
+
+    /** What vendors list the item at right now, cheapest first. */
+    vendorQuotes(productId: string): VendorQuote[] {
+        const key = (this.product(productId)?.name ?? '').trim().toLowerCase();
+        return this._vendors
+            .allProducts()
+            .filter((p) => p.name.trim().toLowerCase() === key)
+            .map((p) => ({ vendor: p.vendorName, price: p.price, unit: p.unit }))
+            .sort((a, b) => a.price - b.price);
     }
 
     // -----------------------------------------------------------------------------------------------------

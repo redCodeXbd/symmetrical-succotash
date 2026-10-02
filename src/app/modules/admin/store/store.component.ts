@@ -10,6 +10,7 @@ import { AddButtonComponent } from '../treasury/shared/add-button/add-button.com
 import { SlideOverComponent } from '../treasury/shared/slide-over/slide-over.component';
 import { UserSwitchComponent } from '../treasury/shared/user-switch/user-switch.component';
 import { StoreService } from './store.service';
+import { PRICE_SOURCE_LABELS, PricePoint } from './store.types';
 import { KIND_CLASSES, KIND_HELP, KIND_LABELS, MOVEMENT_LABELS, INCOMING, Product, ProductInput, ProductKind, ReceiptSource } from './store.types';
 
 type Tab = 'stock' | 'catalogue' | 'movements' | 'purchases';
@@ -29,6 +30,34 @@ export class StoreComponent {
     readonly kindHelp = KIND_HELP;
     readonly moveLabels = MOVEMENT_LABELS;
     readonly incoming = INCOMING;
+
+    readonly sourceLabels = PRICE_SOURCE_LABELS;
+    historyId = signal<string | null>(null);
+    historyProduct = computed(() => this.service.product(this.historyId() ?? ''));
+    history = computed(() => this.service.priceHistory(this.historyId() ?? ''));
+    historyStats = computed(() => this.service.priceStats(this.historyId() ?? ''));
+    quotes = computed(() => this.service.vendorQuotes(this.historyId() ?? ''));
+
+    /** The prices as a line, oldest to newest, scaled into a 400 x 120 box. */
+    chart = computed(() => {
+        const pts = [...this.history()].reverse();
+        if (pts.length === 0) {
+            return null;
+        }
+        const prices = pts.map((p) => p.price);
+        const lo = Math.min(...prices);
+        const hi = Math.max(...prices);
+        const span = hi - lo || 1;
+        const t0 = new Date(pts[0].date).getTime();
+        const tSpan = new Date(pts[pts.length - 1].date).getTime() - t0 || 1;
+        const dots = pts.map((p, i) => ({
+            x: 20 + (pts.length === 1 ? 180 : ((new Date(p.date).getTime() - t0) / tSpan) * 360),
+            y: 100 - ((p.price - lo) / span) * 80,
+            p,
+            i,
+        }));
+        return { dots, line: dots.map((d) => `${d.x.toFixed(1)},${d.y.toFixed(1)}`).join(' '), lo, hi };
+    });
 
     tab = signal<Tab>('stock');
     storeId = signal('S-1');
@@ -109,6 +138,15 @@ export class StoreComponent {
 
     get moveStock(): number {
         return this.service.qtyIn(this.storeId(), this.moveProductId);
+    }
+
+    openHistory(id: string): void {
+        this.historyId.set(id);
+    }
+
+    /** Price change since the purchase before, as text such as "+4.2%". */
+    changeText(change: number | null): string {
+        return change === null || Math.abs(change) < 0.05 ? '' : `${change > 0 ? '+' : ''}${change.toFixed(1)}%`;
     }
 
     setTab(tab: Tab): void {

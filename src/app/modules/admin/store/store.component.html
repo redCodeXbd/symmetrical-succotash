@@ -106,7 +106,7 @@
             @if (tab() === 'catalogue') {
                 <div class="overflow-x-auto">
                     <table class="app-table w-full">
-                        <thead><tr><th scope="col" class="text-left font-medium">Product</th><th scope="col" class="text-left font-medium">Category</th><th scope="col" class="text-left font-medium">Kind</th><th scope="col" class="text-left font-medium">Details</th><th scope="col" class="text-right font-medium">Min stock</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+                        <thead><tr><th scope="col" class="text-left font-medium">Product</th><th scope="col" class="text-left font-medium">Category</th><th scope="col" class="text-left font-medium">Kind</th><th scope="col" class="text-left font-medium">Details</th><th scope="col" class="text-right font-medium">Min stock</th>@if (access.can('store.cost')) { <th scope="col" class="text-right font-medium">Last price</th> }<th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
                         <tbody>
                             @for (p of shownProducts(); track p.id) {
                                 <tr>
@@ -115,10 +115,19 @@
                                     <td><span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="kindClasses[p.kind]">{{ kindLabels[p.kind] }}</span></td>
                                     <td class="text-secondary max-w-xs text-sm">{{ p.description || '-' }}@if (p.addedFrom) { <span class="ml-1 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800">New from {{ p.addedFrom }}</span> }</td>
                                     <td class="text-right">{{ p.minStock }}</td>
+                                    @if (access.can('store.cost')) {
+                                        <td class="text-right whitespace-nowrap">
+                                            @if (service.priceStats(p.id); as s) {
+                                                <button type="button" class="font-medium text-primary hover:underline" (click)="openHistory(p.id)" [attr.aria-label]="'Price history of ' + p.name">{{ s.last.price | number: '1.0-2' }}</button>
+                                                @if (changeText(s.change); as c) { <span class="ml-1 text-xs font-semibold" [class]="s.change! > 0 ? 'text-red-600' : 'text-green-700'">{{ s.change! > 0 ? '▲' : '▼' }} {{ c }}</span> }
+                                                <div class="text-secondary text-xs">{{ s.count }} {{ s.count === 1 ? 'purchase' : 'purchases' }}</div>
+                                            } @else { <span class="text-secondary">-</span> }
+                                        </td>
+                                    }
                                     <td class="text-right">@if (access.can('store.catalog')) { <button type="button" class="font-medium text-primary hover:underline" (click)="open('product', p)">Edit</button> }</td>
                                 </tr>
                             } @empty {
-                                <tr><td colspan="6" class="text-secondary py-10 text-center">No products match.</td></tr>
+                                <tr><td colspan="7" class="text-secondary py-10 text-center">No products match.</td></tr>
                             }
                         </tbody>
                     </table>
@@ -315,5 +324,61 @@
             <button mat-stroked-button type="button" (click)="close()">Cancel</button>
             <button mat-flat-button color="primary" type="submit" form="store-form">Save</button>
         </ng-container>
+    </treasury-slide-over>
+}
+
+<!-- ================= Price history ================= -->
+@if (historyProduct(); as hp) {
+    <treasury-slide-over heading="Price history" [subheading]="hp.name" (closed)="historyId.set(null)">
+        @if (historyStats(); as st) {
+            <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-xl border p-3"><div class="text-secondary text-xs">Last price</div><div class="text-xl font-semibold">{{ st.last.price | number: '1.0-2' }}</div><div class="text-secondary text-xs">per {{ hp.unit }}</div></div>
+                <div class="rounded-xl border p-3"><div class="text-secondary text-xs">Average</div><div class="text-xl font-semibold">{{ st.average | number: '1.0-2' }}</div><div class="text-secondary text-xs">{{ st.count }} purchases</div></div>
+                <div class="rounded-xl border p-3"><div class="text-secondary text-xs">Lowest</div><div class="text-xl font-semibold text-green-700">{{ st.lowest.price | number: '1.0-2' }}</div><div class="text-secondary text-xs">{{ st.lowest.supplier }} · {{ st.lowest.date | date: 'dd MMM y' }}</div></div>
+                <div class="rounded-xl border p-3"><div class="text-secondary text-xs">Highest</div><div class="text-xl font-semibold text-red-600">{{ st.highest.price | number: '1.0-2' }}</div><div class="text-secondary text-xs">{{ st.highest.supplier }} · {{ st.highest.date | date: 'dd MMM y' }}</div></div>
+            </div>
+            @if (st.change !== null && changeText(st.change)) {
+                <div class="mt-3 rounded-lg p-3 text-md" [class]="st.change > 0 ? 'bg-red-50 text-red-800' : 'bg-green-50 text-green-800'">The last price is {{ changeText(st.change) }} compared with the one before ({{ st.previous!.price | number: '1.0-2' }} on {{ st.previous!.date | date: 'dd MMM y' }}).</div>
+            }
+
+            @if (chart(); as c) {
+                <div class="mt-5 text-sm font-medium uppercase tracking-wide text-secondary">Price over time</div>
+                <svg viewBox="0 0 400 130" class="mt-2 w-full" role="img" [attr.aria-label]="'Price of ' + hp.name + ' from ' + c.lo + ' to ' + c.hi">
+                    <line x1="20" y1="100" x2="380" y2="100" stroke="currentColor" stroke-opacity="0.15" />
+                    <line x1="20" y1="20" x2="380" y2="20" stroke="currentColor" stroke-opacity="0.15" stroke-dasharray="3 3" />
+                    <text x="20" y="14" font-size="10" fill="currentColor" fill-opacity="0.6">{{ c.hi | number: '1.0-0' }}</text>
+                    <text x="20" y="116" font-size="10" fill="currentColor" fill-opacity="0.6">{{ c.lo | number: '1.0-0' }}</text>
+                    <polyline [attr.points]="c.line" fill="none" stroke="rgb(var(--fuse-primary-rgb))" stroke-width="2.5" stroke-linejoin="round" />
+                    @for (d of c.dots; track d.i) {
+                        <circle [attr.cx]="d.x" [attr.cy]="d.y" r="4.5" fill="rgb(var(--fuse-primary-rgb))" stroke="#fff" stroke-width="1.5"><title>{{ d.p.date }}: {{ d.p.price }} ({{ d.p.supplier }})</title></circle>
+                    }
+                </svg>
+            }
+
+            <div class="mt-5 text-sm font-medium uppercase tracking-wide text-secondary">Every purchase</div>
+            <table class="app-table mt-2 w-full">
+                <thead><tr><th scope="col" class="text-left font-medium">Date</th><th scope="col" class="text-right font-medium">Price</th><th scope="col" class="text-right font-medium">Qty</th><th scope="col" class="text-left font-medium">From</th></tr></thead>
+                <tbody>
+                    @for (h of history(); track $index) {
+                        <tr>
+                            <td class="whitespace-nowrap">{{ h.date | date: 'dd MMM y' }}</td>
+                            <td class="text-right font-medium" [class]="h.price === st.lowest.price ? 'text-green-700' : h.price === st.highest.price ? 'text-red-600' : ''">{{ h.price | number: '1.0-2' }}</td>
+                            <td class="text-right">{{ h.qty }}</td>
+                            <td>{{ h.supplier }}<div class="text-secondary text-xs">{{ sourceLabels[h.source] }} {{ h.ref }}</div></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        } @else {
+            <p class="text-secondary text-md">No purchase of this product has been recorded yet. Prices appear here when it is bought through an expense, a vendor purchase order or received by hand with a cost.</p>
+        }
+
+        @if (quotes().length) {
+            <div class="mt-5 text-sm font-medium uppercase tracking-wide text-secondary">Vendor price lists now</div>
+            <ul class="mt-2 divide-y">
+                @for (q of quotes(); track q.vendor) { <li class="flex justify-between py-2 text-md"><span>{{ q.vendor }}</span><span class="font-medium">{{ q.price | number: '1.0-2' }} / {{ q.unit }}</span></li> }
+            </ul>
+        }
+        <ng-container footer><button mat-flat-button type="button" (click)="historyId.set(null)">Close</button></ng-container>
     </treasury-slide-over>
 }

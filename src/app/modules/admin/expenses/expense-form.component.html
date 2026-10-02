@@ -66,6 +66,12 @@
                         <input type="number" min="0" class="col-span-4 h-10 rounded-lg border bg-transparent px-2 text-md sm:col-span-3" placeholder="Unit cost" [attr.aria-label]="'Unit cost ' + ($index + 1)" [name]="'ic-' + $index" [(ngModel)]="i.unitCost" />
                         <button type="button" class="col-span-2 text-red-600 hover:underline sm:col-span-1" (click)="removeItem($index)" [attr.aria-label]="'Remove item ' + ($index + 1)">x</button>
                     </div>
+                    @if (priceInfo(i.name); as s) {
+                        <div class="mt-1 rounded-md bg-primary/5 px-2 py-1 text-xs" [attr.aria-label]="'Price history of ' + i.name">
+                            Last bought at <strong>{{ s.last.price | number: '1.0-2' }}</strong> ({{ s.last.date }}, {{ s.last.supplier }}) · lowest {{ s.lowest.price | number: '1.0-2' }} ({{ s.lowest.supplier }}) · average {{ s.average | number: '1.0-2' }}
+                            @if (priceNote(i); as n) { <span class="ml-1 font-semibold" [class]="n.tone === 'up' ? 'text-red-600' : n.tone === 'down' ? 'text-green-700' : ''">{{ n.text }}</span> }
+                        </div>
+                    }
                 }
                 <button type="button" class="mt-2 font-medium text-primary hover:underline" (click)="addItem()">Add another item</button>
             </section>
