@@ -370,6 +370,28 @@ export class VendorsService {
         return null;
     }
 
+    /**
+     * A payment made through Expenses. It counts like any payment but is not limited to staff who may record
+     * vendor payments, because the expense was already approved.
+     */
+    recordLinkedPayment(vendorId: string, input: { amount: number; method: string; reference: string; date: string }, by: string): string | null {
+        if (!this._vendors().some((v) => v.id === vendorId)) {
+            return 'The vendor no longer exists.';
+        }
+        if (input.amount > this.due(vendorId) + 0.001) {
+            return `This is more than what is due to the vendor (BDT ${this.due(vendorId).toLocaleString('en-US')}). Approve the vendor's invoice first.`;
+        }
+        const payment: VendorPayment = {
+            ...input,
+            id: this._nextId('VP-', this._payments().map((p) => p.id), 4001),
+            vendorId,
+            invoiceId: null,
+            by,
+        };
+        this._payments.update((list) => [payment, ...list]);
+        return null;
+    }
+
     requestDue(vendorId: string, amount: number, note: string): string | null {
         if (!this._isOwnVendor(vendorId, 'vendors.submit')) {
             return 'Only the vendor can request a due payment.';

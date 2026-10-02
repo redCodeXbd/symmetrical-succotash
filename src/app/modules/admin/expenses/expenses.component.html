@@ -1,0 +1,191 @@
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <!-- Header -->
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div class="text-secondary text-md">Expenses</div>
+                <h1 class="mt-1 text-4xl font-extrabold leading-tight tracking-tight">Expenses</h1>
+                <div class="text-secondary mt-0.5 text-lg">Every cost of the company, in one place: enter, approve, pay and report.</div>
+            </div>
+            <div class="flex flex-wrap items-center gap-4">
+                <treasury-user-switch></treasury-user-switch>
+                @if (access.can('expenses.manage_categories')) {
+                    <button mat-stroked-button type="button" (click)="categoriesOpen.set(true)">Categories</button>
+                }
+                @if (access.can('expenses.add')) {
+                    <treasury-add-button label="Add expense" (pressed)="openForm()"></treasury-add-button>
+                }
+            </div>
+        </div>
+
+        <!-- Numbers -->
+        <div class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div class="stat-tile" style="--tile: var(--fuse-primary-rgb)"><div class="stat-head"><span class="stat-label">Spent</span></div><div class="stat-value"><span class="stat-cur">BDT</span>{{ spentInRange() | number: '1.0-0' }}</div><div class="stat-sub">{{ inRange().length }} entries in the dates chosen</div></div>
+            <button type="button" class="stat-tile text-left" style="--tile: var(--fuse-accent-rgb)" (click)="statusFilter.set('pending'); range.set('all')"><div class="stat-head"><span class="stat-label">Waiting for approval</span></div><div class="stat-value">{{ pending().length }}</div><div class="stat-sub">BDT {{ pendingTotal() | number: '1.0-0' }} to approve</div></button>
+            <button type="button" class="stat-tile text-left" style="--tile: var(--fuse-accent-rgb)" (click)="statusFilter.set('unpaid'); range.set('all')"><div class="stat-head"><span class="stat-label">Approved, not paid</span></div><div class="stat-value">{{ toPay().length }}</div><div class="stat-sub">Ready for payment</div></button>
+            <div class="stat-tile" style="--tile: var(--fuse-primary-rgb)"><div class="stat-head"><span class="stat-label">Biggest category</span></div><div class="stat-value text-2xl">{{ topCategory()?.category?.name ?? '-' }}</div><div class="stat-sub">{{ topCategory() ? 'BDT ' + (topCategory()!.amount | number: '1.0-0') : 'No spending yet' }}</div></div>
+        </div>
+
+        <!-- Quick entry -->
+        @if (access.can('expenses.add')) {
+            <form class="exp-quick mt-6" (ngSubmit)="addQuick()" aria-label="Quick entry">
+                <div class="mb-2 text-sm font-medium uppercase tracking-wide text-secondary">Quick entry <span class="font-normal normal-case">· press Enter to save and add the next</span></div>
+                <div class="grid grid-cols-2 gap-3 md:grid-cols-12">
+                    <input type="date" class="h-11 rounded-lg border bg-card px-3 text-md md:col-span-2" aria-label="Date" name="q-date" [(ngModel)]="quick.date" />
+                    <select class="h-11 rounded-lg border bg-card px-3 text-md md:col-span-3" aria-label="Category" name="q-cat" [(ngModel)]="quick.categoryId">
+                        <option value="">Category...</option>
+                        @for (c of service.categories(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                    </select>
+                    <input #quickAmount type="number" min="0" step="0.01" class="h-11 rounded-lg border bg-card px-3 text-md md:col-span-2" placeholder="Amount" aria-label="Amount" name="q-amount" [(ngModel)]="quick.amount" />
+                    <input class="col-span-2 h-11 rounded-lg border bg-card px-3 text-md md:col-span-3" placeholder="What was it for?" aria-label="What was it for" name="q-desc" [(ngModel)]="quick.description" />
+                    <button mat-flat-button color="primary" type="submit" class="fuse-mat-button-large col-span-2 md:col-span-2">Save</button>
+                </div>
+                @if (quickError) { <div class="mt-2 text-sm text-red-600" role="alert">{{ quickError }}</div> }
+                @if (toast(); as t) { <div class="mt-2 text-sm font-medium text-green-700" role="status">{{ t }}</div> }
+                <div class="text-secondary mt-2 text-xs">Need receipts, items or more details? Use <strong>Add expense</strong>.</div>
+            </form>
+        }
+
+        <!-- Where the money goes -->
+        <section class="mt-6 rounded-2xl bg-card p-6 shadow" aria-labelledby="by-cat">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 id="by-cat" class="text-xl font-semibold">Where the money goes</h2>
+                <select class="h-10 rounded-lg border bg-transparent px-3 text-md" aria-label="Dates" [ngModel]="range()" (ngModelChange)="range.set($event)">
+                    @for (r of ranges; track r.id) { <option [value]="r.id">{{ r.label }}</option> }
+                </select>
+            </div>
+            @if (range() === 'custom') {
+                <div class="mt-3 flex flex-wrap items-center gap-3 text-md">
+                    <label>From <input type="date" class="ml-1 h-10 rounded-lg border bg-transparent px-2" [ngModel]="from()" (ngModelChange)="from.set($event)" /></label>
+                    <label>To <input type="date" class="ml-1 h-10 rounded-lg border bg-transparent px-2" [ngModel]="to()" (ngModelChange)="to.set($event)" /></label>
+                </div>
+            }
+            <ul class="mt-4 flex flex-col gap-2">
+                @for (b of byCategory(); track b.category.id) {
+                    <li>
+                        <button type="button" class="exp-bar-row" [class.exp-bar-active]="categoryFilter() === b.category.id" [attr.aria-pressed]="categoryFilter() === b.category.id" [attr.aria-label]="b.category.name + ' BDT ' + b.amount" (click)="toggleCategory(b.category.id)">
+                            <span class="exp-bar-name"><span class="exp-dot" [style.--cat]="b.category.color"></span>{{ b.category.name }}</span>
+                            <span class="exp-bar-track"><span class="exp-bar-fill" [style.width.%]="b.bar" [style.background]="b.category.color"></span></span>
+                            <span class="exp-bar-value">BDT {{ b.amount | number: '1.0-0' }} <span class="text-secondary text-xs">{{ b.share | number: '1.0-0' }}%</span></span>
+                        </button>
+                    </li>
+                } @empty {
+                    <li class="text-secondary py-4 text-md">No spending in these dates.</li>
+                }
+            </ul>
+        </section>
+
+        <!-- The list -->
+        <div class="mt-6 rounded-2xl bg-card shadow">
+            <div class="flex flex-wrap items-center gap-3 border-b p-4">
+                <input type="search" class="h-11 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" placeholder="Search by ID, details, person or category..." aria-label="Search expenses" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+                <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Category" [ngModel]="categoryFilter()" (ngModelChange)="categoryFilter.set($event)">
+                    <option value="all">All categories</option>
+                    @for (c of service.categories(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                </select>
+                <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Status" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+                    <option value="all">All statuses</option>
+                    <option value="pending">Waiting for approval</option>
+                    <option value="approved">Approved</option>
+                    <option value="unpaid">Approved, not paid</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Project" [ngModel]="projectFilter()" (ngModelChange)="projectFilter.set($event)">
+                    <option value="all">All projects</option>
+                    @for (p of projects.projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                </select>
+                @if (access.can('expenses.export')) { <treasury-export-menu [build]="doc" [formats]="['xlsx', 'pdf']" [disabled]="rows().length === 0"></treasury-export-menu> }
+            </div>
+            @if (filtersActive) {
+                <div class="flex items-center gap-3 border-b px-4 py-2 text-sm"><span class="text-secondary">Filters are on.</span><button type="button" class="font-medium text-primary hover:underline" (click)="clearFilters()">Clear filters</button></div>
+            }
+            <div class="overflow-x-auto">
+                <table class="app-table w-full">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="text-left font-medium">Date</th>
+                            <th scope="col" class="text-left font-medium">Category</th>
+                            <th scope="col" class="text-left font-medium">Details</th>
+                            <th scope="col" class="text-left font-medium">Project</th>
+                            <th scope="col" class="text-right font-medium">Amount (BDT)</th>
+                            <th scope="col" class="text-left font-medium">Status</th>
+                            <th scope="col" class="text-left font-medium">Payment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (e of shown(); track e.id) {
+                            <tr class="cursor-pointer" (click)="selectedId.set(e.id)">
+                                <td class="whitespace-nowrap">{{ e.date | date: 'dd MMM y' }}<div class="text-secondary text-sm">{{ e.id }}</div></td>
+                                <td><span class="exp-cat-pill" [style.--cat]="service.category(e.categoryId)?.color"><span class="exp-dot"></span>{{ service.categoryName(e.categoryId) }}</span></td>
+                                <td>
+                                    <button type="button" class="text-left font-medium text-primary hover:underline" (click)="selectedId.set(e.id); $event.stopPropagation()">{{ e.description || e.payee || 'Expense' }}</button>
+                                    <div class="text-secondary text-sm">{{ e.payee }}{{ e.payee ? ' · ' : '' }}{{ e.createdBy }}@if (e.receipts.length) { · {{ e.receipts.length }} receipt{{ e.receipts.length > 1 ? 's' : '' }} }</div>
+                                </td>
+                                <td>{{ projectName(e.projectId) || '-' }}</td>
+                                <td class="text-right font-medium">{{ e.amount | number: '1.0-2' }}</td>
+                                <td><span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="statusClasses[e.status]">{{ statusLabels[e.status] }}</span></td>
+                                <td><span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="e.paid ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'">{{ e.paid ? 'Paid' : 'Not paid' }}</span></td>
+                            </tr>
+                        } @empty {
+                            <tr><td colspan="7" class="text-secondary py-10 text-center">{{ service.expenses().length === 0 ? 'No expenses yet. Add the first one above.' : 'No expenses match.' }}</td></tr>
+                        }
+                    </tbody>
+                    @if (rows().length > 0) {
+                        <tfoot><tr><td colspan="4" class="font-medium">Total of {{ rows().length }} {{ rows().length === 1 ? 'expense' : 'expenses' }}</td><td class="text-right font-semibold">{{ total() | number: '1.0-2' }}</td><td colspan="2"></td></tr></tfoot>
+                    }
+                </table>
+            </div>
+            @if (rows().length > shown().length) {
+                <div class="border-t p-3 text-center"><button type="button" class="font-medium text-primary hover:underline" (click)="limit.set(limit() + 50)">Show more ({{ rows().length - shown().length }} left)</button></div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (selected(); as e) {
+    <expenses-detail [expense]="e" (closed)="selectedId.set(null)" (edit)="openForm($event)"></expenses-detail>
+}
+@if (formOpen()) {
+    <expenses-form [expense]="editing()" [presetCategoryId]="quick.categoryId" (saved)="formSaved($event)" (cancelled)="formOpen.set(false); editing.set(null)"></expenses-form>
+}
+
+<!-- Categories and approval limit -->
+@if (categoriesOpen()) {
+    <treasury-slide-over heading="Expense categories" subheading="Categories, their type and the approval limit" (closed)="categoriesOpen.set(false)">
+        @if (categoryMessage; as m) { <div class="mb-4 rounded-lg p-3 text-md" [class]="m.ok ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'" [attr.role]="m.ok ? 'status' : 'alert'">{{ m.text }}</div> }
+        <section class="rounded-xl border p-4">
+            <div class="font-medium">No approval needed up to</div>
+            <div class="mt-2 flex gap-2">
+                <input type="number" min="0" class="h-11 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" aria-label="Approval limit" [(ngModel)]="limitDraft" />
+                <button mat-stroked-button type="button" (click)="saveLimit()">Save</button>
+            </div>
+            <div class="text-secondary mt-1 text-xs">Larger expenses follow the approval tree for their amount.</div>
+        </section>
+        <form class="mt-5 rounded-xl border p-4" (ngSubmit)="addCategory()">
+            <div class="font-medium">New category</div>
+            <input class="mt-2 h-11 w-full rounded-lg border bg-transparent px-3 text-md" placeholder="Name" aria-label="New category name" name="nc-name" [(ngModel)]="newCategory.name" />
+            <select class="mt-2 h-11 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="Type" name="nc-kind" [(ngModel)]="newCategory.kind">
+                @for (k of kinds; track k) { <option [value]="k">{{ kindLabels[k] }}</option> }
+            </select>
+            <button mat-flat-button color="primary" class="mt-3" type="submit">Add category</button>
+        </form>
+        <ul class="mt-5 flex flex-col divide-y">
+            @for (c of service.categories(); track c.id) {
+                <li class="py-3">
+                    @if (categoryEdit && categoryEdit.id === c.id) {
+                        <input class="h-10 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="Category name" [(ngModel)]="categoryEdit.name" />
+                        <select class="mt-2 h-10 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="Category type" [(ngModel)]="categoryEdit.kind">@for (k of kinds; track k) { <option [value]="k">{{ kindLabels[k] }}</option> }</select>
+                        <div class="mt-2 flex gap-4"><button type="button" class="font-medium text-primary hover:underline" (click)="saveCategory()">Save</button><button type="button" class="text-secondary hover:underline" (click)="categoryEdit = null">Cancel</button></div>
+                    } @else {
+                        <div class="flex items-center gap-3">
+                            <span class="exp-dot" [style.--cat]="c.color"></span>
+                            <div class="min-w-0 flex-1"><div class="font-medium">{{ c.name }}</div><div class="text-secondary text-xs">{{ kindLabels[c.kind] }} · {{ service.categoryUsage(c.id) }} expenses</div></div>
+                            <button type="button" class="font-medium text-primary hover:underline" (click)="categoryEdit = { id: c.id, name: c.name, kind: c.kind }; categoryMessage = null">Edit</button>
+                            @if (service.categoryUsage(c.id) === 0) { <button type="button" class="font-medium text-red-600 hover:underline" (click)="deleteCategory(c.id)">Delete</button> }
+                        </div>
+                    }
+                </li>
+            }
+        </ul>
+    </treasury-slide-over>
+}

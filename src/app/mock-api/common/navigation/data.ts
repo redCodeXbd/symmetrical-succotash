@@ -49,6 +49,13 @@ export const defaultNavigation: FuseNavigationItem[] = [
         ]
     },
     {
+        id   : 'expenses',
+        title: 'Expenses',
+        type : 'basic',
+        icon : 'heroicons_outline:receipt-percent',
+        link : '/expenses'
+    },
+    {
         id      : 'treasury',
         title   : 'Treasury',
         type    : 'collapsable',

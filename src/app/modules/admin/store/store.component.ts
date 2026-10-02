@@ -160,12 +160,12 @@ export class StoreComponent {
     }
 
     onRefChange(): void {
-        if (this.receiveSource !== 'purchase') {
+        if (this.receiveSource === 'manual') {
             return;
         }
-        const po = this.service.purchaseOrderOptions().find((o) => o.id === this.receiveRef);
-        if (po) {
-            this.receiveLines = po.lines.map((l) => ({
+        const option = this.receiveOptions.find((o) => o.id === this.receiveRef);
+        if (option && option.lines.length > 0) {
+            this.receiveLines = option.lines.map((l) => ({
                 productId: this.service.products().find((p) => p.name.toLowerCase() === l.name.toLowerCase())?.id ?? '',
                 qty: l.qty,
                 unitCost: l.price,

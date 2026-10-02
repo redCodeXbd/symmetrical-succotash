@@ -7,6 +7,7 @@ import { AccessService } from 'app/core/access/access.service';
 import { ALL_PERMISSIONS, ApprovalRule, FEATURES } from 'app/core/access/access.types';
 import { UserService } from 'app/core/user/user.service';
 import { ClientsService } from '../clients/clients.service';
+import { ExpensesService } from '../expenses/expenses.service';
 import { FundsService } from '../treasury/funds/funds.service';
 import { UserSwitchComponent } from '../treasury/shared/user-switch/user-switch.component';
 import { VendorsService } from '../vendors/vendors.service';
@@ -32,13 +33,15 @@ export class ProfileComponent {
     /** Fund requests and vendor invoices waiting for this person's approval. */
     waitingRequests = computed(() => this.funds.requests().filter((r) => this.funds.canApprove(r)));
     waitingInvoices = computed(() => this.vendors.invoicesAwaitingMe());
-    waitingCount = computed(() => this.waitingRequests().length + this.waitingInvoices().length);
+    waitingExpenses = computed(() => this.expenses.awaitingMe());
+    waitingCount = computed(() => this.waitingRequests().length + this.waitingInvoices().length + this.waitingExpenses().length);
     myRequests = computed(() => this.funds.requests().filter((r) => r.employee === this.user().name));
 
     constructor(
         public access: AccessService,
         private funds: FundsService,
         private vendors: VendorsService,
+        private expenses: ExpensesService,
         private clients: ClientsService,
         users: UserService
     ) {

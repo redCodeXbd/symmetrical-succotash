@@ -2,6 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import { DateTime } from 'luxon';
 import { AccessService } from 'app/core/access/access.service';
 import { CategoryService } from 'app/core/categories/categories.service';
+import { ExpensesService } from '../expenses/expenses.service';
 import { FundsService } from '../treasury/funds/funds.service';
 import { VendorsService } from '../vendors/vendors.service';
 import {
@@ -32,7 +33,8 @@ export class StoreService {
         private _access: AccessService,
         private _categories: CategoryService,
         private _funds: FundsService,
-        private _vendors: VendorsService
+        private _vendors: VendorsService,
+        private _expenses: ExpensesService
     ) {}
 
     readonly stores = this._stores.asReadonly();
@@ -116,13 +118,20 @@ export class StoreService {
             }));
     }
 
-    /** Paid expenses that can be bought into stock: money spent, not yet received into a store. */
+    /** Expenses that can be bought into stock: paid fund requests, and approved purchases entered in Expenses. */
     expenseOptions() {
         const stocked = this.stockedRefs();
-        return this._funds
+        const requests = this._funds
             .requests()
             .filter((r) => r.paidAmount > 0 && !stocked.has(r.id))
-            .map((r) => ({ id: r.id, label: `${r.id} · ${r.purpose} · BDT ${r.paidAmount.toLocaleString('en-US')}`, amount: r.paidAmount }));
+            .map((r) => ({ id: r.id, label: `${r.id} · ${r.purpose} · BDT ${r.paidAmount.toLocaleString('en-US')}`, amount: r.paidAmount, lines: [] as { name: string; qty: number; unit: string; price: number }[] }));
+        const purchases = this._expenses.purchaseOptions(stocked).map((e) => ({
+            id: e.id,
+            label: `${e.id} · ${e.description || e.payee} · BDT ${e.amount.toLocaleString('en-US')}`,
+            amount: e.amount,
+            lines: e.items.map((i) => ({ name: i.name, qty: i.qty, unit: i.unit, price: i.unitCost })),
+        }));
+        return [...purchases, ...requests];
     }
 
     /** Purchase orders to product vendors that are not in stock yet. */

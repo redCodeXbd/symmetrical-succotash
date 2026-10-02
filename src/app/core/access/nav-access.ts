@@ -10,6 +10,7 @@ export const NAV_PERMISSIONS: Record<string, string> = {
     vendors: 'vendors.view',
     projects: 'projects.view',
     store: 'store.view',
+    expenses: 'expenses.view',
     users: 'users.view',
     'users.employees': 'users.view',
     'users.admins': 'users.view',
