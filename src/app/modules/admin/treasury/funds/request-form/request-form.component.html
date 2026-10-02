@@ -54,6 +54,8 @@
             </mat-form-field>
         </div>
 
+        <company-charged-to class="mb-4 block" [branchId]="charged.branchId" [departmentId]="charged.departmentId" (changed)="charged = $event" />
+
         <div class="flex flex-col gap-2">
             <label for="attachment" class="text-secondary text-sm">Supporting attachment (optional)</label>
             <input id="attachment" type="file" class="text-md" (change)="onFile($event)" />

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { DateTime } from 'luxon';
 import { map } from 'rxjs';
 import { AccessService } from 'app/core/access/access.service';
 import { ProjectsService } from '../../projects/projects.service';
@@ -11,9 +12,10 @@ import { StoreService } from '../../store/store.service';
 import { SlideOverComponent } from '../../treasury/shared/slide-over/slide-over.component';
 import { CompanyFormComponent } from './company-form.component';
 import { CompanyService } from './company.service';
+import { DecimalPipe } from '@angular/common';
 import { CHILD_KIND, KIND_LABEL, MONTHS, OrgUnit, UnitInput, UnitKind } from './company.types';
 
-type Tab = 'overview' | 'structure' | 'warehouses' | 'people';
+type Tab = 'overview' | 'structure' | 'warehouses' | 'people' | 'costs';
 type Panel = { type: 'unit'; unit: OrgUnit | null; kind: UnitKind } | { type: 'warehouse'; id: string | null } | { type: 'delete-company' } | { type: 'delete-unit'; unit: OrgUnit };
 
 interface TreeRow {
@@ -27,18 +29,37 @@ interface TreeRow {
     templateUrl: './company-detail.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [FormsModule, RouterLink, MatButtonModule, MatIconModule, SlideOverComponent, CompanyFormComponent],
+    imports: [DecimalPipe, FormsModule, RouterLink, MatButtonModule, MatIconModule, SlideOverComponent, CompanyFormComponent],
 })
 export class CompanyDetailComponent {
     readonly months = MONTHS;
     readonly kindLabel = KIND_LABEL;
     readonly childKind = CHILD_KIND;
-    readonly tabs: { id: Tab; label: string }[] = [
+    get tabs(): { id: Tab; label: string }[] {
+        return this._tabs.filter((t) => t.id !== 'costs' || this.access.can('company.costs'));
+    }
+
+    private readonly _tabs: { id: Tab; label: string }[] = [
         { id: 'overview', label: 'Overview' },
         { id: 'structure', label: 'Structure' },
         { id: 'warehouses', label: 'Warehouses' },
         { id: 'people', label: 'People' },
+        { id: 'costs', label: 'Costs' },
     ];
+
+    readonly periods = [
+        { id: 'month', label: 'This month' },
+        { id: '30', label: 'Last 30 days' },
+        { id: 'year', label: 'This year' },
+        { id: 'all', label: 'All time' },
+    ];
+    period = signal('month');
+    costs = computed(() => {
+        const c = this.company();
+        const now = DateTime.now();
+        const from = { month: now.startOf('month').toISODate(), '30': now.minus({ days: 30 }).toISODate(), year: now.startOf('year').toISODate(), all: null }[this.period()] ?? null;
+        return c ? this.company_.costs(c.id, from) : null;
+    });
 
     private _id = toSignal(this._route.paramMap.pipe(map((p) => p.get('id') ?? '')), { initialValue: '' });
     company = computed(() => this.company_.company(this._id()));

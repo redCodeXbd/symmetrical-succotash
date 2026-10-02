@@ -34,6 +34,23 @@ export interface OrgUnit {
 
 export type UnitInput = Omit<OrgUnit, 'id'>;
 
+export interface CostRow {
+    unit: OrgUnit;
+    depth: number;
+    expenses: number;
+    funds: number;
+    total: number;
+}
+
+export interface CostReport {
+    rows: CostRow[];
+    /** Costs charged to no branch or department at all. */
+    unplaced: { expenses: number; funds: number; total: number };
+    expenses: number;
+    funds: number;
+    total: number;
+}
+
 export const KIND_LABEL: Record<UnitKind, string> = { branch: 'Branch', department: 'Department', team: 'Team' };
 export const CHILD_KIND: Record<UnitKind, UnitKind | null> = { branch: 'department', department: 'team', team: null };
 export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

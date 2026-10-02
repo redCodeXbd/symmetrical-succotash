@@ -9,6 +9,8 @@ import { StoreService } from '../store/store.service';
 import { VendorsService } from '../vendors/vendors.service';
 import { ExpensesService } from './expenses.service';
 import { shrinkImage } from './expenses.util';
+import { ChargedToComponent } from '../settings/company/charged-to.component';
+import { CompanyService } from '../settings/company/company.service';
 import { BRANCHES, Expense, ExpenseInput, KIND_FIELDS, PAYMENT_METHODS } from './expenses.types';
 
 /** Add or edit an expense in a drawer. The category decides which extra fields appear. */
@@ -17,7 +19,7 @@ import { BRANCHES, Expense, ExpenseInput, KIND_FIELDS, PAYMENT_METHODS } from '.
     templateUrl: './expense-form.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [DecimalPipe, FormsModule, MatButtonModule, SlideOverComponent],
+    imports: [DecimalPipe, FormsModule, MatButtonModule, SlideOverComponent, ChargedToComponent],
 })
 export class ExpenseFormComponent implements OnInit {
     @Input() expense: Expense | null = null;
@@ -36,7 +38,8 @@ export class ExpenseFormComponent implements OnInit {
         public service: ExpensesService,
         public projects: ProjectsService,
         public vendors: VendorsService,
-        private _store: StoreService
+        private _store: StoreService,
+        private _company: CompanyService
     ) {}
 
     get kind() {
@@ -88,6 +91,7 @@ export class ExpenseFormComponent implements OnInit {
         if (this.expense) {
             const { id, status, approvals, rejectionReason, paid, paidAt, fundId, paymentReference, createdBy, createdAt, events, ...rest } = this.expense;
             this.model = { ...rest, meta: { ...rest.meta }, items: rest.items.map((i) => ({ ...i })), receipts: [...rest.receipts] };
+            this._legacyUnits();
         } else if (this.presetCategoryId) {
             this.model.categoryId = this.presetCategoryId;
         }
@@ -142,6 +146,13 @@ export class ExpenseFormComponent implements OnInit {
         this.model.receipts = this.model.receipts.filter((_, i) => i !== n);
     }
 
+    /** Cost entered before units existed carries only a branch name; find its unit. */
+    private _legacyUnits(): void {
+        if (!this.model.branchId && this.model.branch) {
+            this.model.branchId = this._company.byName(this.model.branch, 'branch')?.id ?? null;
+        }
+    }
+
     save(): void {
         const input: ExpenseInput = { ...this.model };
         const result = this.expense ? this.service.update(this.expense.id, input) : this.service.add(input);
@@ -155,7 +166,7 @@ export class ExpenseFormComponent implements OnInit {
     private _blank(): ExpenseInput {
         return {
             date: DateTime.now().toISODate(), categoryId: '', amount: 0, description: '', payee: '', vendorId: null, projectId: null,
-            branch: BRANCHES[0], paymentMethod: PAYMENT_METHODS[0], meta: {}, items: [], receipts: [],
+            branch: this._company.placement().branch || BRANCHES[0], branchId: this._company.placement().branchId, departmentId: this._company.placement().departmentId, paymentMethod: PAYMENT_METHODS[0], meta: {}, items: [], receipts: [],
         };
     }
 }

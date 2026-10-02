@@ -127,6 +127,48 @@
                     }
                 </section>
             }
+            @case ('costs') {
+                @if (costs(); as r) {
+                    <section class="mt-6 rounded-2xl bg-card shadow" aria-label="Costs by branch and department">
+                        <div class="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
+                            <div><h2 class="text-xl font-semibold">Costs by branch and department</h2><div class="text-secondary text-md">Approved expenses plus money released on fund requests, less what was returned.</div></div>
+                            <select class="h-11 rounded-lg border bg-transparent px-3 text-md" aria-label="Period" [ngModel]="period()" (ngModelChange)="period.set($event)">
+                                @for (p of periods; track p.id) { <option [value]="p.id">{{ p.label }}</option> }
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 border-b px-6 py-4 text-center">
+                            <div><div class="text-secondary text-sm">Expenses</div><div class="text-2xl font-semibold">{{ r.expenses | number: '1.0-0' }}</div></div>
+                            <div><div class="text-secondary text-sm">Fund requests</div><div class="text-2xl font-semibold">{{ r.funds | number: '1.0-0' }}</div></div>
+                            <div><div class="text-secondary text-sm">Total ({{ c.currency }})</div><div class="text-2xl font-semibold">{{ r.total | number: '1.0-0' }}</div></div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="app-table min-w-[640px] text-md">
+                                <thead><tr><th scope="col">Branch / department</th><th scope="col" class="text-right">Expenses</th><th scope="col" class="text-right">Fund requests</th><th scope="col" class="text-right">Total</th><th scope="col" class="w-40">Share</th></tr></thead>
+                                <tbody>
+                                    @for (row of r.rows; track row.unit.id) {
+                                        <tr>
+                                            <td [style.padding-left.rem]="1 + row.depth * 1.5" [class.font-semibold]="row.depth === 0">{{ row.unit.name }}</td>
+                                            <td class="text-right">{{ row.expenses | number: '1.0-0' }}</td>
+                                            <td class="text-right">{{ row.funds | number: '1.0-0' }}</td>
+                                            <td class="text-right font-medium">{{ row.total | number: '1.0-0' }}</td>
+                                            <td><div class="h-2 rounded-full bg-primary/15"><div class="h-2 rounded-full bg-primary" [style.width.%]="r.total ? (row.total / r.total) * 100 : 0"></div></div></td>
+                                        </tr>
+                                    }
+                                    @if (r.unplaced.total > 0) {
+                                        <tr class="text-secondary">
+                                            <td>Not charged to any branch</td>
+                                            <td class="text-right">{{ r.unplaced.expenses | number: '1.0-0' }}</td>
+                                            <td class="text-right">{{ r.unplaced.funds | number: '1.0-0' }}</td>
+                                            <td class="text-right">{{ r.unplaced.total | number: '1.0-0' }}</td>
+                                            <td></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                }
+            }
             @case ('people') {
                 <section class="mt-6 rounded-2xl bg-card shadow" aria-label="People">
                     <div class="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
