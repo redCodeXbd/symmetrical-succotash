@@ -86,6 +86,7 @@ export const appRoutes: Route[] = [
             {path: 'expenses', canActivate: [permissionGuard('expenses.view')], loadChildren: () => import('app/modules/admin/expenses/expenses.routes')},
             {path: 'help', loadChildren: () => import('app/modules/admin/help/help.routes')},
             {path: 'example', loadChildren: () => import('app/modules/admin/example/example.routes')},
+            {path: 'settings/company', canActivate: [permissionGuard('company.view')], loadChildren: () => import('app/modules/admin/settings/company/company.routes')},
             {path: 'settings/categories', canActivate: [permissionGuard('categories.view')], loadChildren: () => import('app/modules/admin/settings/categories/categories.routes')},
             {path: 'settings/theme', canActivate: [permissionGuard('theme.view')], loadChildren: () => import('app/modules/admin/settings/theme/theme.routes')},
             {path: 'settings/roles', canActivate: [permissionGuard('roles.view')], loadChildren: () => import('app/modules/admin/settings/roles/roles.routes')},

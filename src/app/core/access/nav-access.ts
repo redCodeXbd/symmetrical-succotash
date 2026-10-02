@@ -17,6 +17,7 @@ export const NAV_PERMISSIONS: Record<string, string> = {
     'users.vendors': 'users.view',
     'users.clients': 'users.view',
     'users.customers': 'users.view',
+    'settings.company': 'company.view',
     'settings.theme': 'theme.view',
     'settings.categories': 'categories.view',
     'settings.roles': 'roles.view',

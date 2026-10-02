@@ -16,6 +16,12 @@ export const defaultNavigation: FuseNavigationItem[] = [
         icon    : 'heroicons_outline:adjustments-horizontal',
         children: [
             {
+                id   : 'settings.company',
+                title: 'Company',
+                type : 'basic',
+                link : '/settings/company'
+            },
+            {
                 id   : 'settings.categories',
                 title: 'Categories',
                 type : 'basic',

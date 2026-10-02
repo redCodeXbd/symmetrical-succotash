@@ -1,0 +1,226 @@
+@if (company(); as c) {
+<div class="flex min-w-0 flex-auto flex-col">
+    <div class="flex-auto p-6 sm:p-10">
+        <div class="text-secondary text-md"><a routerLink="/settings/company" class="hover:underline">Configuration / Company</a> / {{ c.code }}</div>
+        <div class="mt-1 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <h1 class="text-4xl font-extrabold leading-tight tracking-tight">{{ c.name }}</h1>
+                <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="c.active ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-700'">{{ c.active ? 'Active' : 'Inactive' }}</span>
+            </div>
+            <div class="flex gap-2">
+                @if (access.can('company.edit')) { <button mat-stroked-button type="button" (click)="editing.set(true)">Edit company</button> }
+                @if (access.can('company.delete')) { <button mat-stroked-button type="button" (click)="askDelete({ type: 'delete-company' })">Delete</button> }
+            </div>
+        </div>
+
+        @if (message(); as m) {
+            <div class="mt-4 rounded-lg px-4 py-3 text-md" [class]="m.ok ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" role="status">{{ m.text }}</div>
+        }
+
+        <div class="mt-6 flex gap-1 overflow-x-auto border-b" role="tablist" aria-label="Company sections">
+            @for (t of tabs; track t.id) {
+                <button type="button" role="tab" class="whitespace-nowrap border-b-2 px-4 py-2.5 text-md font-medium" [class]="tab() === t.id ? 'border-primary text-primary' : 'border-transparent text-secondary hover:text-default'" [attr.aria-selected]="tab() === t.id" (click)="tab.set(t.id)">{{ t.label }}</button>
+            }
+        </div>
+
+        @switch (tab()) {
+            @case ('overview') {
+                <section class="mt-6 rounded-2xl bg-card p-6 shadow" aria-label="Company details">
+                    <dl class="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+                        @for (row of [['Legal name', c.legalName], ['Code', c.code], ['Trade licence', c.tradeLicense], ['TIN / BIN', c.taxId], ['Phone', c.phone], ['Email', c.email], ['Currency', c.currency], ['Fiscal year starts', months[c.fiscalStartMonth - 1]], ['Address', c.address]]; track row[0]) {
+                            <div><dt class="text-secondary text-sm uppercase tracking-wide">{{ row[0] }}</dt><dd class="mt-0.5 text-lg">{{ row[1] || '—' }}</dd></div>
+                        }
+                    </dl>
+                </section>
+                <div class="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div class="rounded-2xl bg-card p-5 shadow"><div class="text-secondary text-sm">Branches</div><div class="mt-1 text-3xl font-semibold">{{ company_.unitsOf(c.id, 'branch').length }}</div></div>
+                    <div class="rounded-2xl bg-card p-5 shadow"><div class="text-secondary text-sm">Departments</div><div class="mt-1 text-3xl font-semibold">{{ company_.unitsOf(c.id, 'department').length }}</div></div>
+                    <div class="rounded-2xl bg-card p-5 shadow"><div class="text-secondary text-sm">Teams</div><div class="mt-1 text-3xl font-semibold">{{ company_.unitsOf(c.id, 'team').length }}</div></div>
+                    <div class="rounded-2xl bg-card p-5 shadow"><div class="text-secondary text-sm">Warehouses</div><div class="mt-1 text-3xl font-semibold">{{ warehouses().length }}</div></div>
+                </div>
+            }
+            @case ('structure') {
+                <div class="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
+                    <section class="rounded-2xl bg-card shadow lg:col-span-2" aria-label="Organisation tree">
+                        <div class="flex items-center justify-between border-b px-6 py-4">
+                            <h2 class="text-xl font-semibold">{{ c.name }}</h2>
+                            @if (access.can('company.create')) { <button mat-flat-button color="primary" type="button" (click)="openUnit('branch', null)">Add branch</button> }
+                        </div>
+                        @if (tree().length === 0) {
+                            <div class="text-secondary px-6 py-10 text-center text-md">No branches yet. Add the first branch.</div>
+                        }
+                        <ul role="tree">
+                            @for (r of tree(); track r.unit.id) {
+                                <li role="treeitem" [class]="'flex items-center gap-2 border-b px-4 py-2.5 last:border-b-0 ' + (selected() === r.unit.id ? 'bg-primary/10' : '')" [style.padding-left.rem]="1 + r.depth * 1.75" [attr.aria-level]="r.depth + 1">
+                                    @if (childKind[r.unit.kind]) {
+                                        <button type="button" class="flex h-7 w-7 flex-none items-center justify-center rounded-full hover:bg-hover" [attr.aria-label]="(collapsed().has(r.unit.id) ? 'Expand ' : 'Collapse ') + r.unit.name" (click)="toggle(r.unit.id)">
+                                            <mat-icon class="icon-size-4" [svgIcon]="collapsed().has(r.unit.id) ? 'heroicons_outline:chevron-right' : 'heroicons_outline:chevron-down'"></mat-icon>
+                                        </button>
+                                    } @else { <span class="w-7 flex-none"></span> }
+                                    <button type="button" class="flex min-w-0 flex-auto items-center gap-2 text-left" (click)="selected.set(r.unit.id)">
+                                        <span class="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-medium uppercase text-primary">{{ kindLabel[r.unit.kind] }}</span>
+                                        <span class="truncate text-md font-medium" [class.line-through]="!r.unit.active">{{ r.unit.name }}</span>
+                                        <span class="text-secondary text-sm">{{ r.unit.code }}</span>
+                                    </button>
+                                    <span class="text-secondary flex-none text-sm">{{ r.people }} {{ r.people === 1 ? 'person' : 'people' }}</span>
+                                </li>
+                            }
+                        </ul>
+                    </section>
+
+                    <aside class="rounded-2xl bg-card p-6 shadow" aria-label="Selected unit">
+                        @if (selectedUnit(); as u) {
+                            <div class="text-secondary text-sm uppercase tracking-wide">{{ kindLabel[u.kind] }}</div>
+                            <div class="text-2xl font-semibold">{{ u.name }}</div>
+                            <div class="text-secondary text-md">{{ company_.path(u.id) }}</div>
+                            <dl class="mt-4 flex flex-col gap-3 text-md">
+                                <div><dt class="text-secondary text-sm">Head / manager</dt><dd>{{ userName(u.managerId) }}</dd></div>
+                                <div><dt class="text-secondary text-sm">Status</dt><dd>{{ u.active ? 'Active' : 'Inactive' }}</dd></div>
+                                @if (u.address) { <div><dt class="text-secondary text-sm">Address</dt><dd>{{ u.address }}</dd></div> }
+                                @if (u.notes) { <div><dt class="text-secondary text-sm">Notes</dt><dd>{{ u.notes }}</dd></div> }
+                                <div>
+                                    <dt class="text-secondary text-sm">People ({{ selectedPeople().length }})</dt>
+                                    <dd>@for (p of selectedPeople(); track p.user.id) { <div>{{ p.user.name }}<span class="text-secondary"> · {{ p.profile.designation || 'Employee' }}</span></div> } @empty { None assigned }</dd>
+                                </div>
+                            </dl>
+                            <div class="mt-5 flex flex-wrap gap-2">
+                                @if (childKind[u.kind]; as ck) {
+                                    @if (access.can('company.create')) { <button mat-flat-button color="primary" type="button" (click)="openUnit(ck, u)">Add {{ kindLabel[ck].toLowerCase() }}</button> }
+                                }
+                                @if (access.can('company.edit')) {
+                                    <button mat-stroked-button type="button" (click)="openUnit(u.kind, null, u)">Edit</button>
+                                    <button mat-stroked-button type="button" (click)="toggleActive(u)">{{ u.active ? 'Deactivate' : 'Activate' }}</button>
+                                }
+                                @if (access.can('company.delete')) { <button mat-stroked-button type="button" (click)="askDelete({ type: 'delete-unit', unit: u })">Delete</button> }
+                            </div>
+                        } @else {
+                            <div class="text-secondary py-8 text-center text-md">Select a branch, department or team to see its details and add to it.</div>
+                        }
+                    </aside>
+                </div>
+            }
+            @case ('warehouses') {
+                <section class="mt-6 rounded-2xl bg-card shadow" aria-label="Warehouses">
+                    <div class="flex items-center justify-between border-b px-6 py-4">
+                        <div><h2 class="text-xl font-semibold">Warehouses</h2><div class="text-secondary text-md">Stores of the Store feature, placed under a branch.</div></div>
+                        @if (access.can('company.create')) { <button mat-flat-button color="primary" type="button" (click)="openWarehouse(null)">Add warehouse</button> }
+                    </div>
+                    @if (warehouses().length === 0) {
+                        <div class="text-secondary px-6 py-10 text-center text-md">No warehouses under this company yet.</div>
+                    } @else {
+                        <div class="overflow-x-auto">
+                            <table class="app-table min-w-[640px] text-md">
+                                <thead><tr><th scope="col">Warehouse</th><th scope="col">Type</th><th scope="col">Branch</th><th scope="col">Manager</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+                                <tbody>
+                                    @for (w of warehouses(); track w.id) {
+                                        <tr>
+                                            <td><div class="font-medium">{{ w.name }}</div><div class="text-secondary text-sm">{{ w.location }}</div></td>
+                                            <td>{{ w.type === 'office' ? 'Office' : 'Project' }}</td>
+                                            <td>{{ company_.unit(w.branchId)?.name }}</td>
+                                            <td>{{ userName(w.managerId) }}</td>
+                                            <td class="text-right">@if (access.can('company.edit')) { <button type="button" class="font-medium text-primary hover:underline" (click)="openWarehouse(w.id)">Edit</button> }</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </section>
+            }
+            @case ('people') {
+                <section class="mt-6 rounded-2xl bg-card shadow" aria-label="People">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
+                        <div><h2 class="text-xl font-semibold">People ({{ people().length }})</h2><div class="text-secondary text-md">Set where a person sits in Users &gt; Employees.@if (unassigned()) { {{ unassigned() }} not placed yet. }</div></div>
+                        <input type="search" class="h-11 w-full max-w-xs rounded-lg border bg-transparent px-3 text-md" placeholder="Search people" aria-label="Search people" [ngModel]="peopleFilter()" (ngModelChange)="peopleFilter.set($event)" />
+                    </div>
+                    @if (people().length === 0) {
+                        <div class="text-secondary px-6 py-10 text-center text-md">Nobody is placed in this company yet.</div>
+                    } @else {
+                        <div class="overflow-x-auto">
+                            <table class="app-table min-w-[560px] text-md">
+                                <thead><tr><th scope="col">Name</th><th scope="col">Designation</th><th scope="col">Placed in</th></tr></thead>
+                                <tbody>
+                                    @for (r of people(); track r.user.id) {
+                                        <tr><td class="font-medium">{{ r.user.name }}</td><td>{{ r.profile.designation || '—' }}</td><td>{{ company_.path(r.profile.orgTeamId || r.profile.orgDeptId || r.profile.orgBranchId) || '—' }}</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </section>
+            }
+        }
+    </div>
+</div>
+
+@if (editing()) {
+    <company-form [company]="c" (closed)="editing.set(false)" (saved)="editing.set(false); message.set({ text: 'Company saved.', ok: true })" />
+}
+
+@if (panel(); as p) {
+    @switch (p.type) {
+        @case ('unit') {
+            <treasury-slide-over [heading]="(p.unit ? 'Edit ' : 'Add ') + kindLabel[p.kind].toLowerCase()" [subheading]="c.name" (closed)="panel.set(null)">
+                <form id="unit-form" class="flex flex-col gap-4" (ngSubmit)="saveUnit()">
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="col-span-2 block"><span class="text-sm font-medium">Name *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="un" [(ngModel)]="unitForm.name" /></label>
+                        <label class="block"><span class="text-sm font-medium">Code *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md uppercase" name="uc" maxlength="6" [(ngModel)]="unitForm.code" /></label>
+                    </div>
+                    @if (p.kind !== 'branch') {
+                        <label class="block"><span class="text-sm font-medium">{{ p.kind === 'department' ? 'Branch' : 'Department' }} *</span>
+                            <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="up" [(ngModel)]="unitForm.parentId"><option [ngValue]="null">Choose…</option>@for (o of parentChoices(p.kind); track o.id) { <option [ngValue]="o.id">{{ company_.path(o.id) }}</option> }</select>
+                        </label>
+                    }
+                    <label class="block"><span class="text-sm font-medium">Head / manager</span>
+                        <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="um" [(ngModel)]="unitForm.managerId"><option [ngValue]="null">None</option>@for (u of staff(); track u.id) { <option [ngValue]="u.id">{{ u.name }}</option> }</select>
+                    </label>
+                    @if (p.kind === 'branch') { <label class="block"><span class="text-sm font-medium">Address</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ua" [(ngModel)]="unitForm.address" /></label> }
+                    <label class="block"><span class="text-sm font-medium">Notes</span><textarea rows="2" class="mt-1 w-full rounded-lg border bg-transparent px-3 py-2 text-md" name="unotes" [(ngModel)]="unitForm.notes"></textarea></label>
+                    @if (error) { <div class="text-sm text-red-600" role="alert">{{ error }}</div> }
+                </form>
+                <ng-container footer>
+                    <button mat-stroked-button type="button" (click)="panel.set(null)">Cancel</button>
+                    <button mat-flat-button color="primary" type="submit" form="unit-form">{{ p.unit ? 'Save changes' : 'Add ' + kindLabel[p.kind].toLowerCase() }}</button>
+                </ng-container>
+            </treasury-slide-over>
+        }
+        @case ('warehouse') {
+            <treasury-slide-over [heading]="p.id ? 'Edit warehouse' : 'Add warehouse'" [subheading]="c.name" (closed)="panel.set(null)">
+                <form id="wh-form" class="flex flex-col gap-4" (ngSubmit)="saveWarehouse()">
+                    <label class="block"><span class="text-sm font-medium">Name *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="wn" [(ngModel)]="whForm.name" [disabled]="!!p.id" /></label>
+                    <label class="block"><span class="text-sm font-medium">Branch *</span>
+                        <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="wb" [(ngModel)]="whForm.branchId"><option value="">Choose…</option>@for (b of branchesOf(); track b.id) { <option [value]="b.id">{{ b.name }}</option> }</select>
+                    </label>
+                    @if (!p.id) {
+                        <label class="block"><span class="text-sm font-medium">Type</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="wt" [(ngModel)]="whForm.type"><option value="office">Office store</option><option value="project">Project store</option></select></label>
+                        @if (whForm.type === 'project') {
+                            <label class="block"><span class="text-sm font-medium">Project *</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="wp" [(ngModel)]="whForm.projectId"><option value="">Choose…</option>@for (pr of projects.projects(); track pr.id) { <option [value]="pr.id">{{ pr.name }}</option> }</select></label>
+                        }
+                        <label class="block"><span class="text-sm font-medium">Location</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="wl" [(ngModel)]="whForm.location" /></label>
+                    }
+                    <label class="block"><span class="text-sm font-medium">Store manager</span>
+                        <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="wm" [(ngModel)]="whForm.managerId"><option value="">None</option>@for (u of staff(); track u.id) { <option [value]="u.id">{{ u.name }}</option> }</select>
+                    </label>
+                    @if (error) { <div class="text-sm text-red-600" role="alert">{{ error }}</div> }
+                </form>
+                <ng-container footer>
+                    <button mat-stroked-button type="button" (click)="panel.set(null)">Cancel</button>
+                    <button mat-flat-button color="primary" type="submit" form="wh-form">{{ p.id ? 'Save changes' : 'Add warehouse' }}</button>
+                </ng-container>
+            </treasury-slide-over>
+        }
+        @default {
+            <treasury-slide-over [heading]="p.type === 'delete-unit' ? 'Delete ' + p.unit.name + '?' : 'Delete ' + c.name + '?'" subheading="This cannot be undone" (closed)="panel.set(null)">
+                <p class="text-md">Only empty units can be deleted. To hide something that is in use, deactivate it instead.</p>
+                @if (error) { <div class="mt-3 text-sm text-red-600" role="alert">{{ error }}</div> }
+                <ng-container footer>
+                    <button mat-stroked-button type="button" (click)="panel.set(null)">Cancel</button>
+                    <button mat-flat-button color="warn" type="button" (click)="confirmDelete()">Delete</button>
+                </ng-container>
+            </treasury-slide-over>
+        }
+    }
+}
+} @else {
+    <div class="p-10 text-center text-lg">Company not found. <a routerLink="/settings/company" class="text-primary hover:underline">Back to companies</a></div>
+}
