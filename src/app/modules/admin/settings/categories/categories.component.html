@@ -40,7 +40,12 @@
                                 [name]="'desc-' + section.group.id"
                                 [(ngModel)]="drafts[section.group.id].description"
                             />
-                            <button mat-flat-button color="primary" type="submit" class="fuse-mat-button-large">Add category</button>
+                            @if (section.group.kinds) {
+                                <select class="h-11 rounded-lg border bg-transparent px-3 text-md sm:col-span-3" aria-label="Type of the new category" [name]="'kind-' + section.group.id" [(ngModel)]="drafts[section.group.id].kind">
+                                    @for (k of section.group.kinds; track k.id) { <option [value]="k.id">{{ k.label }}: {{ k.help }}</option> }
+                                </select>
+                            }
+                            <button mat-flat-button color="primary" type="submit" class="fuse-mat-button-large" [class.sm:col-span-3]="section.group.kinds">Add category</button>
                         </form>
                         @if (errors[section.group.id]) {
                             <div class="mt-2 text-sm text-red-600" role="alert">{{ errors[section.group.id] }}</div>
@@ -58,6 +63,7 @@
                                     <tr>
                                         <th scope="col">Name</th>
                                         <th scope="col">Description</th>
+                                        @if (section.group.kinds) { <th scope="col">Type</th> }
                                         <th scope="col">Used by</th>
                                         <th scope="col"><span class="sr-only">Actions</span></th>
                                     </tr>
@@ -72,6 +78,13 @@
                                                 <td>
                                                     <input type="text" class="h-10 w-full rounded-lg border bg-transparent px-3 text-md" aria-label="Category description" [(ngModel)]="editing!.description" [name]="'ed-' + c.id" (keydown.enter)="saveEdit(section)" />
                                                 </td>
+                                                @if (section.group.kinds) {
+                                                    <td>
+                                                        <select class="h-10 rounded-lg border bg-transparent px-2 text-md disabled:opacity-60" aria-label="Category type" [(ngModel)]="editing!.kind" [name]="'ek-' + c.id" [disabled]="section.usage(c.name) > 0" [attr.title]="section.usage(c.name) > 0 ? 'The type cannot change while expenses use this category' : null">
+                                                            @for (k of section.group.kinds; track k.id) { <option [value]="k.id">{{ k.label }}</option> }
+                                                        </select>
+                                                    </td>
+                                                }
                                                 <td>{{ usageText(section, c.name) }}</td>
                                                 <td class="whitespace-nowrap text-right">
                                                     <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="saveEdit(section)">Save</button>
@@ -83,6 +96,7 @@
                                             } @else {
                                                 <td class="font-medium">{{ c.name }}</td>
                                                 <td class="text-secondary">{{ c.description || '-' }}</td>
+                                                @if (section.group.kinds) { <td>{{ kindLabel(section, c) }}</td> }
                                                 <td>{{ usageText(section, c.name) }}</td>
                                                 <td class="whitespace-nowrap text-right">
                                                     @if (isDeleting(section.group.id, c.id)) {

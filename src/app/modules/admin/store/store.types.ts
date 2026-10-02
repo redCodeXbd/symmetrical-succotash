@@ -26,9 +26,11 @@ export interface Product {
     /** Warn when a store holds less than this. */
     minStock: number;
     active: boolean;
+    /** The expense whose purchase added this product to the list automatically. */
+    addedFrom?: string;
 }
 
-export type ProductInput = Omit<Product, 'id'>;
+export type ProductInput = Omit<Product, 'id' | 'addedFrom'>;
 
 export type MovementType = 'receive' | 'issue' | 'transfer_out' | 'transfer_in' | 'adjust_in' | 'adjust_out';
 export type ReceiptSource = 'expense' | 'purchase' | 'manual';

@@ -1,4 +1,4 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, effect, Injectable, signal, untracked } from '@angular/core';
 import { DateTime } from 'luxon';
 import { AccessService } from 'app/core/access/access.service';
 import { CategoryService } from 'app/core/categories/categories.service';
@@ -35,7 +35,16 @@ export class StoreService {
         private _funds: FundsService,
         private _vendors: VendorsService,
         private _expenses: ExpensesService
-    ) {}
+    ) {
+        // Goods bought through an approved purchase expense join the product list on their own.
+        effect(
+            () => {
+                const purchases = this._expenses.approvedPurchases();
+                untracked(() => this._addPurchasedProducts(purchases));
+            },
+            { allowSignalWrites: true }
+        );
+    }
 
     readonly stores = this._stores.asReadonly();
     readonly products = this._products.asReadonly();
@@ -276,6 +285,42 @@ export class StoreService {
         }
         this._push({ type: diff > 0 ? 'adjust_in' : 'adjust_out', storeId, productId, qty: Math.abs(diff), unitCost: this.avgCostIn(storeId, productId), note });
         return null;
+    }
+
+    /**
+     * Adds a product for every purchased item the list does not have yet. Parts go in as consumables under
+     * "Spare parts"; other purchases are supply items. Nothing is added twice, and existing products are untouched.
+     */
+    private _addPurchasedProducts(purchases: { id: string; categoryName: string; items: { name: string; unit: string }[] }[]): void {
+        const known = new Set(this._products().map((p) => p.name.trim().toLowerCase()));
+        const added: Product[] = [];
+        let max = this._products().reduce((m, p) => Math.max(m, Number(p.id.slice(4)) || 0), 1000);
+        for (const purchase of purchases) {
+            const isParts = /part/i.test(purchase.categoryName);
+            for (const item of purchase.items) {
+                const key = item.name.trim().toLowerCase();
+                if (!key || known.has(key)) {
+                    continue;
+                }
+                known.add(key);
+                const categories = this.categories();
+                added.push({
+                    id: `PRD-${++max}`,
+                    sku: '',
+                    name: item.name.trim(),
+                    category: isParts ? (categories.find((c) => /spare|part/i.test(c)) ?? categories[0] ?? 'Other') : (categories[0] ?? 'Other'),
+                    kind: isParts ? 'consumable' : 'supply',
+                    unit: item.unit || 'pcs',
+                    description: `Added automatically from ${purchase.categoryName} ${purchase.id}. Check the category and kind.`,
+                    minStock: 0,
+                    active: true,
+                    addedFrom: purchase.id,
+                });
+            }
+        }
+        if (added.length > 0) {
+            this._products.update((list) => [...list, ...added]);
+        }
     }
 
     // -----------------------------------------------------------------------------------------------------

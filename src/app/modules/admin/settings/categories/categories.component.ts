@@ -1,3 +1,4 @@
+import { ExpensesService } from '../../expenses/expenses.service';
 import { StoreService } from '../../store/store.service';
 import { AccessService } from 'app/core/access/access.service';
 import { Component, ViewEncapsulation } from '@angular/core';
@@ -31,9 +32,9 @@ interface Section {
 export class CategoriesSettingsComponent {
     readonly sections: Section[];
 
-    drafts: Record<string, { name: string; description: string }> = {};
+    drafts: Record<string, { name: string; description: string; kind: string }> = {};
     errors: Record<string, string | null> = {};
-    editing: { groupId: string; id: string; name: string; description: string; from: string } | null = null;
+    editing: { groupId: string; id: string; name: string; description: string; kind: string; from: string } | null = null;
     editError: string | null = null;
     deleting: { groupId: string; id: string } | null = null;
 
@@ -42,9 +43,10 @@ export class CategoriesSettingsComponent {
         public access: AccessService,
         org: OrgFundsService,
         funds: FundsService,
-        store: StoreService
+        store: StoreService,
+        expenses: ExpensesService
     ) {
-        const [orgGroup, requestGroup, storeGroup] = CATEGORY_GROUPS;
+        const [orgGroup, requestGroup, storeGroup, expenseGroup] = CATEGORY_GROUPS;
         this.sections = [
             {
                 group: orgGroup,
@@ -67,25 +69,41 @@ export class CategoriesSettingsComponent {
                 usage: (name) => store.categoryUsage(name),
                 rename: (from, to) => store.renameCategory(from, to),
             },
+            {
+                group: expenseGroup,
+                noun: 'expense',
+                nounPlural: 'expenses',
+                usage: (name) => expenses.usageByName(name),
+                // Expenses keep the category by id, so a rename needs no update.
+                rename: () => undefined,
+            },
         ];
         for (const s of this.sections) {
-            this.drafts[s.group.id] = { name: '', description: '' };
+            this.drafts[s.group.id] = this._blankDraft(s);
         }
     }
 
     add(section: Section): void {
         const d = this.drafts[section.group.id];
-        const error = this.categories.add(section.group.id, d.name, d.description);
+        const error = this.categories.add(section.group.id, d.name, d.description, section.group.kinds ? d.kind : undefined);
         this.errors[section.group.id] = error;
         if (!error) {
-            this.drafts[section.group.id] = { name: '', description: '' };
+            this.drafts[section.group.id] = this._blankDraft(section);
         }
+    }
+
+    private _blankDraft(s: Section): { name: string; description: string; kind: string } {
+        return { name: '', description: '', kind: s.group.kinds?.[0].id ?? '' };
+    }
+
+    kindLabel(section: Section, c: Category): string {
+        return section.group.kinds?.find((k) => k.id === c.kind)?.label ?? '';
     }
 
     startEdit(section: Section, c: Category): void {
         this.deleting = null;
         this.editError = null;
-        this.editing = { groupId: section.group.id, id: c.id, name: c.name, description: c.description, from: c.name };
+        this.editing = { groupId: section.group.id, id: c.id, name: c.name, description: c.description, kind: c.kind ?? '', from: c.name };
     }
 
     saveEdit(section: Section): void {
@@ -93,7 +111,7 @@ export class CategoriesSettingsComponent {
         if (!e) {
             return;
         }
-        const error = this.categories.update(e.groupId, e.id, e.name, e.description);
+        const error = this.categories.update(e.groupId, e.id, e.name, e.description, section.group.kinds ? e.kind : undefined);
         this.editError = error;
         if (!error) {
             const to = e.name.trim();

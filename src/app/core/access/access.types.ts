@@ -172,7 +172,7 @@ export const FEATURES: FeatureDef[] = [
             { key: 'approve_any', label: 'Approve any step', description: 'Approve or reject at any step of the tree' },
             { key: 'pay', label: 'Record payments', description: 'Pay approved expenses, from a fund or otherwise' },
             { key: 'export', label: 'Export', description: 'Download and share expense reports' },
-            { key: 'manage_categories', label: 'Manage categories', description: 'Add, rename and delete categories and set the no-approval limit' },
+            { key: 'manage_categories', label: 'Expense settings', description: 'Change the no-approval limit. Categories are managed in Configuration > Categories' },
         ],
     },
     {
