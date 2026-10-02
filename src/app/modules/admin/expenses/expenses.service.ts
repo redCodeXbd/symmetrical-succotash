@@ -307,6 +307,13 @@ export class ExpensesService {
     // @ Links to other features
     // -----------------------------------------------------------------------------------------------------
 
+    /** Approved purchases of goods with their items, whoever asks. The store uses it to keep its product list complete. */
+    approvedPurchases(): { id: string; categoryName: string; items: { name: string; unit: string }[] }[] {
+        return this._expenses()
+            .filter((e) => this.category(e.categoryId)?.kind === 'purchase' && e.status === 'approved' && e.items.length > 0)
+            .map((e) => ({ id: e.id, categoryName: this.categoryName(e.categoryId), items: e.items.map((i) => ({ name: i.name, unit: i.unit })) }));
+    }
+
     /** Purchases of goods that can still be received into a store. */
     purchaseOptions(stocked: Set<string>): Expense[] {
         return this._expenses().filter((e) => this.category(e.categoryId)?.kind === 'purchase' && e.status === 'approved' && !stocked.has(e.id));

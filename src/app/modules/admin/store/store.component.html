@@ -113,7 +113,7 @@
                                     <td class="font-medium">{{ p.name }}<div class="text-secondary text-sm">{{ p.sku }} · per {{ p.unit }}</div></td>
                                     <td>{{ p.category }}</td>
                                     <td><span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="kindClasses[p.kind]">{{ kindLabels[p.kind] }}</span></td>
-                                    <td class="text-secondary max-w-xs text-sm">{{ p.description || '-' }}</td>
+                                    <td class="text-secondary max-w-xs text-sm">{{ p.description || '-' }}@if (p.addedFrom) { <span class="ml-1 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800">New from {{ p.addedFrom }}</span> }</td>
                                     <td class="text-right">{{ p.minStock }}</td>
                                     <td class="text-right">@if (access.can('store.catalog')) { <button type="button" class="font-medium text-primary hover:underline" (click)="open('product', p)">Edit</button> }</td>
                                 </tr>
