@@ -25,7 +25,8 @@ const SEED_ROLES: Role[] = [
             'vendors.view', 'vendors.view_all', 'vendors.approve_invoice', 'vendors.pay',
             'projects.view', 'projects.view_all', 'projects.view_cost',
             'store.view', 'store.receive', 'store.cost',
-            'users.view', 'users.view_salary'
+            'users.view', 'users.view_salary',
+            'expenses.view', 'expenses.view_all', 'expenses.add', 'expenses.edit', 'expenses.approve', 'expenses.pay', 'expenses.export'
         ),
     },
     {
@@ -42,7 +43,8 @@ const SEED_ROLES: Role[] = [
             'vendors.view', 'vendors.view_all', 'vendors.add', 'vendors.edit', 'vendors.assign_user', 'vendors.create_po', 'vendors.approve_invoice',
             'projects.view', 'projects.view_all', 'projects.add', 'projects.edit', 'projects.view_cost',
             'store.view', 'store.catalog', 'store.receive', 'store.issue', 'store.transfer', 'store.adjust', 'store.cost',
-            'users.view'
+            'users.view',
+            'expenses.view', 'expenses.view_all', 'expenses.add', 'expenses.approve', 'expenses.export'
         ),
     },
     {
@@ -58,7 +60,8 @@ const SEED_ROLES: Role[] = [
             'vendors.view', 'vendors.view_all', 'vendors.add', 'vendors.edit', 'vendors.create_po',
             'projects.view', 'projects.view_all', 'projects.add', 'projects.edit',
             'store.view', 'store.catalog', 'store.receive',
-            'users.view', 'users.add', 'users.edit'
+            'users.view', 'users.add', 'users.edit',
+            'expenses.view', 'expenses.add', 'expenses.edit'
         ),
     },
     {
@@ -68,7 +71,8 @@ const SEED_ROLES: Role[] = [
         locked: false,
         permissions: perms(
             'fund-requests.view', 'fund-requests.add', 'fund-requests.edit', 'fund-requests.close',
-            'fund-requests.return', 'transactions.view', 'projects.view', 'store.view'
+            'fund-requests.return', 'transactions.view', 'projects.view', 'store.view',
+            'expenses.view', 'expenses.add', 'expenses.edit'
         ),
     },
     {
@@ -523,7 +527,7 @@ export class AccessService {
             if (!seedRole || role.locked) {
                 return role;
             }
-            const add = ['clients', 'vendors', 'projects', 'store', 'users']
+            const add = ['clients', 'vendors', 'projects', 'store', 'users', 'expenses']
                 .filter((f) => !role.permissions.some((p) => p.startsWith(`${f}.`)))
                 .flatMap((f) => seedRole.permissions.filter((p) => p.startsWith(`${f}.`)));
             return add.length ? { ...role, permissions: [...role.permissions, ...add] } : role;

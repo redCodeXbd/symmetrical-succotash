@@ -1,0 +1,104 @@
+<treasury-slide-over [heading]="expense.id" [subheading]="category?.name ?? ''" (closed)="closed.emit()">
+    @if (access.can('expenses.export')) {
+        <treasury-export-menu headerActions [build]="detailDoc" [formats]="['pdf', 'docx']"></treasury-export-menu>
+    }
+
+    <div class="flex flex-wrap items-center gap-3">
+        <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="classes[expense.status]">{{ labels[expense.status] }}</span>
+        <span class="rounded-full px-2.5 py-0.5 text-sm font-medium" [class]="expense.paid ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'">{{ expense.paid ? 'Paid' : 'Not paid' }}</span>
+        @if (stocked) { <span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-sm font-medium text-violet-800">Received into store</span> }
+    </div>
+    <div class="mt-3 text-4xl font-bold tracking-tight">BDT {{ expense.amount | number: '1.0-2' }}</div>
+    <div class="text-secondary mt-1">{{ expense.description || expense.payee }}</div>
+
+    @if (error) { <div class="mt-4 rounded-lg bg-red-50 p-3 text-md text-red-800" role="alert">{{ error }}</div> }
+
+    <dl class="mt-5 divide-y text-md">
+        <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Date</dt><dd>{{ expense.date | date: 'dd MMM y' }}</dd></div>
+        <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Paid to</dt><dd class="text-right">{{ expense.payee || vendor || '-' }}</dd></div>
+        @if (vendor && expense.payee !== vendor) { <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Vendor</dt><dd class="text-right">{{ vendor }}</dd></div> }
+        <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Project</dt><dd class="text-right">{{ project || '-' }}</dd></div>
+        <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Branch</dt><dd>{{ expense.branch }}</dd></div>
+        @for (r of metaRows; track r[0]) { <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">{{ r[0] }}</dt><dd class="text-right">{{ r[1] }}</dd></div> }
+        <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Payment</dt><dd class="text-right">{{ expense.paid ? expense.paymentMethod + (fundName ? ' from ' + fundName : '') + (expense.paymentReference ? ' (' + expense.paymentReference + ')' : '') : expense.paymentMethod + ', not paid yet' }}</dd></div>
+        <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Entered by</dt><dd>{{ expense.createdBy }}</dd></div>
+        @if (expense.rejectionReason) { <div class="flex justify-between gap-4 py-2.5"><dt class="text-secondary">Rejected because</dt><dd class="text-right text-red-700">{{ expense.rejectionReason }}</dd></div> }
+    </dl>
+
+    @if (expense.items.length) {
+        <div class="mt-6 text-sm font-medium uppercase tracking-wide text-secondary">Items</div>
+        <table class="app-table mt-2 w-full">
+            <thead><tr><th scope="col" class="text-left font-medium">Item</th><th scope="col" class="text-right font-medium">Qty</th><th scope="col" class="text-right font-medium">Amount</th></tr></thead>
+            <tbody>@for (i of expense.items; track $index) { <tr><td>{{ i.name }}</td><td class="text-right">{{ i.qty }} {{ i.unit }}</td><td class="text-right">{{ i.qty * i.unitCost | number: '1.0-0' }}</td></tr> }</tbody>
+        </table>
+    }
+
+    @if (expense.receipts.length) {
+        <div class="mt-6 text-sm font-medium uppercase tracking-wide text-secondary">Receipts</div>
+        <div class="mt-2 flex flex-wrap gap-3">
+            @for (r of expense.receipts; track $index) { <button type="button" (click)="preview = r.data" [attr.aria-label]="'View ' + r.name"><img [src]="r.data" [alt]="r.name" class="h-20 w-20 rounded-lg border object-cover" /></button> }
+        </div>
+        @if (preview) { <div class="mt-3"><img [src]="preview" alt="Receipt" class="w-full rounded-lg border" /><button type="button" class="mt-1 text-sm text-primary hover:underline" (click)="preview = null">Hide</button></div> }
+    }
+
+    @if (expense.approvals.length) {
+        <div class="mt-6 text-sm font-medium uppercase tracking-wide text-secondary">Approval flow</div>
+        <ol class="mt-2 flex flex-col">
+            @for (s of expense.approvals; track $index; let last = $last) {
+                <li class="flex gap-3">
+                    <div class="flex flex-col items-center">
+                        <span class="flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-semibold" [class]="s.status === 'approved' ? 'bg-green-100 text-green-800' : s.status === 'rejected' ? 'bg-red-100 text-red-800' : s.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-200 text-gray-600'">{{ $index + 1 }}</span>
+                        @if (!last) { <span class="my-1 w-px flex-auto bg-gray-300"></span> }
+                    </div>
+                    <div class="pb-3 text-md"><div class="font-medium">{{ s.roleName }}</div><div class="text-secondary text-sm">{{ s.status === 'approved' ? 'Approved by ' + s.by : s.status === 'rejected' ? 'Rejected by ' + s.by : s.status === 'pending' ? 'Waiting for approval' : 'Not reached yet' }}</div></div>
+                </li>
+            }
+        </ol>
+        @if (waitingFor) { <div class="mt-1 rounded-lg bg-amber-50 p-3 text-md text-amber-800">Waiting for <strong>{{ waitingFor }}</strong>. You cannot approve it at this step.</div> }
+    }
+
+    @if (mode === 'reject') {
+        <form class="mt-6 rounded-xl border p-4" (ngSubmit)="reject()">
+            <div class="font-medium">Reject this expense</div>
+            <input class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" placeholder="Reason" aria-label="Reason" name="rr" [(ngModel)]="rejectReason" />
+            <div class="mt-3 flex justify-end gap-3"><button mat-stroked-button type="button" (click)="back()">Back</button><button mat-flat-button color="warn" type="submit">Reject</button></div>
+        </form>
+    }
+    @if (mode === 'pay') {
+        <form class="mt-6 rounded-xl border p-4" (ngSubmit)="submitPay()">
+            <div class="font-medium">Record payment of BDT {{ expense.amount | number: '1.0-2' }}</div>
+            <label class="mt-3 block text-sm font-medium">Take the money from
+                <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="pf" [(ngModel)]="pay.fundId">
+                    <option value="">Not from a fund (record only)</option>
+                    @for (f of funds; track f.id) { <option [value]="f.id">{{ f.name }} (BDT {{ f.balance | number: '1.0-0' }})</option> }
+                </select>
+            </label>
+            <div class="mt-3 grid grid-cols-2 gap-3">
+                <label class="block text-sm font-medium">Method<select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="pm" [(ngModel)]="pay.method">@for (m of methods; track m) { <option [value]="m">{{ m }}</option> }</select></label>
+                <label class="block text-sm font-medium">Date<input type="date" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="pd" [(ngModel)]="pay.date" /></label>
+            </div>
+            <input class="mt-3 h-11 w-full rounded-lg border bg-transparent px-3 text-md" placeholder="Reference (cheque or transaction no.)" aria-label="Reference" name="pr" [(ngModel)]="pay.reference" />
+            <div class="mt-3 flex justify-end gap-3"><button mat-stroked-button type="button" (click)="back()">Back</button><button mat-flat-button color="primary" type="submit">Confirm payment</button></div>
+        </form>
+    }
+
+    <div class="mt-8 text-sm font-medium uppercase tracking-wide text-secondary">Timeline</div>
+    <ol class="mt-3 flex flex-col gap-3">
+        @for (e of expense.events; track $index) {
+            <li class="flex gap-3"><span class="mt-1.5 h-2.5 w-2.5 flex-none rounded-full bg-primary"></span><div class="text-md"><div class="font-medium">{{ e.title }}</div>@if (e.note) { <div class="text-secondary">{{ e.note }}</div> }<div class="text-secondary text-sm">{{ e.by }} · {{ e.at | date: 'dd MMM y, h:mm a' }}</div></div></li>
+        }
+    </ol>
+
+    <ng-container footer>
+        @if (mode === 'view') {
+            @if (service.canDelete(expense)) { <button mat-stroked-button color="warn" type="button" (click)="remove()">Delete</button> }
+            @if (service.canEdit(expense)) { <button mat-stroked-button type="button" (click)="edit.emit(expense)">Edit</button> }
+            @if (canReceive) { <a mat-stroked-button routerLink="/store">Receive into store</a> }
+            @if (service.canApprove(expense)) {
+                <button mat-stroked-button type="button" (click)="start('reject')">Reject</button>
+                <button mat-flat-button color="primary" type="button" (click)="approve()">{{ isLastStep ? 'Approve' : 'Approve step' }}</button>
+            }
+            @if (canPay) { <button mat-flat-button color="primary" type="button" (click)="start('pay')">Record payment</button> }
+        }
+    </ng-container>
+</treasury-slide-over>

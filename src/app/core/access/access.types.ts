@@ -160,6 +160,22 @@ export const FEATURES: FeatureDef[] = [
         ],
     },
     {
+        id: 'expenses',
+        title: 'Expenses',
+        permissions: [
+            { key: 'view', label: 'View', description: 'Open Expenses and see expenses you entered' },
+            { key: 'view_all', label: 'View all', description: "See everyone's expenses" },
+            { key: 'add', label: 'Add', description: 'Enter expenses' },
+            { key: 'edit', label: 'Edit', description: 'Edit your own expenses that are waiting or were rejected' },
+            { key: 'delete', label: 'Delete', description: 'Delete any unpaid expense' },
+            { key: 'approve', label: 'Approve', description: "Approve or reject at the role's step in the approval tree" },
+            { key: 'approve_any', label: 'Approve any step', description: 'Approve or reject at any step of the tree' },
+            { key: 'pay', label: 'Record payments', description: 'Pay approved expenses, from a fund or otherwise' },
+            { key: 'export', label: 'Export', description: 'Download and share expense reports' },
+            { key: 'manage_categories', label: 'Manage categories', description: 'Add, rename and delete categories and set the no-approval limit' },
+        ],
+    },
+    {
         id: 'notifications',
         title: 'Notifications',
         permissions: [

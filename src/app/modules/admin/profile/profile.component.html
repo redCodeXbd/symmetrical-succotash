@@ -54,6 +54,12 @@
                                 <a mat-stroked-button routerLink="/treasury/funds" [queryParams]="{ request: r.id }">Review</a>
                             </li>
                         }
+                        @for (x of waitingExpenses(); track x.id) {
+                            <li class="flex flex-wrap items-center gap-3 py-3">
+                                <div class="min-w-0 flex-1"><div class="font-medium">Expense {{ x.id }} · BDT {{ x.amount | number: '1.0-0' }}</div><div class="text-secondary text-sm">{{ x.description || x.payee }} · {{ x.createdBy }}</div></div>
+                                <a mat-stroked-button routerLink="/expenses">Review</a>
+                            </li>
+                        }
                         @for (i of waitingInvoices(); track i.id) {
                             <li class="flex flex-wrap items-center gap-3 py-3">
                                 <div class="min-w-0 flex-1"><div class="font-medium">Vendor invoice {{ i.number }} · BDT {{ i.amount | number: '1.0-0' }}</div><div class="text-secondary text-sm">{{ vendorName(i.vendorId) }}</div></div>

@@ -2,13 +2,15 @@ import { computed, Injectable, signal } from '@angular/core';
 import { DateTime } from 'luxon';
 import { AccessService } from 'app/core/access/access.service';
 import { FundsService } from '../treasury/funds/funds.service';
+import { ExpensesService } from '../expenses/expenses.service';
 import { StoreService } from '../store/store.service';
 import { VendorsService } from '../vendors/vendors.service';
 import { CostLine, Costing, Project, ProjectInput, ProjectStatus } from './projects.types';
 
 /**
  * In-memory store for Projects. Costing and profit are worked out from other features, never typed in:
- *  - Expenses: paid fund requests that name the project's work order (minus money returned).
+ *  - Expenses: paid fund requests that name the project's work order (minus money returned), and approved
+ *    entries in Expenses linked to the project.
  *  - Vendor purchases: approved vendor invoices linked to the project, directly or through its purchase order.
  *  - Store issues: stock issued from a store to the project, at the store's average cost.
  * Expenses and purchases whose goods went into a store are left out here, because they count when the
@@ -22,7 +24,8 @@ export class ProjectsService {
         private _access: AccessService,
         private _funds: FundsService,
         private _vendors: VendorsService,
-        private _store: StoreService
+        private _store: StoreService,
+        private _expenses: ExpensesService
     ) {}
 
     /** Projects the acting user may open: all, their client's, or the ones they manage. */
@@ -140,6 +143,7 @@ export class ProjectsService {
                 }
             }
         }
+        lines.push(...this._expenses.projectCosts(id, stocked));
         lines.push(...this._vendors.projectInvoiceCosts(id, stocked));
         lines.push(...this._store.projectIssueCosts(id));
         lines.sort((a, b) => b.date.localeCompare(a.date));

@@ -1,6 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { DateTime } from 'luxon';
 import { AccessService } from 'app/core/access/access.service';
+import { ExpensesService } from 'app/modules/admin/expenses/expenses.service';
 import { VendorsService } from 'app/modules/admin/vendors/vendors.service';
 import { FundsService } from 'app/modules/admin/treasury/funds/funds.service';
 import { FundEventType, FundRequest, FundRequestEvent } from 'app/modules/admin/treasury/funds/funds.types';
@@ -94,6 +95,16 @@ export class FundNotificationsService {
                     useRouter: true,
                     read: read.has(`wait|${r.id}|${r.approvals.findIndex((s) => s.status === 'pending')}`),
                 })),
+            ...this._expenses.awaitingMe().map((x) => ({
+                id: `wait|${x.id}|${x.approvals.findIndex((s) => s.status === 'pending')}`,
+                icon: 'heroicons_solid:clock',
+                title: `Your approval: expense <strong>${escape(x.id)}</strong>`,
+                description: `${escape(x.createdBy)}: BDT ${x.amount.toLocaleString('en-US')} for ${escape(x.description || x.payee)}`,
+                time: x.createdAt,
+                link: '/expenses',
+                useRouter: true,
+                read: read.has(`wait|${x.id}|${x.approvals.findIndex((s) => s.status === 'pending')}`),
+            })),
             ...this._vendors.invoicesAwaitingMe().map((i) => ({
                 id: `wait|${i.id}|${i.approvals.findIndex((s) => s.status === 'pending')}`,
                 icon: 'heroicons_solid:clock',
@@ -114,7 +125,8 @@ export class FundNotificationsService {
     constructor(
         private _funds: FundsService,
         private _access: AccessService,
-        private _vendors: VendorsService
+        private _vendors: VendorsService,
+        private _expenses: ExpensesService
     ) {}
 
     markRead(id: string): void {

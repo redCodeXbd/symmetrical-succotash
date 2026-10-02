@@ -1,0 +1,121 @@
+<treasury-slide-over [heading]="expense ? 'Edit expense' : 'New expense'" [subheading]="expense?.id ?? ''" (closed)="cancelled.emit()">
+    <form id="expense-form" class="flex flex-col gap-5" (ngSubmit)="save()">
+        <!-- Category first: it decides the rest of the form -->
+        <fieldset>
+            <legend class="text-sm font-medium">Category *</legend>
+            <div class="mt-2 flex flex-wrap gap-2" role="group" aria-label="Category">
+                @for (c of service.categories(); track c.id) {
+                    <button type="button" class="exp-cat-chip" [class.exp-cat-chip-on]="model.categoryId === c.id" [style.--cat]="c.color" [attr.aria-pressed]="model.categoryId === c.id" (click)="setCategory(c.id)">
+                        <span class="exp-dot"></span>{{ c.name }}
+                    </button>
+                }
+            </div>
+        </fieldset>
+
+        <div class="grid grid-cols-2 gap-3">
+            <label class="block"><span class="text-sm font-medium">Date *</span><input type="date" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="date" [(ngModel)]="model.date" /></label>
+            @if (kind === 'purchase' && itemsTotal > 0) {
+                <div><div class="text-sm font-medium">Amount</div><div class="mt-1 flex h-11 items-center rounded-lg bg-primary/10 px-3 text-lg font-semibold">BDT {{ itemsTotal | number: '1.0-2' }}</div></div>
+            } @else {
+                <label class="block"><span class="text-sm font-medium">Amount (BDT) *</span><input type="number" min="0" step="0.01" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="amount" [(ngModel)]="model.amount" /></label>
+            }
+        </div>
+
+        <!-- Who or what -->
+        @if (kind === 'vendor') {
+            <label class="block"><span class="text-sm font-medium">Vendor</span>
+                <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="vendor" [(ngModel)]="model.vendorId">
+                    <option [ngValue]="null">Not a listed vendor</option>
+                    @for (v of vendors.vendors(); track v.id) { <option [value]="v.id">{{ v.name }}</option> }
+                </select>
+                @if (vendorDue !== null) { <span class="text-secondary mt-1 block text-xs">Owed to this vendor now: BDT {{ vendorDue | number: '1.0-0' }}. A payment cannot be more than this.</span> }
+            </label>
+        }
+        <label class="block"><span class="text-sm font-medium">{{ kind === 'vendor' || kind === 'purchase' ? 'Paid to' : 'Paid to / source' }}</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="payee" [(ngModel)]="model.payee" placeholder="Shop, person or company" /></label>
+        <label class="block"><span class="text-sm font-medium">What was it for?</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="description" [(ngModel)]="model.description" /></label>
+
+        <!-- Category-specific details -->
+        @if (fields.length > 0) {
+            <div class="grid grid-cols-2 gap-3 rounded-xl bg-primary/5 p-3">
+                @for (f of fields; track f.key) {
+                    <label class="block" [class.col-span-2]="f.type === 'text' && f.key !== 'invoiceNo'">
+                        <span class="text-sm font-medium">{{ f.label }}</span>
+                        @if (f.type === 'select') {
+                            <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" [name]="'m-' + f.key" [(ngModel)]="model.meta[f.key]">
+                                <option value="">Choose...</option>
+                                @for (o of f.options; track o) { <option [value]="o">{{ o }}</option> }
+                            </select>
+                        } @else {
+                            <input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" [type]="f.type" [name]="'m-' + f.key" [placeholder]="f.placeholder ?? ''" [(ngModel)]="model.meta[f.key]" />
+                        }
+                    </label>
+                }
+            </div>
+        }
+
+        @if (kind === 'purchase') {
+            <section class="rounded-xl border p-3" aria-label="Items bought">
+                <div class="text-sm font-medium">Items bought <span class="text-secondary font-normal">(optional; lets you receive them into a store)</span></div>
+                <datalist id="exp-products">@for (n of catalogue; track n) { <option [value]="n"></option> }</datalist>
+                @for (i of model.items; track $index) {
+                    <div class="mt-2 grid grid-cols-12 items-center gap-2">
+                        <input class="col-span-12 h-10 rounded-lg border bg-transparent px-2 text-md sm:col-span-5" list="exp-products" placeholder="Item" [attr.aria-label]="'Item ' + ($index + 1)" [name]="'it-' + $index" [(ngModel)]="i.name" (change)="pickItem(i)" />
+                        <input type="number" min="0" class="col-span-3 h-10 rounded-lg border bg-transparent px-2 text-md sm:col-span-2" placeholder="Qty" [attr.aria-label]="'Quantity ' + ($index + 1)" [name]="'iq-' + $index" [(ngModel)]="i.qty" />
+                        <input class="col-span-3 h-10 rounded-lg border bg-transparent px-2 text-md sm:col-span-1" placeholder="Unit" [attr.aria-label]="'Unit ' + ($index + 1)" [name]="'iu-' + $index" [(ngModel)]="i.unit" />
+                        <input type="number" min="0" class="col-span-4 h-10 rounded-lg border bg-transparent px-2 text-md sm:col-span-3" placeholder="Unit cost" [attr.aria-label]="'Unit cost ' + ($index + 1)" [name]="'ic-' + $index" [(ngModel)]="i.unitCost" />
+                        <button type="button" class="col-span-2 text-red-600 hover:underline sm:col-span-1" (click)="removeItem($index)" [attr.aria-label]="'Remove item ' + ($index + 1)">x</button>
+                    </div>
+                }
+                <button type="button" class="mt-2 font-medium text-primary hover:underline" (click)="addItem()">Add another item</button>
+            </section>
+        }
+
+        <div class="grid grid-cols-2 gap-3">
+            <label class="block"><span class="text-sm font-medium">Project</span>
+                <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="project" [(ngModel)]="model.projectId">
+                    <option [ngValue]="null">Not for a project</option>
+                    @for (p of projects.projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+                </select>
+            </label>
+            <label class="block"><span class="text-sm font-medium">Branch</span>
+                <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="branch" [(ngModel)]="model.branch">
+                    @for (b of branches; track b) { <option [value]="b">{{ b }}</option> }
+                </select>
+            </label>
+            <label class="block"><span class="text-sm font-medium">Paid by</span>
+                <select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="method" [(ngModel)]="model.paymentMethod">
+                    @for (m of methods; track m) { <option [value]="m">{{ m }}</option> }
+                </select>
+            </label>
+        </div>
+
+        <!-- Receipts -->
+        <section>
+            <div class="text-sm font-medium">Receipts and bills</div>
+            <div class="mt-2 flex flex-wrap gap-3">
+                @for (r of model.receipts; track $index) {
+                    <div class="relative">
+                        <img [src]="r.data" [alt]="r.name" class="h-20 w-20 rounded-lg border object-cover" />
+                        <button type="button" class="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white" (click)="removeReceipt($index)" [attr.aria-label]="'Remove ' + r.name">x</button>
+                    </div>
+                }
+                <label class="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-center text-xs text-primary hover:bg-hover">
+                    <span class="text-2xl leading-none">+</span>Photo
+                    <input type="file" accept="image/*" multiple capture="environment" class="sr-only" (change)="pickReceipts($event)" />
+                </label>
+            </div>
+            @if (uploadError) { <div class="mt-2 text-sm text-red-600" role="alert">{{ uploadError }}</div> }
+        </section>
+
+        @if (model.categoryId && model.amount !== null) {
+            <div class="rounded-lg p-3 text-sm" [class]="needsApproval ? 'bg-amber-50 text-amber-800' : 'bg-green-50 text-green-800'">
+                @if (needsApproval) { This amount goes through the approval tree before it can be paid. } @else { Up to BDT {{ service.autoApproveLimit() | number: '1.0-0' }} needs no approval. It is approved when you save. }
+            </div>
+        }
+        @if (error) { <div class="rounded-lg bg-red-50 p-3 text-md text-red-800" role="alert">{{ error }}</div> }
+    </form>
+    <ng-container footer>
+        <button mat-stroked-button type="button" (click)="cancelled.emit()">Cancel</button>
+        <button mat-flat-button color="primary" type="submit" form="expense-form">{{ expense ? 'Save changes' : 'Save expense' }}</button>
+    </ng-container>
+</treasury-slide-over>
