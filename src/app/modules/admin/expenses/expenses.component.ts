@@ -1,4 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Component, computed, signal, ViewChild, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,7 +14,7 @@ import { UserSwitchComponent } from '../treasury/shared/user-switch/user-switch.
 import { ExpenseDetailComponent } from './expense-detail.component';
 import { ExpenseFormComponent } from './expense-form.component';
 import { ExpensesService } from './expenses.service';
-import { Expense, ExpenseKind, KIND_LABELS, STATUS_CLASSES, STATUS_LABELS } from './expenses.types';
+import { Expense, STATUS_CLASSES, STATUS_LABELS } from './expenses.types';
 
 type Range = 'this_month' | 'last_30' | 'this_year' | 'all' | 'custom';
 
@@ -22,13 +23,11 @@ type Range = 'this_month' | 'last_30' | 'this_year' | 'all' | 'custom';
     templateUrl: './expenses.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, AddButtonComponent, ExportMenuComponent, SlideOverComponent, UserSwitchComponent, ExpenseDetailComponent, ExpenseFormComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, RouterLink, AddButtonComponent, ExportMenuComponent, SlideOverComponent, UserSwitchComponent, ExpenseDetailComponent, ExpenseFormComponent],
 })
 export class ExpensesComponent {
     readonly statusLabels = STATUS_LABELS;
     readonly statusClasses = STATUS_CLASSES;
-    readonly kindLabels = KIND_LABELS;
-    readonly kinds = Object.keys(KIND_LABELS) as ExpenseKind[];
     readonly ranges: { id: Range; label: string }[] = [
         { id: 'this_month', label: 'This month' },
         { id: 'last_30', label: 'Last 30 days' },
@@ -51,7 +50,7 @@ export class ExpensesComponent {
     selectedId = signal<string | null>(null);
     formOpen = signal(false);
     editing = signal<Expense | null>(null);
-    categoriesOpen = signal(false);
+    settingsOpen = signal(false);
     toast = signal<string | null>(null);
 
     // Quick entry
@@ -59,10 +58,8 @@ export class ExpensesComponent {
     quickError: string | null = null;
     @ViewChild('quickAmount') quickAmount?: { nativeElement: HTMLInputElement };
 
-    // Category management
-    newCategory = { name: '', kind: 'general' as ExpenseKind };
-    categoryEdit: { id: string; name: string; kind: ExpenseKind } | null = null;
-    categoryMessage: { text: string; ok: boolean } | null = null;
+    // Settings
+    settingsMessage: { text: string; ok: boolean } | null = null;
     limitDraft: number | null = null;
 
     constructor(
@@ -186,34 +183,12 @@ export class ExpensesComponent {
     }
 
     // -----------------------------------------------------------------------------------------------------
-    // @ Categories and settings
+    // @ Settings
     // -----------------------------------------------------------------------------------------------------
 
-    addCategory(): void {
-        const error = this.service.addCategory(this.newCategory.name, this.newCategory.kind);
-        this._catReport(error, 'Category added.');
-        if (!error) {
-            this.newCategory = { name: '', kind: 'general' };
-        }
-    }
-
-    saveCategory(): void {
-        const c = this.categoryEdit;
-        if (c) {
-            const error = this.service.updateCategory(c.id, c.name, c.kind);
-            this._catReport(error, 'Category saved.');
-            if (!error) {
-                this.categoryEdit = null;
-            }
-        }
-    }
-
-    deleteCategory(id: string): void {
-        this._catReport(this.service.deleteCategory(id), 'Category deleted.');
-    }
-
     saveLimit(): void {
-        this._catReport(this.service.setAutoApproveLimit(Number(this.limitDraft ?? 0)), 'Limit saved.');
+        const error = this.service.setAutoApproveLimit(Number(this.limitDraft ?? 0));
+        this.settingsMessage = error ? { text: error, ok: false } : { text: 'Limit saved.', ok: true };
     }
 
     // -----------------------------------------------------------------------------------------------------
@@ -247,10 +222,6 @@ export class ExpensesComponent {
 
     private _blankQuick() {
         return { date: DateTime.now().toISODate(), categoryId: '', amount: null as number | null, description: '', projectId: '' };
-    }
-
-    private _catReport(error: string | null, ok: string): void {
-        this.categoryMessage = error ? { text: error, ok: false } : { text: ok, ok: true };
     }
 
     private _toast(text: string): void {

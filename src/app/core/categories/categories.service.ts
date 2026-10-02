@@ -3,6 +3,8 @@ import { Injectable, signal } from '@angular/core';
 export interface Category {
     id: string;
     name: string;
+    /** For groups whose categories have a type, such as expense categories. */
+    kind?: string;
     description: string;
 }
 
@@ -16,6 +18,10 @@ export interface CategoryGroup {
     title: string;
     description: string;
     defaults: string[];
+    /** When set, each category in the group has a type chosen from this list. */
+    kinds?: { id: string; label: string; help: string }[];
+    /** The type each default category starts with; others get the first type. */
+    defaultKinds?: Record<string, string>;
 }
 
 export const CATEGORY_GROUPS: CategoryGroup[] = [
@@ -37,6 +43,29 @@ export const CATEGORY_GROUPS: CategoryGroup[] = [
         description: 'Groups the product catalogue in Store, such as Electrical or Tools.',
         defaults: ['Electrical', 'Mechanical', 'Civil', 'Tools & equipment', 'Safety', 'Office supplies', 'Spare parts'],
     },
+    {
+        id: 'expense-types',
+        title: 'Expenses',
+        description: 'What a cost is for in Expenses. The type decides which details the expense form asks for.',
+        defaults: [
+            'Office cost', 'Product purchase', 'Vendor payment', 'Service payment', 'Parts purchase', 'Conveyance & transport',
+            'Business promotion', 'Food cost', 'Office rent', 'Utilities', 'Repair & maintenance', 'Stationery & printing',
+            'Communication', 'Staff welfare', 'Legal & professional fees', 'Bank charges & fees', 'Tax & government fees', 'Other cost',
+        ],
+        kinds: [
+            { id: 'general', label: 'General cost', help: 'Description and who was paid' },
+            { id: 'purchase', label: 'Purchase of goods', help: 'Item lines; can be received into a store' },
+            { id: 'vendor', label: 'Vendor payment', help: 'Pick a vendor; lowers what is owed to them' },
+            { id: 'conveyance', label: 'Transport', help: 'From, to, mode and traveller' },
+            { id: 'food', label: 'Food', help: 'People and occasion' },
+            { id: 'rent', label: 'Rent', help: 'Property, month and landlord' },
+            { id: 'promotion', label: 'Promotion', help: 'Campaign and channel' },
+        ],
+        defaultKinds: {
+            'Product purchase': 'purchase', 'Parts purchase': 'purchase', 'Vendor payment': 'vendor', 'Service payment': 'vendor',
+            'Conveyance & transport': 'conveyance', 'Business promotion': 'promotion', 'Food cost': 'food', 'Office rent': 'rent',
+        },
+    },
 ];
 
 /** Category lists for every feature. Kept in memory like the rest of the demo data. */
@@ -44,7 +73,15 @@ export const CATEGORY_GROUPS: CategoryGroup[] = [
 export class CategoryService {
     private _store = signal<Record<string, Category[]>>(
         Object.fromEntries(
-            CATEGORY_GROUPS.map((g) => [g.id, g.defaults.map((name, i) => ({ id: `${g.id}-${i + 1}`, name, description: '' }))])
+            CATEGORY_GROUPS.map((g) => [
+                g.id,
+                g.defaults.map((name, i) => ({
+                    id: `${g.id}-${i + 1}`,
+                    name,
+                    description: '',
+                    ...(g.kinds ? { kind: g.defaultKinds?.[name] ?? g.kinds[0].id } : {}),
+                })),
+            ])
         )
     );
     private _next = 100;
@@ -60,24 +97,24 @@ export class CategoryService {
     }
 
     /** Returns an error message, or null when the category was added. */
-    add(groupId: string, name: string, description: string): string | null {
+    add(groupId: string, name: string, description: string, kind?: string): string | null {
         const error = this._validate(groupId, name);
         if (error) {
             return error;
         }
-        const category: Category = { id: `${groupId}-${this._next++}`, name: name.trim(), description: description.trim() };
+        const category: Category = { id: `${groupId}-${this._next++}`, name: name.trim(), description: description.trim(), ...(kind ? { kind } : {}) };
         this._store.update((s) => ({ ...s, [groupId]: [...this.list(groupId), category] }));
         return null;
     }
 
-    update(groupId: string, id: string, name: string, description: string): string | null {
+    update(groupId: string, id: string, name: string, description: string, kind?: string): string | null {
         const error = this._validate(groupId, name, id);
         if (error) {
             return error;
         }
         this._store.update((s) => ({
             ...s,
-            [groupId]: this.list(groupId).map((c) => (c.id === id ? { ...c, name: name.trim(), description: description.trim() } : c)),
+            [groupId]: this.list(groupId).map((c) => (c.id === id ? { ...c, name: name.trim(), description: description.trim(), ...(kind ? { kind } : {}) } : c)),
         }));
         return null;
     }

@@ -2,6 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 import { DateTime } from 'luxon';
 import { AccessService } from 'app/core/access/access.service';
 import { ApprovalStep } from 'app/core/access/access.types';
+import { CategoryService } from 'app/core/categories/categories.service';
 import { FundsService } from '../treasury/funds/funds.service';
 import { OrgFundsService } from '../treasury/org-funds/org-funds.service';
 import { VendorsService } from '../vendors/vendors.service';
@@ -28,7 +29,6 @@ const money = (n: number) => `BDT ${n.toLocaleString('en-US')}`;
  */
 @Injectable({ providedIn: 'root' })
 export class ExpensesService {
-    private _categories = signal<ExpenseCategory[]>(this._seedCategories());
     private _expenses = signal<Expense[]>(this._seedExpenses());
     /** Expenses up to this amount need no approval. */
     readonly autoApproveLimit = signal(5000);
@@ -37,10 +37,19 @@ export class ExpensesService {
         private _access: AccessService,
         private _funds: FundsService,
         private _org: OrgFundsService,
-        private _vendors: VendorsService
+        private _vendors: VendorsService,
+        private _cats: CategoryService
     ) {}
 
-    readonly categories = this._categories.asReadonly();
+    /** Categories come from Configuration > Categories. Each keeps its type and a stable colour. */
+    readonly categories = computed<ExpenseCategory[]>(() =>
+        this._cats.list('expense-types').map((c, i) => ({
+            id: c.id,
+            name: c.name,
+            kind: (c.kind as ExpenseKind) ?? 'general',
+            color: CATEGORY_COLORS[(Number(c.id.split('-').pop()) || i) % CATEGORY_COLORS.length],
+        }))
+    );
 
     /** Expenses the acting user may see: everyone's, or only their own. */
     readonly expenses = computed(() => {
@@ -53,7 +62,7 @@ export class ExpensesService {
     });
 
     category(id: string): ExpenseCategory | null {
-        return this._categories().find((c) => c.id === id) ?? null;
+        return this.categories().find((c) => c.id === id) ?? null;
     }
 
     categoryName(id: string): string {
@@ -274,46 +283,12 @@ export class ExpensesService {
     }
 
     // -----------------------------------------------------------------------------------------------------
-    // @ Categories and settings
+    // @ Settings. Categories themselves are kept in Configuration > Categories.
     // -----------------------------------------------------------------------------------------------------
 
-    addCategory(name: string, kind: ExpenseKind): string | null {
-        const error = this._categoryChecks(name);
-        if (error) {
-            return error;
-        }
-        const id = `cat-${Date.now()}`;
-        const color = CATEGORY_COLORS[this._categories().length % CATEGORY_COLORS.length];
-        this._categories.update((list) => [...list, { id, name: name.trim(), kind, color }]);
-        return null;
-    }
-
-    updateCategory(id: string, name: string, kind: ExpenseKind): string | null {
-        const error = this._categoryChecks(name, id);
-        if (error) {
-            return error;
-        }
-        const used = this._expenses().some((e) => e.categoryId === id);
-        const current = this.category(id);
-        if (used && current && current.kind !== kind) {
-            return 'This category already has expenses, so its type cannot change.';
-        }
-        this._categories.update((list) => list.map((c) => (c.id === id ? { ...c, name: name.trim(), kind } : c)));
-        return null;
-    }
-
-    deleteCategory(id: string): string | null {
-        if (!this._access.can('expenses.manage_categories')) {
-            return 'You do not have permission to change categories.';
-        }
-        if (this._expenses().some((e) => e.categoryId === id)) {
-            return 'This category has expenses, so it cannot be deleted.';
-        }
-        this._categories.update((list) => list.filter((c) => c.id !== id));
-        return null;
-    }
-
-    categoryUsage(id: string): number {
+    /** How many expenses use a category, found by name for the Categories page. */
+    usageByName(name: string): number {
+        const id = this._cats.list('expense-types').find((c) => c.name === name)?.id;
         return this._expenses().filter((e) => e.categoryId === id).length;
     }
 
@@ -371,16 +346,6 @@ export class ExpensesService {
         }));
     }
 
-    private _categoryChecks(name: string, ignoreId?: string): string | null {
-        if (!this._access.can('expenses.manage_categories')) {
-            return 'You do not have permission to change categories.';
-        }
-        if (!name.trim()) {
-            return 'Enter a category name.';
-        }
-        return this._categories().some((c) => c.id !== ignoreId && c.name.toLowerCase() === name.trim().toLowerCase()) ? 'A category with this name already exists.' : null;
-    }
-
     private _clean(input: ExpenseInput): ExpenseInput {
         const kind = this.category(input.categoryId)?.kind ?? 'general';
         const items = kind === 'purchase' ? input.items.filter((i) => i.name.trim() && Number(i.qty) > 0).map((i) => ({ ...i, name: i.name.trim(), qty: Number(i.qty), unitCost: Number(i.unitCost) || 0 })) : [];
@@ -433,30 +398,6 @@ export class ExpensesService {
         return DateTime.now().minus({ days }).toISODate();
     }
 
-    private _seedCategories(): ExpenseCategory[] {
-        const c = (i: number, name: string, kind: ExpenseKind): ExpenseCategory => ({ id: `cat-${i}`, name, kind, color: CATEGORY_COLORS[(i - 1) % CATEGORY_COLORS.length] });
-        return [
-            c(1, 'Office cost', 'general'),
-            c(2, 'Product purchase', 'purchase'),
-            c(3, 'Vendor payment', 'vendor'),
-            c(4, 'Service payment', 'vendor'),
-            c(5, 'Parts purchase', 'purchase'),
-            c(6, 'Conveyance & transport', 'conveyance'),
-            c(7, 'Business promotion', 'promotion'),
-            c(8, 'Food cost', 'food'),
-            c(9, 'Office rent', 'rent'),
-            c(10, 'Utilities', 'general'),
-            c(11, 'Repair & maintenance', 'general'),
-            c(12, 'Stationery & printing', 'general'),
-            c(13, 'Communication', 'general'),
-            c(14, 'Staff welfare', 'general'),
-            c(15, 'Legal & professional fees', 'general'),
-            c(16, 'Bank charges & fees', 'general'),
-            c(17, 'Tax & government fees', 'general'),
-            c(18, 'Other cost', 'general'),
-        ];
-    }
-
     private _seedExpenses(): Expense[] {
         let n = 4000;
         const ev = (days: number, by: string, title: string): ExpenseEvent => ({ at: DateTime.now().minus({ days }).toISO(), by, title });
@@ -473,28 +414,28 @@ export class ExpensesService {
             };
         };
         return [
-            e(0, 'cat-8', 1800, 'Lunch with client visitors', { meta: { persons: '6', occasion: 'Client lunch' }, createdBy: 'Mehedi Hasan', paid: false, fundId: null }),
-            e(0, 'cat-6', 450, 'Site visit transport', { meta: { from: 'Dhaka', to: 'Savar', mode: 'CNG', person: 'Mehedi Hasan', distance: '32' }, projectId: 'P-2003', createdBy: 'Mehedi Hasan', paid: false, fundId: null }),
-            e(1, 'cat-1', 2400, 'Printer toner and paper', { payee: 'Star Stationery' }),
-            e(1, 'cat-10', 18500, 'Electricity bill, head office', { payee: 'DESCO', status: 'pending', paid: false, fundId: null, approvals: [{ roleId: 'accountant', roleName: 'Accountant', status: 'pending', by: null, at: null }] }),
-            e(2, 'cat-5', 56000, 'Contactor and relay set for site panels', { payee: 'Electro Parts', projectId: 'P-2001', status: 'pending', paid: false, fundId: null, items: [{ name: 'Contactor 63A', qty: 8, unit: 'pcs', unitCost: 4500 }, { name: 'Relay 24V', qty: 20, unit: 'pcs', unitCost: 1000 }], approvals: [{ roleId: 'manager', roleName: 'Manager', status: 'pending', by: null, at: null }, { roleId: 'accountant', roleName: 'Accountant', status: 'waiting', by: null, at: null }] }),
-            e(3, 'cat-7', 12000, 'Facebook ads: panel services', { meta: { campaign: 'Panel services Q4', channel: 'Facebook / social' }, status: 'pending', paid: false, fundId: null, approvals: [{ roleId: 'accountant', roleName: 'Accountant', status: 'pending', by: null, at: null }] }),
-            e(4, 'cat-3', 50000, 'Part payment to Steelcraft', { vendorId: 'V-1001', paymentMethod: 'Bank transfer', paid: false, fundId: null, meta: { invoiceNo: 'ST-2210' }, status: 'approved', approvals: [] }),
-            e(5, 'cat-9', 45000, 'Head office rent', { payee: 'Mr. Alam', meta: { property: 'Head office, Dhaka', period: DateTime.now().toFormat('yyyy-MM'), landlord: 'Mr. Alam' }, paymentMethod: 'Bank transfer', fundId: 'F-02', createdBy: 'Nadia Rahman' }),
-            e(6, 'cat-4', 30000, 'Guard service, monthly', { vendorId: 'V-1002', paid: false, fundId: null }),
-            e(7, 'cat-12', 3200, 'Visiting cards', { payee: 'Quick Print' }),
-            e(8, 'cat-2', 24000, 'Cable lugs and tape for stock', { payee: 'Metro Electrics', items: [{ name: 'Copper lug 120 sq mm', qty: 100, unit: 'pcs', unitCost: 190 }, { name: 'Insulation tape', qty: 80, unit: 'roll', unitCost: 62 }], status: 'approved', paid: true, approvals: [{ roleId: 'accountant', roleName: 'Accountant', status: 'approved', by: 'Nadia Rahman', at: DateTime.now().minus({ days: 8 }).toISO() }], fundId: 'F-02', paymentMethod: 'Bank transfer' }),
-            e(9, 'cat-13', 1500, 'Office internet', { payee: 'Link3' }),
-            e(10, 'cat-6', 900, 'Client meeting travel', { meta: { from: 'Office', to: 'Gulshan', mode: 'Car / taxi', person: 'Brian Hughes' }, createdBy: 'Brian Hughes' }),
-            e(11, 'cat-11', 8200, 'AC servicing', { payee: 'CoolFix', rejectionReason: 'Covered by the maintenance contract.', status: 'rejected', paid: false, fundId: null, approvals: [{ roleId: 'accountant', roleName: 'Accountant', status: 'rejected', by: 'Nadia Rahman', at: DateTime.now().minus({ days: 10 }).toISO() }] }),
-            e(12, 'cat-8', 2600, 'Site team tea and snacks', { meta: { persons: '12', occasion: 'Site team' }, projectId: 'P-2001', createdBy: 'Mehedi Hasan' }),
-            e(14, 'cat-14', 4800, 'Staff eid gifts', { payee: 'Admin' }),
-            e(16, 'cat-16', 650, 'Bank charges', { payee: 'City Bank', fundId: 'F-02' }),
-            e(18, 'cat-17', 7500, 'Trade licence renewal', { payee: 'City Corporation', fundId: 'F-02' }),
-            e(20, 'cat-18', 1200, 'Courier charges', { payee: 'Sundarban Courier' }),
-            e(22, 'cat-15', 15000, 'Audit fee, advance', { payee: 'Rahman & Co.', fundId: 'F-02', paymentMethod: 'Cheque', createdBy: 'Nadia Rahman' }),
-            e(27, 'cat-10', 16800, 'Electricity bill, head office', { payee: 'DESCO', fundId: 'F-02' }),
-            e(33, 'cat-9', 45000, 'Head office rent', { payee: 'Mr. Alam', meta: { property: 'Head office, Dhaka', period: DateTime.now().minus({ months: 1 }).toFormat('yyyy-MM'), landlord: 'Mr. Alam' }, fundId: 'F-02', createdBy: 'Nadia Rahman' }),
+            e(0, 'expense-types-8', 1800, 'Lunch with client visitors', { meta: { persons: '6', occasion: 'Client lunch' }, createdBy: 'Mehedi Hasan', paid: false, fundId: null }),
+            e(0, 'expense-types-6', 450, 'Site visit transport', { meta: { from: 'Dhaka', to: 'Savar', mode: 'CNG', person: 'Mehedi Hasan', distance: '32' }, projectId: 'P-2003', createdBy: 'Mehedi Hasan', paid: false, fundId: null }),
+            e(1, 'expense-types-1', 2400, 'Printer toner and paper', { payee: 'Star Stationery' }),
+            e(1, 'expense-types-10', 18500, 'Electricity bill, head office', { payee: 'DESCO', status: 'pending', paid: false, fundId: null, approvals: [{ roleId: 'accountant', roleName: 'Accountant', status: 'pending', by: null, at: null }] }),
+            e(2, 'expense-types-5', 56000, 'Contactor and relay set for site panels', { payee: 'Electro Parts', projectId: 'P-2001', status: 'pending', paid: false, fundId: null, items: [{ name: 'Contactor 63A', qty: 8, unit: 'pcs', unitCost: 4500 }, { name: 'Relay 24V', qty: 20, unit: 'pcs', unitCost: 1000 }], approvals: [{ roleId: 'manager', roleName: 'Manager', status: 'pending', by: null, at: null }, { roleId: 'accountant', roleName: 'Accountant', status: 'waiting', by: null, at: null }] }),
+            e(3, 'expense-types-7', 12000, 'Facebook ads: panel services', { meta: { campaign: 'Panel services Q4', channel: 'Facebook / social' }, status: 'pending', paid: false, fundId: null, approvals: [{ roleId: 'accountant', roleName: 'Accountant', status: 'pending', by: null, at: null }] }),
+            e(4, 'expense-types-3', 50000, 'Part payment to Steelcraft', { vendorId: 'V-1001', paymentMethod: 'Bank transfer', paid: false, fundId: null, meta: { invoiceNo: 'ST-2210' }, status: 'approved', approvals: [] }),
+            e(5, 'expense-types-9', 45000, 'Head office rent', { payee: 'Mr. Alam', meta: { property: 'Head office, Dhaka', period: DateTime.now().toFormat('yyyy-MM'), landlord: 'Mr. Alam' }, paymentMethod: 'Bank transfer', fundId: 'F-02', createdBy: 'Nadia Rahman' }),
+            e(6, 'expense-types-4', 30000, 'Guard service, monthly', { vendorId: 'V-1002', paid: false, fundId: null }),
+            e(7, 'expense-types-12', 3200, 'Visiting cards', { payee: 'Quick Print' }),
+            e(8, 'expense-types-2', 24000, 'Cable lugs and tape for stock', { payee: 'Metro Electrics', items: [{ name: 'Copper lug 120 sq mm', qty: 100, unit: 'pcs', unitCost: 190 }, { name: 'Insulation tape', qty: 80, unit: 'roll', unitCost: 62 }], status: 'approved', paid: true, approvals: [{ roleId: 'accountant', roleName: 'Accountant', status: 'approved', by: 'Nadia Rahman', at: DateTime.now().minus({ days: 8 }).toISO() }], fundId: 'F-02', paymentMethod: 'Bank transfer' }),
+            e(9, 'expense-types-13', 1500, 'Office internet', { payee: 'Link3' }),
+            e(10, 'expense-types-6', 900, 'Client meeting travel', { meta: { from: 'Office', to: 'Gulshan', mode: 'Car / taxi', person: 'Brian Hughes' }, createdBy: 'Brian Hughes' }),
+            e(11, 'expense-types-11', 8200, 'AC servicing', { payee: 'CoolFix', rejectionReason: 'Covered by the maintenance contract.', status: 'rejected', paid: false, fundId: null, approvals: [{ roleId: 'accountant', roleName: 'Accountant', status: 'rejected', by: 'Nadia Rahman', at: DateTime.now().minus({ days: 10 }).toISO() }] }),
+            e(12, 'expense-types-8', 2600, 'Site team tea and snacks', { meta: { persons: '12', occasion: 'Site team' }, projectId: 'P-2001', createdBy: 'Mehedi Hasan' }),
+            e(14, 'expense-types-14', 4800, 'Staff eid gifts', { payee: 'Admin' }),
+            e(16, 'expense-types-16', 650, 'Bank charges', { payee: 'City Bank', fundId: 'F-02' }),
+            e(18, 'expense-types-17', 7500, 'Trade licence renewal', { payee: 'City Corporation', fundId: 'F-02' }),
+            e(20, 'expense-types-18', 1200, 'Courier charges', { payee: 'Sundarban Courier' }),
+            e(22, 'expense-types-15', 15000, 'Audit fee, advance', { payee: 'Rahman & Co.', fundId: 'F-02', paymentMethod: 'Cheque', createdBy: 'Nadia Rahman' }),
+            e(27, 'expense-types-10', 16800, 'Electricity bill, head office', { payee: 'DESCO', fundId: 'F-02' }),
+            e(33, 'expense-types-9', 45000, 'Head office rent', { payee: 'Mr. Alam', meta: { property: 'Head office, Dhaka', period: DateTime.now().minus({ months: 1 }).toFormat('yyyy-MM'), landlord: 'Mr. Alam' }, fundId: 'F-02', createdBy: 'Nadia Rahman' }),
         ];
     }
 }
