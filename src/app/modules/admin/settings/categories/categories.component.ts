@@ -1,8 +1,9 @@
 import { ExpensesService } from '../../expenses/expenses.service';
 import { StoreService } from '../../store/store.service';
 import { AccessService } from 'app/core/access/access.service';
-import { Component, ViewEncapsulation } from '@angular/core';
+import { AfterViewInit, Component, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { Category, CATEGORY_GROUPS, CategoryGroup, CategoryService } from 'app/core/categories/categories.service';
 import { FundsService } from '../../treasury/funds/funds.service';
@@ -29,7 +30,7 @@ interface Section {
     standalone: true,
     imports: [FormsModule, MatButtonModule],
 })
-export class CategoriesSettingsComponent {
+export class CategoriesSettingsComponent implements AfterViewInit {
     readonly sections: Section[];
 
     drafts: Record<string, { name: string; description: string; kind: string }> = {};
@@ -44,7 +45,8 @@ export class CategoriesSettingsComponent {
         org: OrgFundsService,
         funds: FundsService,
         store: StoreService,
-        expenses: ExpensesService
+        expenses: ExpensesService,
+        private _route: ActivatedRoute
     ) {
         const [orgGroup, requestGroup, storeGroup, expenseGroup] = CATEGORY_GROUPS;
         this.sections = [
@@ -81,6 +83,18 @@ export class CategoriesSettingsComponent {
         for (const s of this.sections) {
             this.drafts[s.group.id] = this._blankDraft(s);
         }
+    }
+
+    ngAfterViewInit(): void {
+        // A link such as /settings/categories#expense-types scrolls straight to that section.
+        const fragment = this._route.snapshot.fragment;
+        if (fragment) {
+            setTimeout(() => this.jump(fragment));
+        }
+    }
+
+    jump(groupId: string): void {
+        document.getElementById(`section-${groupId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     add(section: Section): void {

@@ -8,9 +8,16 @@
             </div>
         </div>
 
-        <div class="mt-8 flex flex-col gap-6">
+        <!-- Jump to a section -->
+        <nav class="mt-6 flex flex-wrap gap-2" aria-label="Category sections">
             @for (section of sections; track section.group.id) {
-                <section class="rounded-2xl bg-card shadow" [attr.aria-labelledby]="'cat-title-' + section.group.id">
+                <button type="button" class="fund-chip" (click)="jump(section.group.id)">{{ section.group.title }} ({{ categories.list(section.group.id).length }})</button>
+            }
+        </nav>
+
+        <div class="mt-6 flex flex-col gap-6">
+            @for (section of sections; track section.group.id) {
+                <section class="rounded-2xl bg-card shadow" [id]="'section-' + section.group.id" [attr.aria-labelledby]="'cat-title-' + section.group.id">
                     <div class="p-6 pb-4">
                         <div class="flex flex-wrap items-center gap-3">
                             <h2 [id]="'cat-title-' + section.group.id" class="text-xl font-semibold">{{ section.group.title }}</h2>
