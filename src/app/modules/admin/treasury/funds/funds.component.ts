@@ -1,7 +1,7 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, DestroyRef, inject, signal, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -173,13 +173,28 @@ export class FundsComponent {
     constructor(
         public funds: FundsService,
         public access: AccessService,
-        route: ActivatedRoute
+        route: ActivatedRoute,
+        router: Router
     ) {
         // A notification links here with ?request=FR-1024 to open that request.
         route.queryParamMap.pipe(takeUntilDestroyed(inject(DestroyRef))).subscribe((params) => {
             const id = params.get('request');
             if (id) {
                 this.selectedId.set(id);
+            }
+            // Menu links: ?tab=requests|transactions, ?status=pending|approved|..., ?action=new
+            const tab = params.get('tab');
+            if (tab === 'requests' || tab === 'transactions') {
+                this.tab.set(tab);
+            }
+            const status = params.get('status');
+            if (status) {
+                this.status.set(status as 'all' | FundRequestStatus);
+                this.range.set('all');
+            }
+            if (params.get('action') === 'new' && access.can('fund-requests.add')) {
+                Promise.resolve().then(() => this.openNew());
+                void router.navigate([], { relativeTo: route, queryParams: { action: null }, queryParamsHandling: 'merge', replaceUrl: true });
             }
         });
     }

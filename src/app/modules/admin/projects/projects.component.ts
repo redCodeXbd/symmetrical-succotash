@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -45,6 +46,17 @@ export class ProjectsComponent {
     contractTotal = computed(() => this.service.projects().reduce((s, p) => s + p.contractValue, 0));
     budgetTotal = computed(() => this.service.projects().reduce((s, p) => s + p.budget, 0));
     profitTotal = computed(() => this.service.projects().reduce((s, p) => s + this.service.costing(p.id).profitToDate, 0));
+
+    /** Menu links: ?action=add, ?status=planning|in_progress|on_hold|delivered */
+    private _deep = watchQuery((q) => {
+        const status = q.get('status');
+        if (status && ['all', 'planning', 'in_progress', 'on_hold', 'delivered'].includes(status)) {
+            this.status.set(status as 'all' | ProjectStatus);
+        }
+        if (q.get('action') === 'add' && this.access.can('projects.add')) {
+            this.formOpen.set(true);
+        }
+    });
 
     constructor(
         public service: ProjectsService,

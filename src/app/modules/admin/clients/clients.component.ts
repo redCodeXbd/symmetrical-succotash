@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { Component, computed, OnInit, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -28,6 +29,17 @@ export class ClientsComponent implements OnInit {
                     (this.status() === 'all' || c.status === this.status()) &&
                     (!q || [c.id, c.name, c.contactPerson, c.city, c.email].some((v) => v.toLowerCase().includes(q)))
             );
+    });
+
+    /** Menu links: ?action=add, ?status=active|inactive */
+    private _deep = watchQuery((q) => {
+        const status = q.get('status');
+        if (status === 'active' || status === 'inactive' || status === 'all') {
+            this.status.set(status);
+        }
+        if (q.get('action') === 'add' && this.access.can('clients.add')) {
+            this.formOpen.set(true);
+        }
     });
 
     constructor(

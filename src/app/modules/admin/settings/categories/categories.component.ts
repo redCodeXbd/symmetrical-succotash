@@ -2,7 +2,8 @@ import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { ExpensesService } from '../../expenses/expenses.service';
 import { StoreService } from '../../store/store.service';
 import { AccessService } from 'app/core/access/access.service';
-import { AfterViewInit, Component, ViewEncapsulation } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, inject, ViewEncapsulation } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -33,6 +34,7 @@ interface Section {
 })
 export class CategoriesSettingsComponent implements AfterViewInit {
     readonly sections: Section[];
+    private _destroyRef = inject(DestroyRef);
 
     drafts: Record<string, { name: string; description: string; kind: string }> = {};
     errors: Record<string, string | null> = {};
@@ -81,11 +83,19 @@ export class CategoriesSettingsComponent implements AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-        // A link such as /settings/categories#expense-types scrolls straight to that section.
-        const fragment = this._route.snapshot.fragment;
-        if (fragment) {
-            setTimeout(() => this.jump(fragment));
-        }
+        // A menu link such as /settings/categories#expense-types scrolls straight to that section.
+        this._route.fragment.pipe(takeUntilDestroyed(this._destroyRef)).subscribe((fragment) => {
+            if (fragment) {
+                setTimeout(() => this.jump(fragment));
+            }
+        });
+        // ... and so does the menu link /settings/categories?section=expense-types
+        this._route.queryParamMap.pipe(takeUntilDestroyed(this._destroyRef)).subscribe((query) => {
+            const section = query.get('section');
+            if (section) {
+                setTimeout(() => this.jump(section), 150);
+            }
+        });
     }
 
     jump(groupId: string): void {

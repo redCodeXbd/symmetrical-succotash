@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -30,6 +31,13 @@ export class LinkedUsersComponent {
     target = signal<AppUser | null>(null);
     form = { name: '', email: '', phone: '', address: '', companyId: '', active: true };
     error: string | null = null;
+
+    /** Menu link: ?action=add */
+    private _deep = watchQuery((q) => {
+        if (q.get('action') === 'add' && this.access.can('users.add')) {
+            this.openAdd();
+        }
+    });
 
     constructor(
         public access: AccessService,

@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -201,6 +202,14 @@ export class TransactionsComponent {
     });
 
     totalPaid = computed(() => this.payments().reduce((sum, p) => sum + p.t.amount, 0));
+
+    /** Menu links: ?tab=payments|returns|actions|movements */
+    private _deep = watchQuery((q) => {
+        const tab = q.get('tab');
+        if (tab && ['payments', 'returns', 'actions', 'movements'].includes(tab)) {
+            this.tab.set(tab as Tab);
+        }
+    }, []);
 
     constructor(
         public funds: FundsService,
