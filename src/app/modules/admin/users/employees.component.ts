@@ -219,6 +219,54 @@ export class EmployeesComponent {
         this._open('promote');
     }
 
+    /** The career of the person as a timeline: each promotion with only what changed, and the joining at the end. */
+    career(p: EmployeeProfile) {
+        const canSalary = this.access.can('users.view_salary');
+        const sorted = [...p.promotions].sort((a, b) => b.date.localeCompare(a.date));
+        const steps = sorted.map((h) => {
+            const changes: { label: string; from: string; to: string }[] = [];
+            if (h.from.designation !== h.to.designation) {
+                changes.push({ label: 'Designation', from: h.from.designation || 'New hire', to: h.to.designation });
+            }
+            if (h.from.employmentType !== h.to.employmentType) {
+                changes.push({ label: 'Employment', from: h.from.employmentType, to: h.to.employmentType });
+            }
+            if (h.from.department !== h.to.department) {
+                changes.push({ label: 'Department', from: h.from.department, to: h.to.department });
+            }
+            const raise = h.to.gross - h.from.gross;
+            return { h, changes, raise: canSalary ? raise : 0, pct: canSalary && h.from.gross > 0 ? (raise / h.from.gross) * 100 : 0, ago: DateTime.fromISO(h.date).toRelative() ?? '' };
+        });
+        const first = sorted[sorted.length - 1];
+        const startGross = first ? first.from.gross : p.salary.gross;
+        const tenure = DateTime.now().diff(DateTime.fromISO(p.joiningDate), ['years', 'months']).toObject();
+        const years = Math.floor(tenure.years ?? 0);
+        const months = Math.floor(tenure.months ?? 0);
+        return {
+            steps,
+            joined: { date: p.joiningDate, designation: first ? first.from.designation || p.designation : p.designation, type: first ? first.from.employmentType : p.employmentType, department: first ? first.from.department : p.department, gross: startGross },
+            tenure: [years ? `${years} yr` : '', months || !years ? `${months} mo` : ''].filter(Boolean).join(' '),
+            sinceLast: sorted[0] ? (DateTime.fromISO(sorted[0].date).toRelative({ style: 'short' }) ?? '') : '',
+            growth: canSalary && startGross > 0 ? ((p.salary.gross - startGross) / startGross) * 100 : 0,
+            startGross,
+        };
+    }
+
+    historyDoc = (): ReportDoc => {
+        const p = this.profile;
+        const canSalary = this.access.can('users.view_salary');
+        return {
+            kind: 'table',
+            title: `Promotion history of ${this.target()?.name ?? ''}`,
+            subtitle: `${p?.designation ?? ''} · ${p?.employeeId ?? ''} · ${p?.promotions.length ?? 0} promotions`,
+            columns: [{ header: 'Date' }, { header: 'From' }, { header: 'To' }, { header: 'Department' }, { header: 'Employment' }, { header: 'Approved by' }, ...(canSalary ? [{ header: 'Gross before', format: 'number' as const }, { header: 'Gross after', format: 'number' as const }] : [])],
+            rows: (p?.promotions ?? []).map((h) => [
+                DateTime.fromISO(h.date).toFormat('dd MMM y'), h.from.designation || 'New hire', h.to.designation, `${h.from.department} to ${h.to.department}`,
+                `${h.from.employmentType} to ${h.to.employmentType}`, h.by, ...(canSalary ? [h.from.gross, h.to.gross] : []),
+            ]),
+        };
+    };
+
     openHistory(user: AppUser): void {
         this.target.set(user);
         this._open('history');
