@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ThemeService } from 'app/core/theme/theme.service';
 import { AppTheme, THEME_PRESETS, ThemePreset } from 'app/core/theme/theme.types';
+import { SwitchComponent } from '../../treasury/shared/switch/switch.component';
 import { ColorFieldComponent } from './color-field.component';
 
 const MAX_LOGO_BYTES = 1024 * 1024;
@@ -14,7 +15,7 @@ const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
     templateUrl: './theme.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [MatButtonModule, MatIconModule, ColorFieldComponent],
+    imports: [MatButtonModule, MatIconModule, ColorFieldComponent, SwitchComponent],
 })
 export class ThemeSettingsComponent implements OnDestroy {
     readonly presets = THEME_PRESETS;

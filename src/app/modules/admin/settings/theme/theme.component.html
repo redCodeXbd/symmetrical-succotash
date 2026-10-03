@@ -90,10 +90,7 @@
                             @if (logoError) {
                                 <div class="text-xs text-red-600" role="alert">{{ logoError }}</div>
                             }
-                            <label class="mt-1 flex items-center gap-2 text-md">
-                                <input type="checkbox" [checked]="t.logoBadge" (change)="set({ logoBadge: $any($event.target).checked })" />
-                                Put the logo on a white badge (for dark logos on a dark sidebar)
-                            </label>
+                            <treasury-switch class="mt-1" label="Put the logo on a white badge" hint="For dark logos on a dark sidebar" [checked]="t.logoBadge" (toggled)="set({ logoBadge: $event })" />
                         </div>
                     </div>
                 </section>
@@ -169,10 +166,7 @@
                             <input id="sb-tint" type="range" min="0" max="90" step="1" [value]="t.sidebarTint" (input)="set({ sidebarTint: +$any($event.target).value })" />
                         </div>
                     </div>
-                    <label class="mt-4 flex items-center gap-2 text-md">
-                        <input type="checkbox" [checked]="t.sidebarGlow" (change)="set({ sidebarGlow: $any($event.target).checked })" />
-                        Neon glow on the active item and sidebar edge
-                    </label>
+                    <treasury-switch class="mt-4" label="Neon glow" hint="On the active item and the sidebar edge" [checked]="t.sidebarGlow" (toggled)="set({ sidebarGlow: $event })" />
 
                     <h3 class="mt-7 text-sm font-medium uppercase tracking-wide text-secondary">Header</h3>
                     <div class="mt-3 grid grid-cols-1 gap-5 sm:grid-cols-3">

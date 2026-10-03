@@ -6,6 +6,7 @@ import { AccessService } from 'app/core/access/access.service';
 import { AppUser } from 'app/core/access/access.types';
 import { ClientsService } from '../clients/clients.service';
 import { AddButtonComponent } from '../treasury/shared/add-button/add-button.component';
+import { SwitchComponent } from '../treasury/shared/switch/switch.component';
 import { SlideOverComponent } from '../treasury/shared/slide-over/slide-over.component';
 import { UserSwitchComponent } from '../treasury/shared/user-switch/user-switch.component';
 import { VendorsService } from '../vendors/vendors.service';
@@ -18,7 +19,7 @@ type Kind = 'vendor' | 'client' | 'customer';
     templateUrl: './linked-users.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [FormsModule, MatButtonModule, RouterLink, AddButtonComponent, SlideOverComponent, UserSwitchComponent],
+    imports: [FormsModule, MatButtonModule, RouterLink, AddButtonComponent, SlideOverComponent, SwitchComponent, UserSwitchComponent],
 })
 export class LinkedUsersComponent {
     kind = signal<Kind>('vendor');

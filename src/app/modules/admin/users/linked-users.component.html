@@ -81,7 +81,7 @@
                 </select>
             </label>
             }
-            <label class="flex items-center gap-3"><input type="checkbox" class="h-5 w-5" name="ac" [(ngModel)]="form.active" />Active</label>
+            <treasury-switch name="ac" label="Active" hint="Switch off to stop this login" [(ngModel)]="form.active" />
             @if (error) { <div class="rounded-lg bg-red-50 p-3 text-md text-red-800" role="alert">{{ error }}</div> }
         </form>
         <ng-container footer>

@@ -91,69 +91,108 @@
 
 <!-- ================= Add / edit ================= -->
 @if (panel() === 'form') {
-    <treasury-slide-over [heading]="target() ? 'Edit employee' : 'Add employee'" [subheading]="target()?.name ?? ''" (closed)="close()">
-        <div class="-mt-2 mb-4 flex overflow-x-auto border-b" role="tablist">
+    <treasury-slide-over [wide]="true" [heading]="target() ? 'Edit employee' : 'Add employee'" [subheading]="target() ? 'Update details, work placement, pay and access' : 'Fill in the details, you can change them later'" (closed)="close()">
+        <div class="flex items-center gap-4 rounded-2xl bg-primary/10 p-4">
+            <div class="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-full bg-primary text-xl font-bold text-on-primary">
+                @if (target()?.avatar) { <img [src]="target()!.avatar" alt="" class="h-full w-full object-cover" /> } @else { {{ initials }} }
+            </div>
+            <div class="min-w-0 flex-auto">
+                <div class="truncate text-xl font-semibold">{{ (form.firstName + ' ' + form.lastName).trim() || 'New employee' }}</div>
+                <div class="text-secondary truncate text-md">{{ form.designation || 'No designation yet' }}{{ form.employeeId ? ' · ' + form.employeeId : '' }}</div>
+            </div>
+            <treasury-switch name="ac" label="Active" [(ngModel)]="form.active" />
+        </div>
+
+        <div class="emp-tabs mt-4" role="tablist" aria-label="Employee details">
             @for (t of tabs; track t.id) {
-                <button type="button" role="tab" class="-mb-px h-12 flex-none border-b-2 px-4 text-md font-medium" [class]="formTab() === t.id ? 'border-primary text-primary' : 'border-transparent text-secondary'" [attr.aria-selected]="formTab() === t.id" (click)="formTab.set(t.id)">{{ t.label }}</button>
+                <button type="button" role="tab" [attr.aria-selected]="formTab() === t.id" (click)="formTab.set(t.id)"><mat-icon class="icon-size-4" [svgIcon]="t.icon"></mat-icon>{{ t.label }}</button>
             }
         </div>
-        <form id="employee-form" class="flex flex-col gap-4" (ngSubmit)="save()">
+
+        <form id="employee-form" class="mt-4 flex flex-col gap-4" (ngSubmit)="save()">
             @if (formTab() === 'general') {
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="block"><span class="text-sm font-medium">First name *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="fn" [disabled]="nameLocked" [(ngModel)]="form.firstName" /></label>
-                    <label class="block"><span class="text-sm font-medium">Last name *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="ln" [disabled]="nameLocked" [(ngModel)]="form.lastName" /></label>
-                </div>
-                @if (nameLocked) { <div class="text-secondary -mt-2 text-xs">The name is used on fund requests, so it cannot change.</div> }
-                <label class="block"><span class="text-sm font-medium">Email *</span><input type="email" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="em" [(ngModel)]="form.email" /></label>
-                <label class="block"><span class="text-sm font-medium">Phone number *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ph" [(ngModel)]="form.phone" /></label>
-                <label class="block"><span class="text-sm font-medium">Password</span><input type="password" autocomplete="new-password" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="pw" [(ngModel)]="password" /><span class="text-secondary mt-1 block text-xs">Password will be updated only if you provide any value. The demo does not store passwords.</span></label>
-                @if (access.can('roles.assign')) {
-                    <fieldset>
-                        <legend class="text-sm font-medium">Roles</legend>
-                        <div class="mt-2 flex flex-wrap gap-2">
-                            @for (r of access.roles(); track r.id) {
-                                <label class="flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 text-sm" [class]="form.roleIds.includes(r.id) ? 'border-primary bg-primary/10' : ''"><input type="checkbox" class="h-4 w-4" [checked]="form.roleIds.includes(r.id)" (change)="toggleRole(r.id, $event)" />{{ r.name }}</label>
-                            }
-                        </div>
-                    </fieldset>
-                }
+                <section class="form-card" aria-label="Personal details">
+                    <div class="form-card-title">Personal</div>
+                    <div class="mt-3 grid grid-cols-2 gap-3">
+                        <label class="block"><span class="text-sm font-medium">First name *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="fn" [disabled]="nameLocked" [(ngModel)]="form.firstName" /></label>
+                        <label class="block"><span class="text-sm font-medium">Last name *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="ln" [disabled]="nameLocked" [(ngModel)]="form.lastName" /></label>
+                    </div>
+                    @if (nameLocked) { <div class="text-secondary mt-2 text-xs">The name is used on fund requests, so it cannot change.</div> }
+                    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <label class="block"><span class="text-sm font-medium">Email *</span><input type="email" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="em" [(ngModel)]="form.email" /></label>
+                        <label class="block"><span class="text-sm font-medium">Phone number *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="ph" [(ngModel)]="form.phone" /></label>
+                    </div>
+                </section>
             }
             @if (formTab() === 'office') {
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="block"><span class="text-sm font-medium">Designation *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ds" [(ngModel)]="form.designation" /></label>
-                    <label class="block"><span class="text-sm font-medium">Joining date</span><input type="date" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="jd" [(ngModel)]="form.joiningDate" /></label>
-                    <label class="block"><span class="text-sm font-medium">Employment type</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="et" [(ngModel)]="form.employmentType">@for (t of employmentTypes; track t) { <option [value]="t">{{ t }}</option> }</select></label>
-                    <label class="block"><span class="text-sm font-medium">Department</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="dp" [(ngModel)]="form.department">@for (d of departments; track d) { <option [value]="d">{{ d }}</option> }</select></label>
-                    <label class="block"><span class="text-sm font-medium">Workstation</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ws" [(ngModel)]="form.workstation" /></label>
-                    <label class="block"><span class="text-sm font-medium">Employee ID *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ei" [(ngModel)]="form.employeeId" /></label>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="block"><span class="text-sm font-medium">Company</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="oc" [(ngModel)]="form.orgCompanyId" (ngModelChange)="pickLevel('company')"><option value="">Not placed</option>@for (c of company.companies(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }</select></label>
-                    <label class="block"><span class="text-sm font-medium">Branch</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ob" [(ngModel)]="form.orgBranchId" (ngModelChange)="pickLevel('branch')" [disabled]="!form.orgCompanyId"><option value="">None</option>@for (b of branchChoices; track b.id) { <option [value]="b.id">{{ b.name }}</option> }</select></label>
-                    <label class="block"><span class="text-sm font-medium">Org department</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="od" [(ngModel)]="form.orgDeptId" (ngModelChange)="pickLevel('dept')" [disabled]="!form.orgBranchId"><option value="">None</option>@for (d of deptChoices; track d.id) { <option [value]="d.id">{{ d.name }}</option> }</select></label>
-                    <label class="block"><span class="text-sm font-medium">Team</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="ot" [(ngModel)]="form.orgTeamId" [disabled]="!form.orgDeptId"><option value="">None</option>@for (t of teamChoices; track t.id) { <option [value]="t.id">{{ t.name }}</option> }</select></label>
-                </div>
-                <label class="block"><span class="text-sm font-medium">Shift *</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="sh" [(ngModel)]="form.shift">@for (s of shifts; track s) { <option [value]="s">{{ s }}</option> }</select></label>
+                <section class="form-card" aria-label="Position">
+                    <div class="form-card-title">Position</div>
+                    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <label class="block"><span class="text-sm font-medium">Designation *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="ds" [(ngModel)]="form.designation" /></label>
+                        <label class="block"><span class="text-sm font-medium">Employee ID *</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="ei" [(ngModel)]="form.employeeId" /></label>
+                        <label class="block"><span class="text-sm font-medium">Employment type</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="et" [(ngModel)]="form.employmentType">@for (t of employmentTypes; track t) { <option [value]="t">{{ t }}</option> }</select></label>
+                        <label class="block"><span class="text-sm font-medium">Joining date</span><input type="date" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="jd" [(ngModel)]="form.joiningDate" /></label>
+                        <label class="block"><span class="text-sm font-medium">Department</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="dp" [(ngModel)]="form.department">@for (d of departments; track d) { <option [value]="d">{{ d }}</option> }</select></label>
+                        <label class="block"><span class="text-sm font-medium">Shift *</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="sh" [(ngModel)]="form.shift">@for (s of shifts; track s) { <option [value]="s">{{ s }}</option> }</select></label>
+                        <label class="block"><span class="text-sm font-medium">Workstation</span><input class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="ws" [(ngModel)]="form.workstation" /></label>
+                    </div>
+                </section>
+                <section class="form-card" aria-label="Where the person sits">
+                    <div class="form-card-title">Where they sit</div>
+                    <div class="form-card-sub">{{ placement || 'Not placed in a company yet' }}</div>
+                    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <label class="block"><span class="text-sm font-medium">Company</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="oc" [(ngModel)]="form.orgCompanyId" (ngModelChange)="pickLevel('company')"><option value="">Not placed</option>@for (c of company.companies(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }</select></label>
+                        <label class="block"><span class="text-sm font-medium">Branch</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="ob" [(ngModel)]="form.orgBranchId" (ngModelChange)="pickLevel('branch')" [disabled]="!form.orgCompanyId"><option value="">None</option>@for (b of branchChoices; track b.id) { <option [value]="b.id">{{ b.name }}</option> }</select></label>
+                        <label class="block"><span class="text-sm font-medium">Org department</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="od" [(ngModel)]="form.orgDeptId" (ngModelChange)="pickLevel('dept')" [disabled]="!form.orgBranchId"><option value="">None</option>@for (d of deptChoices; track d.id) { <option [value]="d.id">{{ d.name }}</option> }</select></label>
+                        <label class="block"><span class="text-sm font-medium">Team</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="ot" [(ngModel)]="form.orgTeamId" [disabled]="!form.orgDeptId"><option value="">None</option>@for (t of teamChoices; track t.id) { <option [value]="t.id">{{ t.name }}</option> }</select></label>
+                    </div>
+                </section>
             }
             @if (formTab() === 'salary' && access.can('users.view_salary')) {
-                <div class="grid grid-cols-2 gap-3">
-                    @for (f of salaryFields; track f.key) {
-                        <label class="block"><span class="text-sm font-medium">{{ f.label }}</span><input type="number" min="0" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" [name]="'sal-' + f.key" [(ngModel)]="form.salary[f.key]" /></label>
-                    }
-                </div>
-                <label class="flex items-center gap-3"><input type="checkbox" class="h-5 w-5" name="tx" [(ngModel)]="form.salary.taxApplicable" />Tax applicable</label>
-                <label class="flex items-center gap-3"><input type="checkbox" class="h-5 w-5" name="ot" [(ngModel)]="form.salary.overtimeCountable" />Overtime countable</label>
+                <section class="form-card" aria-label="Pay">
+                    <div class="form-card-title">Monthly pay</div>
+                    <div class="mt-3 grid grid-cols-2 gap-3">
+                        @for (f of salaryFields.slice(0, 7); track f.key) {
+                            <label class="block" [class.col-span-2]="f.key === 'gross'"><span class="text-sm font-medium">{{ f.label }}</span><input type="number" min="0" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" [name]="'sal-' + f.key" [(ngModel)]="form.salary[f.key]" /></label>
+                        }
+                    </div>
+                    <div class="text-secondary mt-3 text-sm">Components add up to {{ componentsTotal | number: '1.0-0' }} of {{ form.salary.gross | number: '1.0-0' }} gross.</div>
+                </section>
+                <section class="form-card" aria-label="Funds">
+                    <div class="form-card-title">Funds kept from pay</div>
+                    <div class="mt-3 grid grid-cols-2 gap-3">
+                        @for (f of salaryFields.slice(7); track f.key) {
+                            <label class="block"><span class="text-sm font-medium">{{ f.label }}</span><input type="number" min="0" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" [name]="'sal-' + f.key" [(ngModel)]="form.salary[f.key]" /></label>
+                        }
+                    </div>
+                </section>
+                <section class="form-card" aria-label="Pay rules">
+                    <div class="form-switch-row"><treasury-switch name="tx" label="Tax applicable" hint="Income tax is deducted from this pay" [(ngModel)]="form.salary.taxApplicable" /></div>
+                    <div class="form-switch-row"><treasury-switch name="ot" label="Overtime countable" hint="Extra hours are paid on top" [(ngModel)]="form.salary.overtimeCountable" /></div>
+                </section>
             }
-            <div class="mt-2 flex flex-wrap gap-x-6 gap-y-3 border-t pt-4">
-                <label class="flex items-center gap-3"><input type="checkbox" class="h-5 w-5" name="ac" [(ngModel)]="form.active" />Active</label>
-                <label class="flex items-center gap-3"><input type="checkbox" class="h-5 w-5" name="id" [(ngModel)]="form.canGenerateIdCard" />Can generate ID card</label>
-                <label class="flex items-center gap-3"><input type="checkbox" class="h-5 w-5" name="sy" [(ngModel)]="form.syncAppUser" />Sync app user</label>
-            </div>
+            @if (formTab() === 'access') {
+                <section class="form-card" aria-label="Sign in">
+                    <div class="form-card-title">Sign in</div>
+                    <label class="mt-3 block"><span class="text-sm font-medium">Password</span><input type="password" autocomplete="new-password" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md disabled:opacity-60" name="pw" [(ngModel)]="password" /><span class="text-secondary mt-1 block text-xs">Changed only if you type a new one. The demo does not store passwords.</span></label>
+                    <div class="form-switch-row mt-2"><treasury-switch name="sy" label="App login on" hint="Lets the person sign in to the app" [(ngModel)]="form.syncAppUser" /></div>
+                    <div class="form-switch-row"><treasury-switch name="id" label="Can generate ID card" hint="Allowed to print their own ID card" [(ngModel)]="form.canGenerateIdCard" /></div>
+                </section>
+                @if (access.can('roles.assign')) {
+                    <section class="form-card" aria-label="Roles">
+                        <div class="form-card-title">Roles</div>
+                        <div class="form-card-sub">What the person is allowed to do. A person can have more than one.</div>
+                        @for (r of roleChoices; track r.id) {
+                            <div class="form-switch-row"><treasury-switch [label]="r.name" [hint]="r.description" [checked]="form.roleIds.includes(r.id)" (toggled)="toggleRole(r.id, $event)" /></div>
+                        }
+                    </section>
+                }
+            }
             @if (error) { <div class="rounded-lg bg-red-50 p-3 text-md text-red-800" role="alert">{{ error }}</div> }
         </form>
         <ng-container footer>
             <button mat-stroked-button type="button" (click)="close()">Cancel</button>
-            <button mat-flat-button color="primary" type="submit" form="employee-form">{{ target() ? 'Update' : 'Add' }}</button>
+            <button mat-flat-button color="primary" type="submit" form="employee-form">{{ target() ? 'Save changes' : 'Add employee' }}</button>
         </ng-container>
     </treasury-slide-over>
 }
@@ -204,8 +243,8 @@
                     <label class="block"><span class="text-sm font-medium">{{ f.label }}</span><input type="number" min="0" class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" [name]="'psal-' + f.key" [(ngModel)]="form.salary[f.key]" /></label>
                 }
             </div>
-            <label class="flex items-center gap-3"><input type="checkbox" class="h-5 w-5" name="ptx" [(ngModel)]="form.salary.taxApplicable" />Tax applicable</label>
-            <label class="flex items-center gap-3"><input type="checkbox" class="h-5 w-5" name="pot" [(ngModel)]="form.salary.overtimeCountable" />Overtime countable</label>
+            <treasury-switch name="ptx" label="Tax applicable" [(ngModel)]="form.salary.taxApplicable" />
+            <treasury-switch name="pot" label="Overtime countable" [(ngModel)]="form.salary.overtimeCountable" />
             @if (error) { <div class="rounded-lg bg-red-50 p-3 text-md text-red-800" role="alert">{{ error }}</div> }
         </form>
         <ng-container footer>

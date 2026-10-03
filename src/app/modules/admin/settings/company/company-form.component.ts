@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { SwitchComponent } from '../../treasury/shared/switch/switch.component';
 import { SlideOverComponent } from '../../treasury/shared/slide-over/slide-over.component';
 import { CompanyService } from './company.service';
 import { Company, CompanyInput, CURRENCIES, MONTHS } from './company.types';
@@ -10,7 +11,7 @@ import { Company, CompanyInput, CURRENCIES, MONTHS } from './company.types';
     selector: 'company-form',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [FormsModule, MatButtonModule, SlideOverComponent],
+    imports: [FormsModule, MatButtonModule, SlideOverComponent, SwitchComponent],
     template: `
         <treasury-slide-over [heading]="company ? 'Edit company' : 'Add company'" subheading="Legal and contact details" (closed)="closed.emit()">
             <form id="company-form" class="flex flex-col gap-4" (ngSubmit)="save()">
@@ -28,7 +29,7 @@ import { Company, CompanyInput, CURRENCIES, MONTHS } from './company.types';
                     <label class="block"><span class="text-sm font-medium">Fiscal year starts</span><select class="mt-1 h-11 w-full rounded-lg border bg-transparent px-3 text-md" name="fy" [(ngModel)]="form.fiscalStartMonth">@for (m of months; track m; let i = $index) { <option [ngValue]="i + 1">{{ m }}</option> }</select></label>
                 </div>
                 <label class="block"><span class="text-sm font-medium">Address</span><textarea rows="2" class="mt-1 w-full rounded-lg border bg-transparent px-3 py-2 text-md" name="addr" [(ngModel)]="form.address"></textarea></label>
-                <label class="flex items-center gap-2"><input type="checkbox" name="active" [(ngModel)]="form.active" /><span class="text-md">Active</span></label>
+                <treasury-switch name="active" label="Active" hint="Switch off to hide the company from pickers" [(ngModel)]="form.active" />
                 @if (error) {
                     <div class="text-sm text-red-600" role="alert">{{ error }}</div>
                 }
