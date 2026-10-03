@@ -4,7 +4,8 @@ import { AccessService } from 'app/core/access/access.service';
 import { AppUser } from 'app/core/access/access.types';
 import { FundsService } from '../treasury/funds/funds.service';
 import { SEED_DEPARTMENT_IDS } from '../settings/company/company.types';
-import { BLANK_SALARY, EmployeeProfile, SalaryStructure } from './users.types';
+import { ExpensesService } from '../expenses/expenses.service';
+import { BLANK_SALARY, EmployeeProfile, LedgerEntry, LedgerRow, LEDGER_KINDS, SalaryStructure } from './users.types';
 
 export interface EmployeeInput {
     firstName: string;
@@ -39,7 +40,8 @@ export class UsersService {
 
     constructor(
         private _access: AccessService,
-        private _funds: FundsService
+        private _funds: FundsService,
+        private _expenses: ExpensesService
     ) {}
 
     /** Staff: everyone who is not a client or vendor login. */
@@ -181,7 +183,11 @@ export class UsersService {
                 ? { securityBalance: balance - amount, securityWithdrawn: current.funds.securityWithdrawn + amount }
                 : { providentBalance: balance - amount, providentWithdrawn: current.funds.providentWithdrawn + amount }),
         };
-        const next = { ...current, funds };
+        const entry: LedgerEntry = {
+            id: `LG-${Date.now()}`, date: DateTime.now().toISO(), kind: fund === 'security' ? 'security_out' : 'provident_out', amount,
+            note: `Refunded from the ${fund} fund`, by: this._access.user().name,
+        };
+        const next = { ...current, funds, ledger: [entry, ...current.ledger] };
         this._profiles.update((list) => (list.some((p) => p.userId === userId) ? list.map((p) => (p.userId === userId ? next : p)) : [...list, next]));
         return null;
     }
@@ -250,7 +256,69 @@ export class UsersService {
             department: 'Service Team', workstation: '', orgCompanyId: '', orgBranchId: '', orgDeptId: '', orgTeamId: '', employeeId: '', shift: 'Head Office Shift', salary: { ...BLANK_SALARY },
             canGenerateIdCard: false, syncAppUser: true,
             funds: { totalSalary: 0, totalBonus: 0, securityBalance: 0, securityWithdrawn: 0, providentBalance: 0, providentWithdrawn: 0 },
-            promotions: [],
+            ledger: [], promotions: [],
+        };
+    }
+
+    /** Four months of pay, one bonus and the fund deposits kept from each month's pay. */
+    private _seedLedger(userId: string, gross: number, days: (n: number) => string): LedgerEntry[] {
+        const sec = Math.round(gross * 0.02);
+        const prov = Math.round(gross * 0.03);
+        const out: LedgerEntry[] = [];
+        for (let i = 1; i <= 4; i++) {
+            const date = days(i * 30 - 3);
+            out.push({ id: `LG-${userId}-s${i}`, date, kind: 'salary', amount: gross, note: `Salary for ${DateTime.fromISO(date).toFormat('LLLL y')}`, by: 'Accounts' });
+            out.push({ id: `LG-${userId}-c${i}`, date, kind: 'security_in', amount: sec, note: 'Kept from pay', by: 'Accounts' });
+            out.push({ id: `LG-${userId}-p${i}`, date, kind: 'provident_in', amount: prov, note: 'Kept from pay', by: 'Accounts' });
+        }
+        out.push({ id: `LG-${userId}-b1`, date: days(45), kind: 'bonus', amount: Math.round(gross * 0.5), note: 'Festival bonus', by: 'Accounts' });
+        return out;
+    }
+
+    /** Everything that moved between the company and the person, newest first. */
+    ledger(userId: string): LedgerRow[] {
+        const user = this._access.users().find((u) => u.id === userId);
+        const profile = this.profile(userId);
+        const rows: LedgerRow[] = profile.ledger.map((e) => ({
+            id: e.id, date: e.date, kind: e.kind, flow: LEDGER_KINDS[e.kind].flow, title: LEDGER_KINDS[e.kind].label, note: e.note, ref: '', amount: e.amount, by: e.by,
+        }));
+        for (const p of profile.promotions) {
+            rows.push({
+                id: p.id, date: p.date, kind: 'promotion', flow: 'info', title: 'Promotion', ref: p.id, amount: 0, by: p.by,
+                note: `${p.from.designation} to ${p.to.designation}, gross ${p.from.gross.toLocaleString('en-US')} to ${p.to.gross.toLocaleString('en-US')}`,
+            });
+        }
+        if (user) {
+            const mine = new Map(this._funds.requests().filter((r) => r.employee === user.name).map((r) => [r.id, r]));
+            for (const t of this._funds.transactions()) {
+                const r = mine.get(t.requestId);
+                if (r) {
+                    rows.push({ id: t.id, date: t.date, kind: 'advance', flow: 'in', title: 'Fund request', ref: r.id, amount: t.amount, by: t.recordedBy, note: `${r.purpose} (${t.method})` });
+                }
+            }
+            for (const f of this._funds.returns()) {
+                if (f.employee === user.name && f.status === 'received') {
+                    rows.push({ id: f.id, date: f.decidedAt ?? f.createdAt, kind: 'advance_return', flow: 'out', title: 'Money returned', ref: f.requestId, amount: f.amount, by: f.decidedBy ?? '', note: f.note || `Returned on ${f.requestId}` });
+                }
+            }
+        }
+        return rows.sort((a, b) => b.date.localeCompare(a.date));
+    }
+
+    /** Fund request money the person has taken and given back, and how many costs they entered. */
+    activity(userId: string) {
+        const rows = this.ledger(userId);
+        const sum = (k: LedgerRow['kind']) => rows.filter((r) => r.kind === k).reduce((s, r) => s + r.amount, 0);
+        const name = this._access.users().find((u) => u.id === userId)?.name ?? '';
+        const costs = this._expenses.expenses().filter((e) => e.createdBy === name && e.status !== 'rejected');
+        const taken = sum('advance');
+        const returned = sum('advance_return');
+        return {
+            taken, returned, outstanding: Math.max(taken - returned, 0),
+            requests: this._funds.requests().filter((r) => r.employee === name).length,
+            expenses: costs.length,
+            expensesTotal: costs.reduce((s, e) => s + e.amount, 0),
+            paySlips: rows.filter((r) => r.kind === 'salary').length,
         };
     }
 
@@ -271,6 +339,7 @@ export class UsersService {
             },
             canGenerateIdCard: true,
             funds: { totalSalary: gross * 4, totalBonus: Math.round(gross * 0.5), securityBalance: Math.round(gross * 0.08), securityWithdrawn: 0, providentBalance: Math.round(gross * 0.12), providentWithdrawn: 0 },
+            ledger: this._seedLedger(userId, gross, days),
             ...extra,
         });
         return [

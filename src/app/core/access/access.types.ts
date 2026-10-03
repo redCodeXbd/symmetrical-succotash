@@ -167,6 +167,7 @@ export const FEATURES: FeatureDef[] = [
             { key: 'edit', label: 'Edit', description: 'Edit people and switch them active or inactive' },
             { key: 'delete', label: 'Delete', description: 'Delete users' },
             { key: 'view_salary', label: 'View salary', description: 'See salary details and financial records' },
+            { key: 'export', label: 'Export', description: 'Download or share an employee\'s financial statement as Excel or PDF' },
             { key: 'promote', label: 'Promote', description: 'Promote employees and change their salary structure' },
         ],
     },

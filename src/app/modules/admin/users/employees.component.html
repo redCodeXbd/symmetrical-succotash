@@ -199,26 +199,113 @@
 
 <!-- ================= Financial records ================= -->
 @if (panel() === 'financial' && profile; as p) {
-    <treasury-slide-over [heading]="'Financial records of ' + target()!.name" (closed)="close()">
-        <div class="flex flex-col gap-4">
-            <section class="rounded-xl border p-4" aria-label="Total earnings">
-                <div class="text-sm font-medium uppercase tracking-wide text-secondary">Total earnings</div>
-                <div class="mt-3 flex justify-between"><span>Total salary</span><span>{{ p.funds.totalSalary | number: '1.0-0' }}</span></div>
-                <div class="mt-2 flex justify-between"><span>Total bonus</span><span>{{ p.funds.totalBonus | number: '1.0-0' }}</span></div>
-                <div class="mt-3 flex justify-between border-t pt-3 font-semibold"><span>Total</span><span>{{ p.funds.totalSalary + p.funds.totalBonus | number: '1.0-0' }}</span></div>
-            </section>
-            @for (f of [{ id: 'security', title: 'Security fund', balance: p.funds.securityBalance, withdrawn: p.funds.securityWithdrawn }, { id: 'provident', title: 'Provident fund', balance: p.funds.providentBalance, withdrawn: p.funds.providentWithdrawn }]; track f.id) {
-                <section class="rounded-xl border p-4" [attr.aria-label]="f.title">
-                    <div class="text-sm font-medium uppercase tracking-wide text-secondary">{{ f.title }}</div>
-                    <div class="mt-3 flex justify-between"><span>Current balance</span><span>{{ f.balance | number: '1.0-0' }}</span></div>
-                    <div class="mt-2 flex justify-between"><span>Total withdrawn</span><span>{{ f.withdrawn | number: '1.0-0' }}</span></div>
-                    @if (access.can('users.edit')) {
-                        <div class="mt-3 flex gap-2">
-                            <input type="number" min="0" class="h-10 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" placeholder="Amount" [attr.aria-label]="'Refund amount from ' + f.title" [(ngModel)]="refundAmount[f.id]" />
-                            <button mat-stroked-button type="button" (click)="refund($any(f.id))">Refund balance</button>
-                        </div>
+    <treasury-slide-over [wide]="true" heading="Financial records" [subheading]="target()!.name + ' · lifetime pay, funds and transactions'" (closed)="close()">
+        @if (access.can('users.export')) {
+            <treasury-export-menu headerActions [build]="finDoc" [formats]="['xlsx', 'pdf']" [disabled]="ledger().length === 0"></treasury-export-menu>
+        }
+        <div class="flex items-center gap-4 rounded-2xl bg-primary/10 p-4">
+            <div class="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-full bg-primary text-xl font-bold text-on-primary">
+                @if (target()?.avatar) { <img [src]="target()!.avatar" alt="" class="h-full w-full object-cover" /> } @else { {{ p.firstName[0] }}{{ p.lastName[0] }} }
+            </div>
+            <div class="min-w-0 flex-auto">
+                <div class="truncate text-xl font-semibold">{{ target()!.name }}</div>
+                <div class="text-secondary truncate text-md">{{ p.designation }} · {{ p.employeeId }}</div>
+                <div class="text-secondary text-sm">Joined {{ p.joiningDate | date: 'dd MMM y' }}</div>
+            </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-2 gap-3" aria-label="Summary">
+            <div class="fin-tile"><div class="fin-tile-label">Lifetime earnings</div><div class="fin-tile-value">{{ p.funds.totalSalary + p.funds.totalBonus | number: '1.0-0' }}</div><div class="fin-tile-sub">Salary and bonus</div></div>
+            <div class="fin-tile"><div class="fin-tile-label">Held in funds</div><div class="fin-tile-value">{{ p.funds.securityBalance + p.funds.providentBalance | number: '1.0-0' }}</div><div class="fin-tile-sub">Security and provident</div></div>
+            <div class="fin-tile"><div class="fin-tile-label">Taken on fund requests</div><div class="fin-tile-value">{{ activity()!.taken | number: '1.0-0' }}</div><div class="fin-tile-sub">{{ activity()!.requests }} requests</div></div>
+            <div class="fin-tile" [class.fin-tile-warn]="activity()!.outstanding > 0"><div class="fin-tile-label">Still to settle</div><div class="fin-tile-value">{{ activity()!.outstanding | number: '1.0-0' }}</div><div class="fin-tile-sub">{{ activity()!.returned | number: '1.0-0' }} returned so far</div></div>
+        </div>
+
+        <div class="emp-tabs mt-4" role="tablist" aria-label="Financial records">
+            @for (t of finTabs; track t.id) {
+                <button type="button" role="tab" [attr.aria-selected]="finTab() === t.id" (click)="finTab.set(t.id)"><mat-icon class="icon-size-4" [svgIcon]="t.icon"></mat-icon>{{ t.label }}</button>
+            }
+        </div>
+
+        <div class="mt-4 flex flex-col gap-4">
+            @switch (finTab()) {
+                @case ('overview') {
+                    <section class="form-card" aria-label="Earnings">
+                        <div class="form-card-title">Earnings</div>
+                        <div class="mt-3 flex justify-between"><span>Total salary ({{ activity()!.paySlips }} months paid)</span><span>{{ p.funds.totalSalary | number: '1.0-0' }}</span></div>
+                        <div class="mt-2 flex justify-between"><span>Total bonus</span><span>{{ p.funds.totalBonus | number: '1.0-0' }}</span></div>
+                        <div class="mt-3 flex justify-between border-t pt-3 font-semibold"><span>Total</span><span>{{ p.funds.totalSalary + p.funds.totalBonus | number: '1.0-0' }}</span></div>
+                        <div class="text-secondary mt-2 text-sm">Current monthly gross {{ p.salary.gross | number: '1.0-0' }}.</div>
+                    </section>
+                    <section class="form-card" aria-label="Company money">
+                        <div class="form-card-title">Fund requests and costs</div>
+                        <div class="mt-3 flex justify-between"><span>Taken on fund requests</span><span>{{ activity()!.taken | number: '1.0-0' }}</span></div>
+                        <div class="mt-2 flex justify-between"><span>Given back</span><span>{{ activity()!.returned | number: '1.0-0' }}</span></div>
+                        <div class="mt-3 flex justify-between border-t pt-3 font-semibold"><span>Still to settle</span><span>{{ activity()!.outstanding | number: '1.0-0' }}</span></div>
+                        <div class="text-secondary mt-2 text-sm">{{ activity()!.expenses }} expenses entered, BDT {{ activity()!.expensesTotal | number: '1.0-0' }} in all.</div>
+                    </section>
+                    <section class="form-card" aria-label="Latest">
+                        <div class="flex items-center justify-between"><div class="form-card-title">Latest transactions</div><button type="button" class="text-sm font-medium text-primary hover:underline" (click)="finTab.set('transactions')">See all {{ ledger().length }}</button></div>
+                        @for (r of ledger().slice(0, 5); track r.id) {
+                            <div class="fin-row">
+                                <div class="min-w-0"><span class="fin-chip" [class]="ledgerKinds[r.kind].chip">{{ r.title }}</span><div class="text-secondary mt-0.5 truncate text-sm">{{ r.date | date: 'dd MMM y' }} · {{ r.note }}</div></div>
+                                <div class="fin-amount" [class]="'fin-' + r.flow">{{ r.flow === 'in' ? '+' : r.flow === 'out' ? '−' : '' }}{{ r.amount | number: '1.0-0' }}</div>
+                            </div>
+                        } @empty { <div class="text-secondary mt-3 text-md">Nothing recorded yet.</div> }
+                    </section>
+                }
+                @case ('transactions') {
+                    <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Show">
+                        @for (f of ledgerFilters; track f.id) {
+                            <button type="button" class="fund-chip" [class.fund-chip-on]="finFilter() === f.id" (click)="finFilter.set(f.id)">{{ f.label }}</button>
+                        }
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="search" class="h-11 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" placeholder="Search transactions" aria-label="Search transactions" [ngModel]="finSearch()" (ngModelChange)="finSearch.set($event)" />
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center" aria-label="Totals of the list">
+                        <div class="fin-tile"><div class="fin-tile-label">Received</div><div class="fin-amount fin-in">{{ finTotals().received | number: '1.0-0' }}</div></div>
+                        <div class="fin-tile"><div class="fin-tile-label">Returned</div><div class="fin-amount fin-out">{{ finTotals().returned | number: '1.0-0' }}</div></div>
+                        <div class="fin-tile"><div class="fin-tile-label">Kept in funds</div><div class="fin-amount fin-held">{{ finTotals().held | number: '1.0-0' }}</div></div>
+                    </div>
+                    <section class="form-card !py-1" aria-label="Transactions">
+                        @for (r of finRows(); track r.id) {
+                            <div class="fin-row">
+                                <div class="min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2"><span class="fin-chip" [class]="ledgerKinds[r.kind].chip">{{ r.title }}</span>@if (r.ref) { <span class="text-secondary text-xs">{{ r.ref }}</span> }</div>
+                                    <div class="mt-0.5 text-md">{{ r.note }}</div>
+                                    <div class="text-secondary text-xs">{{ r.date | date: 'dd MMM y' }}{{ r.by ? ' · ' + r.by : '' }}</div>
+                                </div>
+                                <div class="fin-amount" [class]="'fin-' + r.flow">{{ r.flow === 'in' ? '+' : r.flow === 'out' ? '−' : '' }}{{ r.amount | number: '1.0-0' }}</div>
+                            </div>
+                        } @empty { <div class="text-secondary py-8 text-center text-md">No transactions match.</div> }
+                    </section>
+                }
+                @case ('funds') {
+                    @for (f of [{ id: 'security', title: 'Security fund', balance: p.funds.securityBalance, withdrawn: p.funds.securityWithdrawn }, { id: 'provident', title: 'Provident fund', balance: p.funds.providentBalance, withdrawn: p.funds.providentWithdrawn }]; track f.id) {
+                        <section class="form-card" [attr.aria-label]="f.title">
+                            <div class="flex items-end justify-between gap-3">
+                                <div><div class="form-card-title">{{ f.title }}</div><div class="mt-1 text-3xl font-semibold">{{ f.balance | number: '1.0-0' }}</div><div class="text-secondary text-sm">Current balance</div></div>
+                                <div class="text-right"><div class="text-lg font-medium">{{ f.withdrawn | number: '1.0-0' }}</div><div class="text-secondary text-sm">Total withdrawn</div></div>
+                            </div>
+                            <div class="mt-3 h-2 rounded-full bg-primary/15" role="img" [attr.aria-label]="(f.balance + f.withdrawn ? (f.withdrawn / (f.balance + f.withdrawn)) * 100 : 0 | number: '1.0-0') + ' percent withdrawn'"><div class="h-2 rounded-full bg-amber-500" [style.width.%]="f.balance + f.withdrawn ? (f.withdrawn / (f.balance + f.withdrawn)) * 100 : 0"></div></div>
+                            @if (access.can('users.edit')) {
+                                <div class="mt-4 flex gap-2">
+                                    <input type="number" min="0" class="h-11 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" placeholder="Amount to refund" [attr.aria-label]="'Refund amount from ' + f.title" [(ngModel)]="refundAmount[f.id]" />
+                                    <button mat-stroked-button type="button" (click)="refund($any(f.id))">Refund balance</button>
+                                </div>
+                            }
+                            <div class="mt-4 border-t pt-2">
+                                @for (r of fundRows($any(f.id)); track r.id) {
+                                    <div class="fin-row">
+                                        <div class="min-w-0"><div class="text-md">{{ r.note }}</div><div class="text-secondary text-xs">{{ r.date | date: 'dd MMM y' }}{{ r.by ? ' · ' + r.by : '' }}</div></div>
+                                        <div class="fin-amount" [class]="r.flow === 'held' ? 'fin-held' : 'fin-in'">{{ r.flow === 'held' ? '+' : '−' }}{{ r.amount | number: '1.0-0' }}</div>
+                                    </div>
+                                } @empty { <div class="text-secondary py-4 text-md">No movements yet.</div> }
+                            </div>
+                        </section>
                     }
-                </section>
+                }
             }
             @if (error) { <div class="rounded-lg bg-red-50 p-3 text-md text-red-800" role="alert">{{ error }}</div> }
         </div>

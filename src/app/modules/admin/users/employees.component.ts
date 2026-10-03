@@ -12,8 +12,12 @@ import { SlideOverComponent } from '../treasury/shared/slide-over/slide-over.com
 import { UserSwitchComponent } from '../treasury/shared/user-switch/user-switch.component';
 import { CompanyService } from '../settings/company/company.service';
 import { EmployeeInput, UsersService } from './users.service';
-import { BLANK_SALARY, DEPARTMENTS, EMPLOYMENT_TYPES, EmployeeProfile, SALARY_FIELDS, SHIFTS } from './users.types';
+import { DateTime } from 'luxon';
+import { ReportDoc } from '../treasury/shared/report.types';
+import { ExportMenuComponent } from '../treasury/shared/export-menu/export-menu.component';
+import { BLANK_SALARY, DEPARTMENTS, EMPLOYMENT_TYPES, EmployeeProfile, LEDGER_FILTERS, LEDGER_KINDS, SALARY_FIELDS, SHIFTS } from './users.types';
 
+type FinTab = 'overview' | 'transactions' | 'funds';
 type Panel = 'form' | 'financial' | 'promote' | 'history' | 'delete';
 type FormTab = 'general' | 'office' | 'salary' | 'access';
 
@@ -22,7 +26,7 @@ type FormTab = 'general' | 'office' | 'salary' | 'access';
     templateUrl: './employees.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatIconModule, MatMenuModule, AddButtonComponent, SlideOverComponent, SwitchComponent, UserSwitchComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatIconModule, MatMenuModule, AddButtonComponent, ExportMenuComponent, SlideOverComponent, SwitchComponent, UserSwitchComponent],
 })
 export class EmployeesComponent {
     readonly departments = DEPARTMENTS;
@@ -42,6 +46,51 @@ export class EmployeesComponent {
     password = '';
     error: string | null = null;
     refundAmount: Record<string, number | null> = {};
+
+    readonly ledgerKinds = LEDGER_KINDS;
+    readonly ledgerFilters = LEDGER_FILTERS;
+    readonly finTabs: { id: FinTab; label: string; icon: string }[] = [
+        { id: 'overview', label: 'Overview', icon: 'heroicons_outline:chart-pie' },
+        { id: 'transactions', label: 'Transactions', icon: 'heroicons_outline:arrows-right-left' },
+        { id: 'funds', label: 'Funds', icon: 'heroicons_outline:wallet' },
+    ];
+    finTab = signal<FinTab>('overview');
+    finFilter = signal('all');
+    finSearch = signal('');
+
+    /** Every pay and fund movement of the person in the financial drawer. */
+    ledger = computed(() => (this.target() ? this.users.ledger(this.target()!.id) : []));
+    finRows = computed(() => {
+        const kinds = LEDGER_FILTERS.find((f) => f.id === this.finFilter())?.kinds ?? [];
+        const q = this.finSearch().trim().toLowerCase();
+        return this.ledger().filter((r) => (!kinds.length || kinds.includes(r.kind)) && (!q || [r.title, r.note, r.ref, r.by].some((v) => v.toLowerCase().includes(q))));
+    });
+    finTotals = computed(() => {
+        const rows = this.finRows();
+        const sum = (flow: string) => rows.filter((r) => r.flow === flow).reduce((s, r) => s + r.amount, 0);
+        return { received: sum('in'), returned: sum('out'), held: sum('held') };
+    });
+    activity = computed(() => (this.target() ? this.users.activity(this.target()!.id) : null));
+    fundRows(fund: 'security' | 'provident') {
+        const kinds = [`${fund}_in`, `${fund}_out`];
+        return this.ledger().filter((r) => kinds.includes(r.kind));
+    }
+
+    /** The whole lifetime statement of the person, whatever the list is filtered to. */
+    finDoc = (): ReportDoc => {
+        const rows = this.ledger();
+        const sum = (flow: string) => rows.filter((r) => r.flow === flow).reduce((s, r) => s + r.amount, 0);
+        const p = this.profile;
+        return {
+            kind: 'table',
+            title: `Financial statement of ${this.target()?.name ?? ''}`,
+            subtitle: `${p?.designation ?? ''} · ${p?.employeeId ?? ''} · lifetime, ${rows.length} entries · received ${sum('in').toLocaleString('en-US')}, returned ${sum('out').toLocaleString('en-US')}, kept in funds ${sum('held').toLocaleString('en-US')}`,
+            columns: [{ header: 'Date' }, { header: 'Type' }, { header: 'Details' }, { header: 'Reference' }, { header: 'Recorded by' }, { header: 'Amount (BDT)', format: 'number' as const }],
+            rows: rows.map((r) => [DateTime.fromISO(r.date).toFormat('dd MMM y'), r.title, r.note, r.ref, r.by, r.flow === 'out' ? -r.amount : r.amount]),
+            footer: ['', '', '', '', 'Received less returned', sum('in') - sum('out')],
+        };
+    };
+
 
     rows = computed(() => {
         const q = this.search().trim().toLowerCase();
@@ -154,6 +203,9 @@ export class EmployeesComponent {
 
     openFinancial(user: AppUser): void {
         this.target.set(user);
+        this.finTab.set('overview');
+        this.finFilter.set('all');
+        this.finSearch.set('');
         this._open('financial');
     }
 
