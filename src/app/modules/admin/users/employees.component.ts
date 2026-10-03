@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -109,7 +110,8 @@ export class EmployeesComponent {
     constructor(
         public users: UsersService,
         public access: AccessService,
-        public company: CompanyService
+        public company: CompanyService,
+        private _confirm: ConfirmService
     ) {}
 
     /** Choices for the company > branch > department > team pickers; a change clears the levels below it. */
@@ -224,9 +226,17 @@ export class EmployeesComponent {
         this._open('history');
     }
 
-    openDelete(user: AppUser): void {
-        this.target.set(user);
-        this._open('delete');
+    async openDelete(user: AppUser): Promise<void> {
+        const p = this.users.profile(user.id);
+        const ok = await this._confirm.delete(`${user.name}`, {
+            message: 'This removes the employee and their login. Their past fund requests stay in the records.',
+            details: [['Employee', user.name], ['Designation', p.designation || '-'], ['ID', p.employeeId || '-']],
+        });
+        if (!ok) {
+            return;
+        }
+        const error = this.users.remove(user.id);
+        this.message.set(error ? { text: error, ok: false } : { text: `${user.name} deleted.`, ok: true });
     }
 
     close(): void {
@@ -241,31 +251,53 @@ export class EmployeesComponent {
     // @ Actions
     // -----------------------------------------------------------------------------------------------------
 
-    save(): void {
+    async save(): Promise<void> {
         const t = this.target();
+        if (t && !(await this._confirm.update(t.name, { message: 'The details, work placement, pay and access you changed will replace the current ones.', details: [['Employee', t.name], ['Designation', this.form.designation]] }))) {
+            return;
+        }
         const result = t ? this.users.update(t.id, this.form) : this.users.add(this.form);
         const error = typeof result === 'string' ? result : null;
         this._finish(error, t ? 'Employee updated.' : 'Employee added. Give more roles in the General info tab if needed.');
     }
 
-    promote(): void {
+    async promote(): Promise<void> {
         const t = this.target();
         if (t) {
+            const before = this.users.profile(t.id);
+            const ok = await this._confirm.ask({
+                title: `Promote ${t.name}?`,
+                message: 'The new role and pay start now, and the change is added to their promotion history.',
+                tone: 'primary',
+                icon: 'heroicons_outline:arrow-trending-up',
+                confirmLabel: 'Yes, promote',
+                details: [['From', before.designation], ['To', this.form.designation], ['Gross pay', `${before.salary.gross.toLocaleString('en-US')} to ${Number(this.form.salary.gross).toLocaleString('en-US')}`]],
+            });
+            if (!ok) {
+                return;
+            }
             this._finish(this.users.promote(t.id, this.form), 'Employee promoted. See Promotion history.');
         }
     }
 
-    remove(): void {
-        const t = this.target();
-        if (t) {
-            this._finish(this.users.remove(t.id), `${t.name} deleted.`);
-        }
-    }
-
-    refund(fund: 'security' | 'provident'): void {
+    async refund(fund: 'security' | 'provident'): Promise<void> {
         const t = this.target();
         if (!t) {
             return;
+        }
+        const amount = Number(this.refundAmount[fund] ?? 0);
+        if (amount > 0) {
+            const ok = await this._confirm.ask({
+                title: `Refund from the ${fund} fund?`,
+                message: 'The amount is paid back to the employee and taken off the fund balance.',
+                tone: 'warning',
+                icon: 'heroicons_outline:banknotes',
+                confirmLabel: 'Yes, refund',
+                details: [['Employee', t.name], ['Fund', fund === 'security' ? 'Security fund' : 'Provident fund'], ['Amount', `BDT ${amount.toLocaleString('en-US')}`]],
+            });
+            if (!ok) {
+                return;
+            }
         }
         const error = this.users.refund(t.id, fund, Number(this.refundAmount[fund] ?? 0));
         this.error = error;

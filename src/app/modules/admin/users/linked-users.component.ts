@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -34,7 +35,8 @@ export class LinkedUsersComponent {
         public access: AccessService,
         private _vendors: VendorsService,
         private _clients: ClientsService,
-        route: ActivatedRoute
+        route: ActivatedRoute,
+        private _confirm: ConfirmService
     ) {
         route.data.subscribe((d) => this.kind.set((d['kind'] as Kind) ?? 'vendor'));
     }
@@ -86,20 +88,27 @@ export class LinkedUsersComponent {
         this._open('form');
     }
 
-    openDelete(u: AppUser): void {
-        this.target.set(u);
-        this._open('delete');
+    async openDelete(u: AppUser): Promise<void> {
+        const ok = await this._confirm.delete(u.name, { message: 'This removes the login. Records they made stay.', details: [['Login', u.name], ['Email', u.email]] });
+        if (!ok) {
+            return;
+        }
+        const error = this.access.removeUser(u.id);
+        this.message.set(error ? { text: error, ok: false } : { text: `${u.name} deleted.`, ok: true });
     }
 
     close(): void {
         this.panel.set(null);
     }
 
-    save(): void {
+    async save(): Promise<void> {
         const t = this.target();
         const f = this.form;
         if (this.needsCompany && !f.companyId) {
             this.error = `Choose the ${this.noun.toLowerCase()} this login belongs to.`;
+            return;
+        }
+        if (t && !(await this._confirm.update(t.name))) {
             return;
         }
         let error: string | null;
@@ -127,13 +136,6 @@ export class LinkedUsersComponent {
     unlink(u: AppUser): void {
         this._setCompany(u.id, null);
         this.message.set({ text: `${u.name} no longer has access to a ${this.noun.toLowerCase()}.`, ok: true });
-    }
-
-    remove(): void {
-        const t = this.target();
-        if (t) {
-            this._finish(this.access.removeUser(t.id), `${t.name} deleted.`);
-        }
     }
 
     private _setCompany(userId: string, id: string | null): void {

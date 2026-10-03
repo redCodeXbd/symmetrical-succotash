@@ -251,16 +251,6 @@
                 </ng-container>
             </treasury-slide-over>
         }
-        @default {
-            <treasury-slide-over [heading]="p.type === 'delete-unit' ? 'Delete ' + p.unit.name + '?' : 'Delete ' + c.name + '?'" subheading="This cannot be undone" (closed)="panel.set(null)">
-                <p class="text-md">Only empty units can be deleted. To hide something that is in use, deactivate it instead.</p>
-                @if (error) { <div class="mt-3 text-sm text-red-600" role="alert">{{ error }}</div> }
-                <ng-container footer>
-                    <button mat-stroked-button type="button" (click)="panel.set(null)">Cancel</button>
-                    <button mat-flat-button color="warn" type="button" (click)="confirmDelete()">Delete</button>
-                </ng-container>
-            </treasury-slide-over>
-        }
     }
 }
 } @else {

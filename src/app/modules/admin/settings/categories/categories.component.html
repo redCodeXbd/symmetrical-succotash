@@ -106,21 +106,15 @@
                                                 @if (section.group.kinds) { <td>{{ kindLabel(section, c) }}</td> }
                                                 <td>{{ usageText(section, c.name) }}</td>
                                                 <td class="whitespace-nowrap text-right">
-                                                    @if (isDeleting(section.group.id, c.id)) {
-                                                        <span class="mr-3 text-sm">Delete "{{ c.name }}"?</span>
-                                                        <button type="button" class="mr-4 font-medium text-red-600 hover:underline" (click)="remove(section, c)">Delete</button>
-                                                        <button type="button" class="text-secondary hover:underline" (click)="deleting = null">Cancel</button>
-                                                    } @else {
-                                                        @if (access.can('categories.edit')) {
+                                                    @if (access.can('categories.edit')) {
                                                             <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="startEdit(section, c)">Edit</button>
                                                         }
                                                         @if (!access.can('categories.delete')) {
                                                         } @else if (section.usage(c.name) > 0) {
                                                             <span class="text-secondary text-sm" [attr.title]="'Move or change the ' + section.nounPlural + ' using it first'">In use</span>
                                                         } @else {
-                                                            <button type="button" class="font-medium text-red-600 hover:underline" (click)="deleting = { groupId: section.group.id, id: c.id }">Delete</button>
+                                                            <button type="button" class="font-medium text-red-600 hover:underline" (click)="remove(section, c)">Delete</button>
                                                         }
-                                                    }
                                                 </td>
                                             }
                                         </tr>

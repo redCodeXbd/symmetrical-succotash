@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -43,7 +44,8 @@ export class ProfileComponent {
         private vendors: VendorsService,
         private expenses: ExpensesService,
         private clients: ClientsService,
-        users: UserService
+        users: UserService,
+        private _confirm: ConfirmService
     ) {
         this._load();
         users.user$.subscribe((u) => this.avatar.set(u?.avatar ?? null));
@@ -80,7 +82,10 @@ export class ProfileComponent {
         }
     }
 
-    removePhoto(): void {
+    async removePhoto(): Promise<void> {
+        if (!(await this._confirm.delete('your photo', { message: 'Your initials are shown instead until you add a new photo.', confirmLabel: 'Yes, remove', note: '' }))) {
+            return;
+        }
         this.photoError.set(null);
         this.access.setAvatar('');
     }

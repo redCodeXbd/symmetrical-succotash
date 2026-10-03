@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -45,7 +46,8 @@ export class ExpenseDetailComponent {
         private _projects: ProjectsService,
         private _vendors: VendorsService,
         private _store: StoreService,
-        private _company: CompanyService
+        private _company: CompanyService,
+        private _confirm: ConfirmService
     ) {}
 
     get chargedTo(): string {
@@ -112,19 +114,38 @@ export class ExpenseDetailComponent {
         this.mode = 'view';
     }
 
-    approve(): void {
+    private _facts(): [string, string][] {
+        return [['Expense', this.expense.id], ['Category', this.category?.name ?? '-'], ['Amount', `BDT ${this.expense.amount.toLocaleString('en-US')}`]];
+    }
+
+    async approve(): Promise<void> {
+        const ok = await this._confirm.ask({ title: 'Approve this step?', message: 'Your approval is recorded with your name and cannot be taken back.', tone: 'success', icon: 'heroicons_outline:check-circle', confirmLabel: 'Yes, approve', details: this._facts() });
+        if (!ok) {
+            return;
+        }
         this._finish(this.service.approve(this.expense.id));
     }
 
-    reject(): void {
+    async reject(): Promise<void> {
+        const ok = await this._confirm.ask({ title: 'Reject this expense?', message: 'It stops here and the person who entered it is told why.', tone: 'danger', icon: 'heroicons_outline:x-circle', confirmLabel: 'Yes, reject', details: [...this._facts(), ['Reason', this.rejectReason || '-']] });
+        if (!ok) {
+            return;
+        }
         this._finish(this.service.reject(this.expense.id, this.rejectReason));
     }
 
-    submitPay(): void {
+    async submitPay(): Promise<void> {
+        const ok = await this._confirm.ask({ title: 'Record this payment?', message: 'The money is taken from the chosen fund and the expense is marked paid.', tone: 'warning', icon: 'heroicons_outline:banknotes', confirmLabel: 'Yes, record payment', details: [...this._facts(), ['Method', this.pay.method]] });
+        if (!ok) {
+            return;
+        }
         this._finish(this.service.pay(this.expense.id, { fundId: this.pay.fundId || null, method: this.pay.method, reference: this.pay.reference, date: this.pay.date }));
     }
 
-    remove(): void {
+    async remove(): Promise<void> {
+        if (!(await this._confirm.delete('this expense', { details: this._facts() }))) {
+            return;
+        }
         const error = this.service.delete(this.expense.id);
         this.error = error;
         if (!error) {

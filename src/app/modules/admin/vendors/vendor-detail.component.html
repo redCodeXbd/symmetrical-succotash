@@ -30,13 +30,7 @@
                         <button mat-stroked-button type="button" (click)="editing.set(true)">Edit vendor</button>
                     }
                     @if (access.can('vendors.delete')) {
-                        @if (confirmDelete()) {
-                            <span class="text-sm">Delete this vendor?</span>
-                            <button mat-flat-button color="warn" type="button" (click)="deleteVendor()">Delete</button>
-                            <button mat-stroked-button type="button" (click)="confirmDelete.set(false)">Cancel</button>
-                        } @else {
-                            <button mat-stroked-button color="warn" type="button" (click)="confirmDelete.set(true)">Delete</button>
-                        }
+                        <button mat-stroked-button color="warn" type="button" (click)="deleteVendor()">Delete</button>
                     }
                 </div>
             </div>

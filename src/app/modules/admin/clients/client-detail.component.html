@@ -27,13 +27,7 @@
                         <button mat-stroked-button type="button" (click)="editing.set(true)">Edit client</button>
                     }
                     @if (access.can('clients.delete')) {
-                        @if (confirmDelete()) {
-                            <span class="text-sm">Delete this client?</span>
-                            <button mat-flat-button color="warn" type="button" (click)="deleteClient()">Delete</button>
-                            <button mat-stroked-button type="button" (click)="confirmDelete.set(false)">Cancel</button>
-                        } @else {
-                            <button mat-stroked-button color="warn" type="button" (click)="confirmDelete.set(true)">Delete</button>
-                        }
+                        <button mat-stroked-button color="warn" type="button" (click)="deleteClient()">Delete</button>
                     }
                 </div>
             </div>

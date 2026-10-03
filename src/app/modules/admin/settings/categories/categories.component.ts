@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { ExpensesService } from '../../expenses/expenses.service';
 import { StoreService } from '../../store/store.service';
 import { AccessService } from 'app/core/access/access.service';
@@ -46,7 +47,8 @@ export class CategoriesSettingsComponent implements AfterViewInit {
         funds: FundsService,
         store: StoreService,
         expenses: ExpensesService,
-        private _route: ActivatedRoute
+        private _route: ActivatedRoute,
+        private _confirm: ConfirmService
     ) {
         const [orgGroup, requestGroup, storeGroup, expenseGroup] = CATEGORY_GROUPS;
         this.sections = [
@@ -120,9 +122,13 @@ export class CategoriesSettingsComponent implements AfterViewInit {
         this.editing = { groupId: section.group.id, id: c.id, name: c.name, description: c.description, kind: c.kind ?? '', from: c.name };
     }
 
-    saveEdit(section: Section): void {
+    async saveEdit(section: Section): Promise<void> {
         const e = this.editing;
         if (!e) {
+            return;
+        }
+        const used = section.usage(e.from);
+        if (!(await this._confirm.update(`"${e.from}"`, { message: e.name.trim() !== e.from ? `It is renamed everywhere it is used (${used} ${used === 1 ? section.noun : section.nounPlural}).` : undefined, details: [['Category', e.from], ['New name', e.name.trim()]] }))) {
             return;
         }
         const error = this.categories.update(e.groupId, e.id, e.name, e.description, section.group.kinds ? e.kind : undefined);
@@ -142,8 +148,11 @@ export class CategoriesSettingsComponent implements AfterViewInit {
     }
 
     /** Deleting is blocked while records still use the category, so nothing is left without one. */
-    remove(section: Section, c: Category): void {
+    async remove(section: Section, c: Category): Promise<void> {
         if (section.usage(c.name) > 0) {
+            return;
+        }
+        if (!(await this._confirm.delete(`the category "${c.name}"`, { details: [['Category', c.name], ['Section', section.group.title]] }))) {
             return;
         }
         this.categories.remove(section.group.id, c.id);

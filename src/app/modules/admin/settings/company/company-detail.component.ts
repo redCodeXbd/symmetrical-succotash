@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -112,7 +113,8 @@ export class CompanyDetailComponent {
         public store: StoreService,
         public projects: ProjectsService,
         private _route: ActivatedRoute,
-        private _router: Router
+        private _router: Router,
+        private _confirm: ConfirmService
     ) {}
 
     users = () => this.access.users();
@@ -152,9 +154,12 @@ export class CompanyDetailComponent {
         this.panel.set({ type: 'warehouse', id });
     }
 
-    saveUnit(): void {
+    async saveUnit(): Promise<void> {
         const p = this.panel();
         if (p?.type !== 'unit') {
+            return;
+        }
+        if (p.unit && !(await this._confirm.update(`the ${KIND_LABEL[p.kind].toLowerCase()} "${p.unit.name}"`))) {
             return;
         }
         const input: UnitInput = { ...this.unitForm, kind: p.kind, companyId: this.company()!.id };
@@ -167,9 +172,12 @@ export class CompanyDetailComponent {
         this._say(`${KIND_LABEL[p.kind]} ${p.unit ? 'saved' : 'added'}.`);
     }
 
-    saveWarehouse(): void {
+    async saveWarehouse(): Promise<void> {
         const p = this.panel();
         if (p?.type !== 'warehouse') {
+            return;
+        }
+        if (p.id && !(await this._confirm.update('this warehouse'))) {
             return;
         }
         const f = this.whForm;
@@ -191,35 +199,56 @@ export class CompanyDetailComponent {
         this._say(p.id ? 'Warehouse saved.' : 'Warehouse added.');
     }
 
-    toggleActive(unit: OrgUnit): void {
+    async toggleActive(unit: OrgUnit): Promise<void> {
+        const children = this.company_.children(unit.id).length;
+        const ok = await this._confirm.ask({
+            title: `${unit.active ? 'Deactivate' : 'Activate'} ${unit.name}?`,
+            message: unit.active ? 'It and everything under it is hidden from the pickers. History is kept.' : 'It and everything under it can be chosen again.',
+            tone: unit.active ? 'warning' : 'success',
+            icon: unit.active ? 'heroicons_outline:pause-circle' : 'heroicons_outline:play-circle',
+            confirmLabel: unit.active ? 'Yes, deactivate' : 'Yes, activate',
+            details: [[KIND_LABEL[unit.kind], this.company_.path(unit.id)], ['Units under it', String(children)]],
+        });
+        if (!ok) {
+            return;
+        }
         const error = this.company_.setUnitActive(unit.id, !unit.active);
         this._say(error ?? `${unit.name} is now ${unit.active ? 'inactive' : 'active'}.`, !error);
     }
 
-    confirmDelete(): void {
-        const p = this.panel();
-        if (p?.type === 'delete-unit') {
-            const error = this.company_.deleteUnit(p.unit.id);
+    async askDelete(panel: Panel): Promise<void> {
+        if (panel.type === 'delete-unit') {
+            const u = panel.unit;
+            const ok = await this._confirm.delete(`the ${KIND_LABEL[u.kind].toLowerCase()} "${u.name}"`, {
+                message: 'Only empty units can be deleted. To hide one that is in use, deactivate it instead.',
+                details: [[KIND_LABEL[u.kind], this.company_.path(u.id)], ['People', String(this.company_.peopleOf(u.companyId, u.id).length)]],
+            });
+            if (!ok) {
+                return;
+            }
+            const error = this.company_.deleteUnit(u.id);
             if (error) {
-                this.error = error;
+                this._say(error, false);
                 return;
             }
             this.selected.set(null);
-            this.panel.set(null);
-            this._say(`${p.unit.name} deleted.`);
-        } else if (p?.type === 'delete-company') {
-            const error = this.company_.deleteCompany(this.company()!.id);
+            this._say(`${u.name} deleted.`);
+        } else if (panel.type === 'delete-company') {
+            const c = this.company()!;
+            const ok = await this._confirm.delete(`the company "${c.name}"`, {
+                message: 'Only a company with no branches and no people can be deleted.',
+                details: [['Company', c.name], ['Branches', String(this.company_.unitsOf(c.id, 'branch').length)]],
+            });
+            if (!ok) {
+                return;
+            }
+            const error = this.company_.deleteCompany(c.id);
             if (error) {
-                this.error = error;
+                this._say(error, false);
                 return;
             }
             void this._router.navigate(['/settings/company']);
         }
-    }
-
-    askDelete(panel: Panel): void {
-        this.error = null;
-        this.panel.set(panel);
     }
 
     private _say(text: string, ok = true): void {

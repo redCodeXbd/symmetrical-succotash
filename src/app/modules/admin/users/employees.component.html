@@ -360,14 +360,3 @@
     </treasury-slide-over>
 }
 
-<!-- ================= Delete ================= -->
-@if (panel() === 'delete') {
-    <treasury-slide-over heading="Delete employee" [subheading]="target()?.name ?? ''" (closed)="close()">
-        <p class="text-md">This removes the employee and their login. Their past fund requests stay in the records.</p>
-        @if (error) { <div class="mt-4 rounded-lg bg-red-50 p-3 text-md text-red-800" role="alert">{{ error }}</div> }
-        <ng-container footer>
-            <button mat-stroked-button type="button" (click)="close()">Cancel</button>
-            <button mat-flat-button color="warn" type="button" (click)="remove()">Delete</button>
-        </ng-container>
-    </treasury-slide-over>
-}
