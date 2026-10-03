@@ -41,6 +41,8 @@ A request copies its path when submitted. Only someone holding the current step'
 - **Salary** (needs View salary): gross and its components with a live check that they add up, funds kept from pay, and switches for tax and overtime.
 - **Access:** password, the app-login and ID-card switches, and one switch row per role.
 
+**Promotion history.** A career timeline in a wide drawer: with-us time, number of promotions and pay growth (pay figures need View salary), then each promotion newest first showing only what changed (designation, employment, department, gross with the raise and percent) and who approved it, ending with how the person joined. Download / Share (Excel or PDF) needs the Users Export permission.
+
 **Financial records.** Open from an employee's action menu (needs View salary). A wide drawer with the person, four summary numbers (lifetime earnings, held in funds, taken on fund requests, still to settle) and three tabs:
 
 - **Overview:** earnings (salary and bonus), fund request money taken and given back, and the latest five transactions.
