@@ -2,7 +2,7 @@
     <div class="absolute inset-0 bg-slate-900/40" (click)="closed.emit()"></div>
     <div
         #panel
-        class="relative flex h-full w-full max-w-md flex-col bg-card shadow-2xl outline-none"
+        [class]="'relative flex h-full w-full flex-col bg-card shadow-2xl outline-none ' + (wide ? 'max-w-xl' : 'max-w-md')"
         role="dialog"
         aria-modal="true"
         [attr.aria-label]="heading"

@@ -130,7 +130,7 @@
                                         <td class="text-secondary text-sm">Everything in {{ f.title.toLowerCase() }}</td>
                                         @for (r of access.roles(); track r.id) {
                                             <td class="text-center">
-                                                <input type="checkbox" class="h-4 w-4" [attr.aria-label]="'All ' + f.title + ' for ' + r.name" [checked]="featureAll(r, f.id)" [disabled]="r.locked || !access.can('roles.edit')" (change)="toggleFeature(r, f.id, $any($event.target).checked)" />
+                                                <treasury-switch size="sm" [ariaLabel]="'All ' + f.title + ' for ' + r.name" [checked]="featureAll(r, f.id)" [disabled]="r.locked || !access.can('roles.edit')" (toggled)="toggleFeature(r, f.id, $event)" />
                                             </td>
                                         }
                                     </tr>
@@ -142,7 +142,7 @@
                                             </td>
                                             @for (r of access.roles(); track r.id) {
                                                 <td class="text-center">
-                                                    <input type="checkbox" class="h-4 w-4" [attr.aria-label]="p.label + ' ' + f.title + ' for ' + r.name" [checked]="has(r, f.id + '.' + p.key)" [disabled]="r.locked || !access.can('roles.edit')" (change)="toggle(r, f.id + '.' + p.key, $event)" />
+                                                    <treasury-switch size="sm" [ariaLabel]="p.label + ' ' + f.title + ' for ' + r.name" [checked]="has(r, f.id + '.' + p.key)" [disabled]="r.locked || !access.can('roles.edit')" (toggled)="toggle(r, f.id + '.' + p.key, $event)" />
                                                 </td>
                                             }
                                         </tr>

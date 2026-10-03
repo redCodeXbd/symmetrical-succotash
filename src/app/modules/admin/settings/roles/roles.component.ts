@@ -1,3 +1,4 @@
+import { SwitchComponent } from '../../treasury/shared/switch/switch.component';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +20,7 @@ interface RuleDraft {
     templateUrl: './roles.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [DecimalPipe, FormsModule, MatButtonModule],
+    imports: [DecimalPipe, FormsModule, MatButtonModule, SwitchComponent],
 })
 export class RolesSettingsComponent {
     readonly features = FEATURES;
@@ -107,8 +108,8 @@ export class RolesSettingsComponent {
         return this.access.permissionsOf(role).includes(permission);
     }
 
-    toggle(role: Role, permission: string, event: Event): void {
-        this.access.setPermission(role.id, permission, (event.target as HTMLInputElement).checked);
+    toggle(role: Role, permission: string, on: boolean): void {
+        this.access.setPermission(role.id, permission, on);
     }
 
     /** Switches every permission of one feature on or off for a role. */

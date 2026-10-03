@@ -21,6 +21,8 @@ import { MatIconModule } from '@angular/material/icon';
 export class SlideOverComponent implements AfterViewInit {
     @Input() heading = '';
     @Input() subheading = '';
+    /** A wider drawer, for long forms. */
+    @Input() wide = false;
     @Output() closed = new EventEmitter<void>();
     @ViewChild('panel') panel: ElementRef<HTMLElement>;
 

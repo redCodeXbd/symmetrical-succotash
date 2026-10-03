@@ -7,6 +7,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { AccessService } from 'app/core/access/access.service';
 import { AppUser } from 'app/core/access/access.types';
 import { AddButtonComponent } from '../treasury/shared/add-button/add-button.component';
+import { SwitchComponent } from '../treasury/shared/switch/switch.component';
 import { SlideOverComponent } from '../treasury/shared/slide-over/slide-over.component';
 import { UserSwitchComponent } from '../treasury/shared/user-switch/user-switch.component';
 import { CompanyService } from '../settings/company/company.service';
@@ -14,14 +15,14 @@ import { EmployeeInput, UsersService } from './users.service';
 import { BLANK_SALARY, DEPARTMENTS, EMPLOYMENT_TYPES, EmployeeProfile, SALARY_FIELDS, SHIFTS } from './users.types';
 
 type Panel = 'form' | 'financial' | 'promote' | 'history' | 'delete';
-type FormTab = 'general' | 'office' | 'salary';
+type FormTab = 'general' | 'office' | 'salary' | 'access';
 
 @Component({
     selector: 'users-employees',
     templateUrl: './employees.component.html',
     encapsulation: ViewEncapsulation.None,
     standalone: true,
-    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatIconModule, MatMenuModule, AddButtonComponent, SlideOverComponent, UserSwitchComponent],
+    imports: [DatePipe, DecimalPipe, FormsModule, MatButtonModule, MatIconModule, MatMenuModule, AddButtonComponent, SlideOverComponent, SwitchComponent, UserSwitchComponent],
 })
 export class EmployeesComponent {
     readonly departments = DEPARTMENTS;
@@ -92,15 +93,35 @@ export class EmployeesComponent {
         return !!t && this.users.nameLocked(t.id);
     }
 
-    get tabs(): { id: FormTab; label: string }[] {
-        const tabs: { id: FormTab; label: string }[] = [
-            { id: 'general', label: 'General info' },
-            { id: 'office', label: 'Office info' },
+    get tabs(): { id: FormTab; label: string; icon: string }[] {
+        const tabs: { id: FormTab; label: string; icon: string }[] = [
+            { id: 'general', label: 'Profile', icon: 'heroicons_outline:user' },
+            { id: 'office', label: 'Work', icon: 'heroicons_outline:briefcase' },
         ];
         if (this.access.can('users.view_salary')) {
-            tabs.push({ id: 'salary', label: 'Salary info' });
+            tabs.push({ id: 'salary', label: 'Salary', icon: 'heroicons_outline:banknotes' });
         }
+        tabs.push({ id: 'access', label: 'Access', icon: 'heroicons_outline:key' });
         return tabs;
+    }
+
+    get initials(): string {
+        return `${this.form.firstName[0] ?? ''}${this.form.lastName[0] ?? ''}`.toUpperCase() || '?';
+    }
+
+    /** Where the person sits, as one line, so the pickers can be checked at a glance. */
+    get placement(): string {
+        return this.company.path(this.form.orgTeamId || this.form.orgDeptId || this.form.orgBranchId);
+    }
+
+    /** What the pay components add up to, to compare with the gross. */
+    get componentsTotal(): number {
+        const s = this.form.salary;
+        return [s.basic, s.houseRent, s.conveyance, s.medical, s.tada, s.mobile].reduce((a, b) => a + (Number(b) || 0), 0);
+    }
+
+    get roleChoices() {
+        return this.access.roles();
     }
 
     roleNames(user: AppUser): string[] {
@@ -160,8 +181,7 @@ export class EmployeesComponent {
         this.panel.set(null);
     }
 
-    toggleRole(id: string, event: Event): void {
-        const on = (event.target as HTMLInputElement).checked;
+    toggleRole(id: string, on: boolean): void {
         this.form.roleIds = on ? [...this.form.roleIds, id] : this.form.roleIds.filter((r) => r !== id);
     }
 
