@@ -1870,7 +1870,7 @@
         },
         "steps": [
           {
-            "text": "Add an employee with general, office and salary details.",
+            "text": "Add an employee: profile, work, salary and access are separate tabs.",
             "target": "button:has-text(\"Add Employee\")"
           },
           {
@@ -2043,6 +2043,266 @@
     ],
     "related": [
       "users-hr"
+    ]
+  },
+  {
+    "id": "employee-financials",
+    "title": "Financial records of an employee",
+    "feature": "Users",
+    "audiences": [
+      "admin",
+      "accountant"
+    ],
+    "openPath": "/users/employees",
+    "brief": "Open an employee's financial records to see everything between the company and the person over their whole time: pay, bonuses, fund deposits and refunds, fund request money and promotions. Download it as Excel or PDF, or share a link.",
+    "useCases": [
+      "Accounts need a statement for one person.",
+      "An employee asks how much is in their security or provident fund.",
+      "You are refunding part of a fund balance.",
+      "You want to see what an employee still owes from fund requests."
+    ],
+    "shots": [
+      {
+        "id": "overview",
+        "caption": "Summary and overview",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Users",
+                "Employees"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"Imran\") button[aria-label^=\"Actions for\"]"
+            },
+            {
+              "click": ".mat-mdc-menu-item:has-text(\"Financial\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Four numbers: lifetime earnings, held in funds, taken on fund requests, still to settle.",
+            "target": ".fin-tile >> nth=0"
+          },
+          {
+            "text": "Download or share the whole statement as Excel or PDF.",
+            "target": "[role=dialog] button[aria-label=\"Download or share\"]"
+          },
+          {
+            "text": "Switch between Overview, Transactions and Funds.",
+            "target": "[role=dialog] .emp-tabs"
+          }
+        ]
+      },
+      {
+        "id": "transactions",
+        "caption": "Lifetime transactions",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Users",
+                "Employees"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"Imran\") button[aria-label^=\"Actions for\"]"
+            },
+            {
+              "click": ".mat-mdc-menu-item:has-text(\"Financial\")"
+            },
+            {
+              "click": "[role=dialog] [role=tab]:has-text(\"Transactions\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Narrow the list by type, or search it.",
+            "target": "[role=dialog] .fund-chip >> nth=1"
+          },
+          {
+            "text": "Totals of what is listed: received, returned, kept in funds.",
+            "target": "[role=dialog] [aria-label=\"Totals of the list\"]"
+          },
+          {
+            "text": "Each line shows the type, details, date and who recorded it. Green is money received, red returned, blue kept in a fund. Scroll down to see them.",
+            "target": null
+          }
+        ]
+      },
+      {
+        "id": "funds",
+        "caption": "Security and provident funds",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Users",
+                "Employees"
+              ]
+            },
+            {
+              "click": "tbody tr:has-text(\"Imran\") button[aria-label^=\"Actions for\"]"
+            },
+            {
+              "click": ".mat-mdc-menu-item:has-text(\"Financial\")"
+            },
+            {
+              "click": "[role=dialog] [role=tab]:has-text(\"Funds\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Balance and total withdrawn of each fund.",
+            "target": "[role=dialog] section[aria-label=\"Security fund\"]"
+          },
+          {
+            "text": "Type an amount and press Refund balance to pay part of it back. You cannot refund more than the balance.",
+            "target": "[role=dialog] input[aria-label=\"Refund amount from Security fund\"]"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "Downloading needs the Export permission under Users; the drawer needs View salary.",
+      "The download always has the whole lifetime, whatever the list is filtered to.",
+      "A refund is recorded in the list at once."
+    ],
+    "related": [
+      "users-hr"
+    ]
+  },
+  {
+    "id": "company-structure",
+    "title": "Companies, branches, departments, teams, warehouses",
+    "feature": "Configuration",
+    "audiences": [
+      "admin",
+      "manager"
+    ],
+    "openPath": "/settings/company",
+    "brief": "Configuration > Company defines how the organisation is built: companies, then branches, departments and teams, plus the warehouses (stores) of each branch. Employees, expenses and fund requests are placed on this structure so costs can be seen per branch and department.",
+    "useCases": [
+      "A new branch or department opens.",
+      "You want to see what each branch or department spent.",
+      "A warehouse needs a manager or a different branch.",
+      "You add a second company."
+    ],
+    "shots": [
+      {
+        "id": "list",
+        "caption": "The company list",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Configuration",
+                "Company"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Each card shows branches, departments, warehouses and people.",
+            "target": ".company-card >> nth=0"
+          },
+          {
+            "text": "Add another company with its legal and contact details.",
+            "target": "button:has-text(\"Add company\")"
+          }
+        ]
+      },
+      {
+        "id": "structure",
+        "caption": "The structure tree",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Configuration",
+                "Company"
+              ]
+            },
+            {
+              "click": ".company-card >> nth=0"
+            },
+            {
+              "click": "[role=tab]:has-text(\"Structure\")"
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "The tree shows branch, department and team with the people in each.",
+            "target": "[role=tree]"
+          },
+          {
+            "text": "Add a branch here; select any unit to add under it.",
+            "target": "button:has-text(\"Add branch\")"
+          },
+          {
+            "text": "Select a unit to see its head, people and actions: add, edit, deactivate, delete.",
+            "target": "aside[aria-label=\"Selected unit\"]"
+          }
+        ]
+      },
+      {
+        "id": "costs",
+        "caption": "Costs per branch and department",
+        "capture": {
+          "as": "Brian Hughes",
+          "actions": [
+            {
+              "nav": [
+                "Configuration",
+                "Company"
+              ]
+            },
+            {
+              "click": ".company-card >> nth=0"
+            },
+            {
+              "click": "[role=tab]:has-text(\"Costs\")"
+            },
+            {
+              "select": [
+                "select[aria-label=Period]",
+                "all"
+              ]
+            }
+          ]
+        },
+        "steps": [
+          {
+            "text": "Choose the period.",
+            "target": "select[aria-label=Period]"
+          },
+          {
+            "text": "Approved expenses and fund request money, per branch with its departments under it.",
+            "target": "table"
+          }
+        ]
+      }
+    ],
+    "tips": [
+      "A unit with children, people or warehouses cannot be deleted; deactivate it instead.",
+      "Warehouses are the stores of the Store feature, placed under a branch.",
+      "Place employees in Users > Employees > Work. Charge costs on the expense and fund request forms.",
+      "Costs need the View costs permission under Company."
+    ],
+    "related": [
+      "users-hr",
+      "expense-full-entry"
     ]
   }
 ]

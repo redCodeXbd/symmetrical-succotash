@@ -200,6 +200,9 @@
 <!-- ================= Financial records ================= -->
 @if (panel() === 'financial' && profile; as p) {
     <treasury-slide-over [wide]="true" heading="Financial records" [subheading]="target()!.name + ' · lifetime pay, funds and transactions'" (closed)="close()">
+        @if (access.can('users.export')) {
+            <treasury-export-menu headerActions [build]="finDoc" [formats]="['xlsx', 'pdf']" [disabled]="ledger().length === 0"></treasury-export-menu>
+        }
         <div class="flex items-center gap-4 rounded-2xl bg-primary/10 p-4">
             <div class="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-full bg-primary text-xl font-bold text-on-primary">
                 @if (target()?.avatar) { <img [src]="target()!.avatar" alt="" class="h-full w-full object-cover" /> } @else { {{ p.firstName[0] }}{{ p.lastName[0] }} }
@@ -259,7 +262,6 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <input type="search" class="h-11 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-md" placeholder="Search transactions" aria-label="Search transactions" [ngModel]="finSearch()" (ngModelChange)="finSearch.set($event)" />
-                        <treasury-export-menu [build]="finDoc" [formats]="['xlsx', 'pdf']" [disabled]="finRows().length === 0"></treasury-export-menu>
                     </div>
                     <div class="grid grid-cols-3 gap-2 text-center" aria-label="Totals of the list">
                         <div class="fin-tile"><div class="fin-tile-label">Received</div><div class="fin-amount fin-in">{{ finTotals().received | number: '1.0-0' }}</div></div>

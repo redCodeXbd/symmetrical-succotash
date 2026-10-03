@@ -18,7 +18,7 @@ What a person sees and can do is decided only by the permissions of their roles.
 
 **Roles.** Seeded: Admin (built in, always everything), Accountant, Manager, Data entry executive, Employee, Client, Customer, Vendor. Admins create, rename and delete roles in Configuration > Roles and permissions. A role in use cannot be deleted.
 
-**Permissions.** Each feature has a group named `feature.action` (view, view all, add, edit, delete, approve, pay, export and more). Groups: Fund requests, Organization funds, Transactions, Categories, Theme, Roles, Approval tree, Clients, Vendors, Projects, Store, Users, Expenses, Notifications. The Permissions tab is a matrix of roles against permissions.
+**Permissions.** Each feature has a group named `feature.action` (view, view all, add, edit, delete, approve, pay, export and more). Groups: Fund requests, Organization funds, Transactions, Categories, Company, Theme, Roles, Approval tree, Clients, Vendors, Projects, Store, Users, Expenses, Notifications. The Permissions tab is a matrix of roles against permissions.
 
 **Approval tree.** Requests are approved in steps chosen by amount. Seeded branches:
 
@@ -33,6 +33,21 @@ A request copies its path when submitted. Only someone holding the current step'
 **Safeguards.** Someone active must always keep a role that can assign roles. You cannot delete or deactivate the user you are acting as.
 
 **Users menu.** Employees (HR details, salary, financial records, promotion and history), Admins, Vendors, Clients and Customers. Salary information needs the View salary permission.
+
+**Edit employee.** A wide drawer with a header card (photo or initials, name, designation, ID and an Active switch) and four tabs:
+
+- **Profile:** name, email and phone. A name already used on fund requests is locked.
+- **Work:** designation, employee ID, employment type, joining date, department, shift, workstation, and "Where they sit": company, branch, department and team, with the choice narrowing at each level and the result shown as one line (for example "Head Office / Sales").
+- **Salary** (needs View salary): gross and its components with a live check that they add up, funds kept from pay, and switches for tax and overtime.
+- **Access:** password, the app-login and ID-card switches, and one switch row per role.
+
+**Financial records.** Open from an employee's action menu (needs View salary). A wide drawer with the person, four summary numbers (lifetime earnings, held in funds, taken on fund requests, still to settle) and three tabs:
+
+- **Overview:** earnings (salary and bonus), fund request money taken and given back, and the latest five transactions.
+- **Transactions:** the lifetime list, newest first: salary, bonus, security and provident deposits and refunds, fund request payments, money returned and promotions. Narrow it by type or search it. Totals show received (green), returned (red) and kept in funds (blue).
+- **Funds:** security and provident balance, total withdrawn, a refund box (never above the balance) and each fund's own movements.
+
+The header has Download / Share: the whole lifetime statement as Excel or PDF, or a share link (needs the Users Export permission). The download always covers every entry, whatever the list is filtered to. Salary, bonus and fund deposits are demo records created with the employee; fund request money and returns come from the Funds feature; a refund adds a line at once.
 
 **Profile.** Opens from the sidebar card or the top-right menu: roles, what you can do, approvals waiting for you, where you approve, and editable job title, phone, about text and photo.
 
@@ -147,8 +162,46 @@ Office and project stores, a product catalogue and a ledger of every movement. S
 
 - **Categories:** one page, a section per feature (Organization funds, Fund requests, Store items, Expense categories), with chips to jump between them. A category in use cannot be deleted; renames follow through.
 - **Theme:** colours, logo, page background, sidebar colour and glass wallpaper, table design. Previewed until saved.
+- **Company:** see below.
 - **Roles and permissions:** Roles, Permissions matrix, Employees (several roles per person) and Approval tree.
 - **Menu and routes:** every item and page is guarded by a permission; a person without access goes back to the Dashboard.
+
+### Company structure
+
+Configuration > Company defines how the organisation is built. Every other feature points at this structure.
+
+```
+Company  (Encore Engineering Ltd)
+ ├─ Branch      (Head Office, Chattogram Branch, Dhaka Site)
+ │   ├─ Department  (Accounts, Procurement, Sales ...)
+ │   │   └─ Team        (Field crew, Estimation team)
+ │   └─ Warehouse   (a store of the Store feature)
+```
+
+- **Company list:** a card per company with branch, department, warehouse and people counts, search and an Active filter. Add company takes legal name, trade licence, TIN/BIN, address, phone, email, currency and the month the fiscal year starts.
+- **Company page tabs:** Overview (details and counts); Structure (an expandable tree; select a unit to see its head, address, notes and people and to add under it, edit, deactivate or delete); Warehouses (stores placed under a branch, each with a manager; add and edit here); People (employees placed in the company and where); Costs (needs the View costs permission).
+- **Warehouses are the Store's stores.** There is one list. A warehouse created here appears in Store, and the other way round once it is given a branch.
+- **Placing people.** Users > Employees > Work sets company, branch, department and team.
+- **Charging costs.** The expense form and the fund request form have a Charged to picker (branch, then department). It defaults to where the acting user sits. Older records that only carry a branch name are matched by that name. The Expenses list can be filtered by branch or department; a branch filter includes its departments.
+- **Costs tab.** For a chosen period (this month, last 30 days, this year, all time): approved expenses plus money released on fund requests less what was returned, per branch with its departments under it. A department's cost also counts in its branch. Costs charged to no branch appear in a separate row.
+- **Rules.** Codes are unique within a level; a name cannot repeat under the same parent; a unit cannot be moved under itself. A unit that has children, people or warehouses cannot be deleted; deactivate it (this also deactivates everything under it and hides it from the pickers).
+- **Permissions (group "Company"):** View, Create, Edit, Delete and View costs.
+
+## Screen conventions
+
+- **Selects:** every drop-down in the app shares one style, defined once in `src/styles/_app-theme.scss`.
+- **Switches:** on/off choices (Active, tax applicable, a role on a person, a permission on a role) use the shared switch component, `treasury-switch`, which works with `ngModel` or with `[checked]` and `(toggled)`.
+- **Drawers:** add and edit screens open in a right-hand drawer; long forms use the wide drawer.
+- **Export:** list and record screens offer Download / Share (Excel, PDF or Word depending on the screen) and an online share link.
+
+## Help
+
+The Help item at the bottom of the menu opens step-by-step guides with screenshots: 26 guides in all, covering every feature flow. Pick who you are (employee, data entry, accountant, manager, admin, client, vendor, customer; it starts as the acting user's role), filter by feature or search, then open a guide. A guide has a short summary, when you would use it, numbered screenshots with red pointers (hover or focus a step to highlight its spot; click a picture to enlarge it), tips, related guides and a Try it now link.
+
+The guides are data (`src/app/modules/admin/help/help-guides.json`) and the screenshots are captured from the running app, so they can be refreshed after the screens change:
+
+1. Start the app: `npx ng serve --port 4300`.
+2. Run `node tools/help-capture.js` (all guides) or `node tools/help-capture.js <guide-id>` (one guide). It signs in, acts as the person named in each shot, saves the pictures to `public/images/help/` and measures each pointer into `help-pins.json`. A step whose target is not found is reported and shown without a pointer.
 
 ## End-to-end workflows
 
@@ -161,6 +214,10 @@ Office and project stores, a product catalogue and a ledger of every movement. S
 **4. Vendor invoice.** Purchase order sent; the vendor submits an invoice with a photo; approval tree; approved invoices raise "due now"; the vendor may request part of it; payment lowers it.
 
 **5. Client project.** Create client and project; give the client a login; post updates and set progress; costs flow in from expenses, vendor invoices and store issues and profit is calculated as they arrive.
+
+**6. Employee statement.** Open Users > Employees > the employee > Financial records; check the summary and the Transactions tab; download the statement as Excel or PDF, or share a link, for Accounts or the employee.
+
+**7. Cost by branch.** Record expenses and fund requests with Charged to set; open Configuration > Company > the company > Costs and pick the period.
 
 ```mermaid
 flowchart LR
@@ -178,6 +235,7 @@ flowchart LR
 - "Acting as" replaces real sign-in; passwords are not stored; real role enforcement needs a server.
 - A person can approve their own request if their roles allow it.
 - Seeded amounts, names and balances are demo data; seeded expenses do not change fund balances.
+- Employee salary, bonus and fund deposits in the financial records are seeded demo records; real payroll is not built.
 - Vendor daily reports, customer features, the quotation builder and the dashboard are placeholders or not built.
 
 **Next steps (not decided)**

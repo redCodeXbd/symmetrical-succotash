@@ -76,14 +76,21 @@ export class EmployeesComponent {
         return this.ledger().filter((r) => kinds.includes(r.kind));
     }
 
-    finDoc = (): ReportDoc => ({
-        kind: 'table',
-        title: `Financial records of ${this.target()?.name ?? ''}`,
-        subtitle: `${LEDGER_FILTERS.find((f) => f.id === this.finFilter())?.label} · ${this.finRows().length} entries`,
-        columns: [{ header: 'Date' }, { header: 'Type' }, { header: 'Details' }, { header: 'Reference' }, { header: 'Recorded by' }, { header: 'Amount (BDT)', format: 'number' as const }],
-        rows: this.finRows().map((r) => [DateTime.fromISO(r.date).toFormat('dd MMM y'), r.title, r.note, r.ref, r.by, r.flow === 'out' ? -r.amount : r.amount]),
-        footer: ['', '', '', '', 'Received less returned', this.finTotals().received - this.finTotals().returned],
-    });
+    /** The whole lifetime statement of the person, whatever the list is filtered to. */
+    finDoc = (): ReportDoc => {
+        const rows = this.ledger();
+        const sum = (flow: string) => rows.filter((r) => r.flow === flow).reduce((s, r) => s + r.amount, 0);
+        const p = this.profile;
+        return {
+            kind: 'table',
+            title: `Financial statement of ${this.target()?.name ?? ''}`,
+            subtitle: `${p?.designation ?? ''} · ${p?.employeeId ?? ''} · lifetime, ${rows.length} entries · received ${sum('in').toLocaleString('en-US')}, returned ${sum('out').toLocaleString('en-US')}, kept in funds ${sum('held').toLocaleString('en-US')}`,
+            columns: [{ header: 'Date' }, { header: 'Type' }, { header: 'Details' }, { header: 'Reference' }, { header: 'Recorded by' }, { header: 'Amount (BDT)', format: 'number' as const }],
+            rows: rows.map((r) => [DateTime.fromISO(r.date).toFormat('dd MMM y'), r.title, r.note, r.ref, r.by, r.flow === 'out' ? -r.amount : r.amount]),
+            footer: ['', '', '', '', 'Received less returned', sum('in') - sum('out')],
+        };
+    };
+
 
     rows = computed(() => {
         const q = this.search().trim().toLowerCase();
