@@ -32,12 +32,6 @@ export const CATEGORY_GROUPS: CategoryGroup[] = [
         defaults: ['Operations', 'Project', 'Procurement', 'Payroll', 'Travel & Transport', 'Petty cash'],
     },
     {
-        id: 'fund-requests',
-        title: 'Fund requests',
-        description: 'What an employee asks money for. It is chosen on the Request Funds form.',
-        defaults: ['Travel & transport', 'Materials & supplies', 'Site expenses', 'Office', 'Meals & entertainment', 'Other'],
-    },
-    {
         id: 'store-items',
         title: 'Store items',
         description: 'Groups the product catalogue in Store, such as Electrical or Tools.',

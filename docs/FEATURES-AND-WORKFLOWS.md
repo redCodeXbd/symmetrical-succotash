@@ -61,7 +61,7 @@ Treasury holds the company's money (Organization Funds), the requests employees 
 
 **Organization Funds.** Cash, bank and other funds with a balance, reserved amount and minimum balance; low funds are flagged. Balance tiles, a trend chart, recent activity, category filters, Excel and PDF export. Categories are managed in Configuration > Categories.
 
-**Funds (requests).** An employee submits a request with purpose, category, amount, needed-by date, work order and an optional attachment. Company, branch, department and currency come from the user's profile.
+**Funds (requests).** An employee submits a request with just the amount, purpose, needed-by date, work order (optional) and an optional attachment. A fund request has no category, branch or department. Every payment Accounts record for it goes into the requesting employee's wallet.
 
 1. Employee submits; the request follows the approval tree for its amount.
 2. Approvers approve step by step (the last step sets the approved amount) or reject with a reason.
@@ -162,7 +162,7 @@ Office and project stores, a product catalogue and a ledger of every movement. S
 
 ## Configuration
 
-- **Categories:** one page, a section per feature (Organization funds, Fund requests, Store items, Expense categories), with chips to jump between them. A category in use cannot be deleted; renames follow through.
+- **Categories:** one page, a section per feature (Organization funds, Store items, Expense categories), with chips to jump between them. A category in use cannot be deleted; renames follow through.
 - **Theme:** colours, logo, page background, sidebar colour and glass wallpaper, table design. Previewed until saved.
 - **Company:** see below.
 - **Roles and permissions:** Roles, Permissions matrix, Employees (several roles per person) and Approval tree.
@@ -184,8 +184,8 @@ Company  (Encore Engineering Ltd)
 - **Company page tabs:** Overview (details and counts); Structure (an expandable tree; select a unit to see its head, address, notes and people and to add under it, edit, deactivate or delete); Warehouses (stores placed under a branch, each with a manager; add and edit here); People (employees placed in the company and where); Costs (needs the View costs permission).
 - **Warehouses are the Store's stores.** There is one list. A warehouse created here appears in Store, and the other way round once it is given a branch.
 - **Placing people.** Users > Employees > Work sets company, branch, department and team.
-- **Charging costs.** The expense form and the fund request form have a Charged to picker (branch, then department). It defaults to where the acting user sits. Older records that only carry a branch name are matched by that name. The Expenses list can be filtered by branch or department; a branch filter includes its departments.
-- **Costs tab.** For a chosen period (this month, last 30 days, this year, all time): approved expenses plus money released on fund requests less what was returned, per branch with its departments under it. A department's cost also counts in its branch. Costs charged to no branch appear in a separate row.
+- **Charging costs.** The expense form has a Charged to picker (branch, then department). Fund requests do not: their money goes to the employee's wallet. The picker defaults to where the acting user sits. Older records that only carry a branch name are matched by that name. The Expenses list can be filtered by branch or department; a branch filter includes its departments.
+- **Costs tab.** For a chosen period (this month, last 30 days, this year, all time): approved expenses, per branch with its departments under it. A department's cost also counts in its branch. Costs charged to no branch appear in a separate row.
 - **Rules.** Codes are unique within a level; a name cannot repeat under the same parent; a unit cannot be moved under itself. A unit that has children, people or warehouses cannot be deleted; deactivate it (this also deactivates everything under it and hides it from the pickers).
 - **Permissions (group "Company"):** View, Create, Edit, Delete and View costs.
 
@@ -220,7 +220,7 @@ The guides are data (`src/app/modules/admin/help/help-guides.json`) and the scre
 
 **6. Employee statement.** Open Users > Employees > the employee > Financial records; check the summary and the Transactions tab; download the statement as Excel or PDF, or share a link, for Accounts or the employee.
 
-**7. Cost by branch.** Record expenses and fund requests with Charged to set; open Configuration > Company > the company > Costs and pick the period.
+**7. Cost by branch.** Record expenses with Charged to set; open Configuration > Company > the company > Costs and pick the period.
 
 ```mermaid
 flowchart LR
