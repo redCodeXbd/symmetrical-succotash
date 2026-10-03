@@ -297,11 +297,23 @@ export class FuseVerticalNavigationCollapsableItemComponent
             }
 
             // Check if the child has a link and is active
-            if (
-                child.link &&
-                this._router.isActive(child.link, child.exactMatch || false)
-            ) {
-                return true;
+            // (app change) Children that differ only by their query options, such as /expenses?status=pending
+            // and /expenses?range=all, must be told apart, so the options take part in the check.
+            if (child.link) {
+                const tree = this._router.createUrlTree([child.link], {
+                    queryParams: child.queryParams ?? undefined,
+                });
+                const exact = child.exactMatch || false;
+                if (
+                    this._router.isActive(tree, {
+                        paths: exact ? 'exact' : 'subset',
+                        queryParams: exact ? 'exact' : 'subset',
+                        fragment: 'ignored',
+                        matrixParams: 'ignored',
+                    })
+                ) {
+                    return true;
+                }
             }
         }
 

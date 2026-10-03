@@ -9,7 +9,7 @@
  * Input:  src/app/modules/admin/help/help-guides.json  (each shot lists the actions to reach a screen, and each step a "target")
  * Output: public/images/help/<guide>-<shot>.jpg  and  src/app/modules/admin/help/help-pins.json
  *
- * Actions: {"as":"Name"} act as a user · {"nav":["Treasury","Funds"]} click menu items · {"click":sel} · {"fill":[sel,text]}
+ * Actions: {"as":"Name"} act as a user · {"nav":["Treasury","Funds","All requests"]} click menu items, one per level · {"goto":"/path"} open an address · {"click":sel} · {"fill":[sel,text]}
  *          {"select":[sel,value]} · {"press":[sel,key]} · {"wait":ms} · {"hover":sel}.  Selectors are Playwright selectors.
  * Re-run it after screens change so the pictures and pointers stay current.
  */
@@ -42,10 +42,18 @@ async function run(page, a) {
         await page.waitForTimeout(500);
     } else if (a.nav) {
         for (const title of [].concat(a.nav)) {
-            const item = page.locator('.fuse-vertical-navigation-item-title', { hasText: new RegExp(`^\\s*${title}\\s*$`) }).first();
+            // Only items that are showing: the menu has three levels and some titles repeat in closed groups.
+            const item = page.locator('.fuse-vertical-navigation-item-title:visible', { hasText: new RegExp(`^\\s*${title}\\s*$`) }).first();
             await item.click();
-            await page.waitForTimeout(600);
+            await page.waitForTimeout(700);
         }
+    } else if (a.goto) {
+        // Open an address inside the app without reloading it (keeps the demo data and the acting user).
+        await page.evaluate((url) => {
+            history.pushState({}, '', url);
+            dispatchEvent(new PopStateEvent('popstate'));
+        }, a.goto);
+        await page.waitForTimeout(900);
     } else if (a.click) {
         await page.locator(a.click).first().click();
         await page.waitForTimeout(400);

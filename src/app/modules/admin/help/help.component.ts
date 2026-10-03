@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -19,6 +20,18 @@ export class HelpComponent {
     /** Starts on the signed-in person's own roles; "all" shows everything. */
     audience = signal<Audience | 'all'>('all');
     feature = signal('all');
+
+    /** Menu links: ?audience=employee|admin|..., ?feature=Expenses */
+    private _deep = watchQuery((q) => {
+        const audience = q.get('audience');
+        if (audience) {
+            this.audience.set(audience as Audience | 'all');
+        }
+        const feature = q.get('feature');
+        if (feature) {
+            this.feature.set(feature);
+        }
+    }, []);
 
     constructor(
         public help: HelpService,

@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -113,6 +114,19 @@ export class StoreComponent {
     movements = computed(() => this.service.movementsOf(this.storeId()).slice(0, 200));
     /** Receipts that came from an expense or a vendor order, newest first. */
     purchases = computed(() => this.service.movements().filter((m) => m.type === 'receive' && m.source !== 'manual'));
+
+    /** Menu links: ?tab=stock|catalogue|movements|purchases, ?action=receive|issue|transfer|count|product|store */
+    private _deep = watchQuery((q) => {
+        const tab = q.get('tab');
+        if (tab && ['stock', 'catalogue', 'movements', 'purchases'].includes(tab)) {
+            this.tab.set(tab as Tab);
+        }
+        const action = q.get('action');
+        const needs: Record<string, string> = { receive: 'store.receive', issue: 'store.issue', transfer: 'store.transfer', count: 'store.adjust', product: 'store.catalog', store: 'store.catalog' };
+        if (action && needs[action] && this.access.can(needs[action])) {
+            this.open(action as Action);
+        }
+    });
 
     constructor(
         public service: StoreService,

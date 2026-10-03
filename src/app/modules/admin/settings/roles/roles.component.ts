@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { SwitchComponent } from '../../treasury/shared/switch/switch.component';
 import { DecimalPipe } from '@angular/common';
@@ -48,6 +49,14 @@ export class RolesSettingsComponent {
     deletingRule: string | null = null;
     addStepRole = '';
     testAmount = 25000;
+
+    /** Menu links: ?tab=roles|permissions|employees|approvals */
+    private _deep = watchQuery((q) => {
+        const tab = q.get('tab');
+        if (tab && ['roles', 'permissions', 'employees', 'approvals'].includes(tab)) {
+            this.tab.set(tab as Tab);
+        }
+    }, []);
 
     constructor(public access: AccessService, private _confirm: ConfirmService) {}
 

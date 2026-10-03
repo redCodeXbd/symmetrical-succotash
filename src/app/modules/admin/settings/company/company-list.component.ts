@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -81,6 +82,13 @@ export class CompanyListComponent {
                 warehouses: this.company.warehousesOf(c.id).length,
                 people: this.company.headcount(c.id),
             }));
+    });
+
+    /** Menu link: ?action=add */
+    private _deep = watchQuery((q) => {
+        if (q.get('action') === 'add' && this.access.can('company.create')) {
+            this.adding.set(true);
+        }
     });
 
     constructor(

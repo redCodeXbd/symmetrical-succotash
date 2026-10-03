@@ -7,6 +7,7 @@ Living document. A shareable copy with a diagram is kept in Claude Docs: https:/
 Encore ERP is one web app for company money, projects and stock. Expenses, Treasury, Clients, Vendors, Projects, Store and Users share the same people, roles and approval rules.
 
 - **Built on:** Angular 18 with the Fuse admin template, Angular Material and Tailwind. Colours, logo, tables and the sidebar come from the Theme settings.
+- **Menu:** a three-level side menu (see Side menu).
 - **Who uses it:** employees enter expenses and fund requests; managers and accountants approve and pay; admins set up roles, categories and the theme; clients, vendors and customers get their own limited logins.
 - **Sign in:** every user lands on the Dashboard (a coming-soon page) and then uses the side menu.
 - **Demo mode:** there is no server yet. Data is kept in the browser tab and resets on reload. Only the theme, roles, users, notification read-state, profile photos and share links are remembered in this browser.
@@ -188,6 +189,26 @@ Company  (Encore Engineering Ltd)
 - **Costs tab.** For a chosen period (this month, last 30 days, this year, all time): approved expenses, per branch with its departments under it. A department's cost also counts in its branch. Costs charged to no branch appear in a separate row.
 - **Rules.** Codes are unique within a level; a name cannot repeat under the same parent; a unit cannot be moved under itself. A unit that has children, people or warehouses cannot be deleted; deactivate it (this also deactivates everything under it and hides it from the pickers).
 - **Permissions (group "Company"):** View, Create, Edit, Delete and View costs.
+
+## Side menu
+
+The menu opens in three levels: a menu (Expenses), a page or group under it (Review), and the exact view or action (Waiting for approval). A third-level item opens its page already on the right tab, filter or form, so most jobs are two clicks after the menu.
+
+| Menu | Second level, then third level (examples) |
+| --- | --- |
+| Configuration | Company (All companies, Add company); Categories (Organization funds, Store items, Expense categories); Theme (Presets, Logo and company, Colours, Tables); Roles and permissions (Roles, Permissions, People and their roles, Approval tree) |
+| Users | Employees (All, Add); Admins; Vendor logins, Client logins, Customers (each: All, Add) |
+| Expenses | Enter (Quick entry, Add expense); Review (All, Waiting for approval, Approved not paid, Approved, Rejected); By period (This month, Last 30 days, This year, All time); Expense settings |
+| Treasury | Organization Funds (Funds overview, Add fund); Funds (Request funds, All requests, Awaiting approval, Awaiting payment, Partly paid); Transactions (Payments, Returns, Actions, Treasury movements) |
+| Clients | Directory (All, Active, Inactive); Create (Add client, Add client login) |
+| Vendors | Directory (All, Product, Service, Other); Create (Add vendor, Add vendor login) |
+| Projects | By status (All, Planning, In progress, On hold, Delivered); Create (Add project) |
+| Store | Stock (Stock levels, Movements, Purchases); Catalogue (Products, Add product, Add store); Actions (Receive, Issue, Transfer, Stock count) |
+| Help | Guides (All, Getting started, Treasury, Expenses, Store); By role (employee, data entry, accountant, manager, admin, client, vendor) |
+
+- **Permissions:** every item follows the permission of what it opens. An Add item shows only to people who may add, and a group with nothing left to show disappears.
+- **Highlight:** the item that matches the address is lit. A page without options is lit only on its bare address, so "All expenses" is not lit while a filter is on.
+- **For developers:** the menu is `defaultNavigation` in `src/app/mock-api/common/navigation/data.ts` and its permissions are in `src/app/core/access/nav-access.ts`. A page learns what a menu link wants through `watchQuery()` in `src/app/core/navigation/deep-link.ts`. Query options understood: `action=add|new|quick|settings|receive|issue|transfer|count|product|store`, `status=...`, `range=...`, `tab=...`, `type=...`, `audience=...`, `feature=...`, `section=...`. A one-shot `action` is removed from the address once used. The group-opening check of the menu (`collapsable.component.ts`) takes the query options into account, so only the group holding the lit item opens.
 
 ## Screen conventions
 

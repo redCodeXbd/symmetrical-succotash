@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, OnInit, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -30,6 +31,17 @@ export class VendorsComponent implements OnInit {
         return this.service
             .vendors()
             .filter((v) => (this.type() === 'all' || v.type === this.type()) && (!q || [v.id, v.name, v.contactPerson, v.city, v.email].some((x) => x.toLowerCase().includes(q))));
+    });
+
+    /** Menu links: ?action=add, ?type=product|service|other */
+    private _deep = watchQuery((q) => {
+        const type = q.get('type');
+        if (type === 'product' || type === 'service' || type === 'other' || type === 'all') {
+            this.type.set(type);
+        }
+        if (q.get('action') === 'add' && this.access.can('vendors.add')) {
+            this.formOpen.set(true);
+        }
     });
 
     constructor(

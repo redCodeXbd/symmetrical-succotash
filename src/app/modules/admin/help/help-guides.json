@@ -30,8 +30,8 @@
         },
         "steps": [
           {
-            "text": "The side menu is your map. Click a group such as Treasury to open it, then pick a page.",
-            "target": ".fuse-vertical-navigation-item-title:text-is(\"Treasury\")"
+            "text": "The side menu is your map. Click a menu such as Expenses to open it, then a group, then the exact view or action, for example Review, then Waiting for approval.",
+            "target": ".fuse-vertical-navigation-item-title:text-is(\"Expenses\")"
           },
           {
             "text": "The bell lists approvals waiting for you first, then what happened on your requests.",
@@ -83,6 +83,7 @@
       }
     ],
     "tips": [
+      "The menu opens in three levels: menu, page or group, then a view or action. Items you may not use are hidden.",
       "Your permissions are the sum of all your roles.",
       "Pages you cannot open send you back to the Dashboard.",
       "The Help guides are written per role; pick yours on the Help page."
@@ -139,7 +140,9 @@
           "actions": [
             {
               "nav": [
-                "Expenses"
+                "Expenses",
+                "Review",
+                "All expenses"
               ]
             },
             {
@@ -193,7 +196,8 @@
             {
               "nav": [
                 "Treasury",
-                "Funds"
+                "Funds",
+                "All requests"
               ]
             }
           ]
@@ -222,7 +226,8 @@
             {
               "nav": [
                 "Treasury",
-                "Funds"
+                "Funds",
+                "All requests"
               ]
             },
             {
@@ -285,7 +290,8 @@
             {
               "nav": [
                 "Treasury",
-                "Funds"
+                "Funds",
+                "All requests"
               ]
             },
             {
@@ -317,7 +323,8 @@
             {
               "nav": [
                 "Treasury",
-                "Funds"
+                "Funds",
+                "All requests"
               ]
             },
             {
@@ -379,7 +386,8 @@
             {
               "nav": [
                 "Treasury",
-                "Funds"
+                "Funds",
+                "All requests"
               ]
             },
             {
@@ -411,7 +419,8 @@
             {
               "nav": [
                 "Treasury",
-                "Funds"
+                "Funds",
+                "All requests"
               ]
             },
             {
@@ -465,7 +474,8 @@
             {
               "nav": [
                 "Treasury",
-                "Organization Funds"
+                "Organization Funds",
+                "Funds overview"
               ]
             }
           ]
@@ -524,7 +534,8 @@
             {
               "nav": [
                 "Treasury",
-                "Transactions"
+                "Transactions",
+                "Payments"
               ]
             }
           ]
@@ -577,7 +588,9 @@
           "actions": [
             {
               "nav": [
-                "Expenses"
+                "Expenses",
+                "Review",
+                "All expenses"
               ]
             }
           ]
@@ -613,7 +626,9 @@
           "actions": [
             {
               "nav": [
-                "Expenses"
+                "Expenses",
+                "Review",
+                "All expenses"
               ]
             },
             {
@@ -688,7 +703,9 @@
           "actions": [
             {
               "nav": [
-                "Expenses"
+                "Expenses",
+                "Review",
+                "All expenses"
               ]
             },
             {
@@ -769,7 +786,9 @@
           "actions": [
             {
               "nav": [
-                "Expenses"
+                "Expenses",
+                "Review",
+                "All expenses"
               ]
             },
             {
@@ -800,7 +819,9 @@
           "actions": [
             {
               "nav": [
-                "Expenses"
+                "Expenses",
+                "Review",
+                "All expenses"
               ]
             },
             {
@@ -858,10 +879,7 @@
           "as": "Brian Hughes",
           "actions": [
             {
-              "nav": [
-                "Configuration",
-                "Categories"
-              ]
+              "goto": "/settings/categories"
             },
             {
               "click": "nav[aria-label=\"Category sections\"] button:has-text(\"Expense categories\")"
@@ -925,7 +943,9 @@
           "actions": [
             {
               "nav": [
-                "Store"
+                "Store",
+                "Stock",
+                "Stock levels"
               ]
             },
             {
@@ -986,7 +1006,9 @@
           "actions": [
             {
               "nav": [
-                "Store"
+                "Store",
+                "Stock",
+                "Stock levels"
               ]
             }
           ]
@@ -1018,7 +1040,9 @@
           "actions": [
             {
               "nav": [
-                "Store"
+                "Store",
+                "Stock",
+                "Stock levels"
               ]
             },
             {
@@ -1076,7 +1100,9 @@
           "actions": [
             {
               "nav": [
-                "Store"
+                "Store",
+                "Stock",
+                "Stock levels"
               ]
             },
             {
@@ -1103,7 +1129,9 @@
           "actions": [
             {
               "nav": [
-                "Store"
+                "Store",
+                "Stock",
+                "Stock levels"
               ]
             },
             {
@@ -1168,7 +1196,9 @@
           "actions": [
             {
               "nav": [
-                "Vendors"
+                "Vendors",
+                "Directory",
+                "All vendors"
               ]
             }
           ]
@@ -1196,7 +1226,9 @@
           "actions": [
             {
               "nav": [
-                "Vendors"
+                "Vendors",
+                "Directory",
+                "All vendors"
               ]
             },
             {
@@ -1233,7 +1265,9 @@
           "actions": [
             {
               "nav": [
-                "Vendors"
+                "Vendors",
+                "Directory",
+                "All vendors"
               ]
             },
             {
@@ -1292,7 +1326,9 @@
           "actions": [
             {
               "nav": [
-                "Vendors"
+                "Vendors",
+                "Directory",
+                "All vendors"
               ]
             }
           ]
@@ -1316,7 +1352,9 @@
           "actions": [
             {
               "nav": [
-                "Vendors"
+                "Vendors",
+                "Directory",
+                "All vendors"
               ]
             },
             {
@@ -1350,7 +1388,9 @@
           "actions": [
             {
               "nav": [
-                "Vendors"
+                "Vendors",
+                "Directory",
+                "All vendors"
               ]
             },
             {
@@ -1403,7 +1443,9 @@
           "actions": [
             {
               "nav": [
-                "Clients"
+                "Clients",
+                "Directory",
+                "All clients"
               ]
             }
           ]
@@ -1431,7 +1473,9 @@
           "actions": [
             {
               "nav": [
-                "Clients"
+                "Clients",
+                "Directory",
+                "All clients"
               ]
             },
             {
@@ -1465,7 +1509,9 @@
           "actions": [
             {
               "nav": [
-                "Clients"
+                "Clients",
+                "Directory",
+                "All clients"
               ]
             },
             {
@@ -1520,7 +1566,9 @@
           "actions": [
             {
               "nav": [
-                "Clients"
+                "Clients",
+                "Directory",
+                "All clients"
               ]
             },
             {
@@ -1547,7 +1595,9 @@
           "actions": [
             {
               "nav": [
-                "Clients"
+                "Clients",
+                "Directory",
+                "All clients"
               ]
             },
             {
@@ -1607,7 +1657,9 @@
           "actions": [
             {
               "nav": [
-                "Projects"
+                "Projects",
+                "By status",
+                "All projects"
               ]
             }
           ]
@@ -1635,7 +1687,9 @@
           "actions": [
             {
               "nav": [
-                "Projects"
+                "Projects",
+                "By status",
+                "All projects"
               ]
             },
             {
@@ -1695,7 +1749,8 @@
             {
               "nav": [
                 "Configuration",
-                "Roles and permissions"
+                "Roles and permissions",
+                "Roles"
               ]
             }
           ]
@@ -1720,7 +1775,8 @@
             {
               "nav": [
                 "Configuration",
-                "Roles and permissions"
+                "Roles and permissions",
+                "Roles"
               ]
             },
             {
@@ -1748,7 +1804,8 @@
             {
               "nav": [
                 "Configuration",
-                "Roles and permissions"
+                "Roles and permissions",
+                "Roles"
               ]
             },
             {
@@ -1801,7 +1858,8 @@
             {
               "nav": [
                 "Configuration",
-                "Roles and permissions"
+                "Roles and permissions",
+                "Roles"
               ]
             },
             {
@@ -1859,7 +1917,8 @@
             {
               "nav": [
                 "Users",
-                "Employees"
+                "Employees",
+                "All employees"
               ]
             }
           ]
@@ -1888,7 +1947,8 @@
             {
               "nav": [
                 "Users",
-                "Employees"
+                "Employees",
+                "All employees"
               ]
             },
             {
@@ -1965,7 +2025,8 @@
             {
               "nav": [
                 "Configuration",
-                "Theme"
+                "Theme",
+                "Presets"
               ]
             }
           ]
@@ -2017,7 +2078,8 @@
             {
               "nav": [
                 "Users",
-                "Customers"
+                "Customers",
+                "All customers"
               ]
             }
           ]
@@ -2067,7 +2129,8 @@
             {
               "nav": [
                 "Users",
-                "Employees"
+                "Employees",
+                "All employees"
               ]
             },
             {
@@ -2102,7 +2165,8 @@
             {
               "nav": [
                 "Users",
-                "Employees"
+                "Employees",
+                "All employees"
               ]
             },
             {
@@ -2140,7 +2204,8 @@
             {
               "nav": [
                 "Users",
-                "Employees"
+                "Employees",
+                "All employees"
               ]
             },
             {
@@ -2201,7 +2266,8 @@
             {
               "nav": [
                 "Configuration",
-                "Company"
+                "Company",
+                "All companies"
               ]
             }
           ]
@@ -2226,7 +2292,8 @@
             {
               "nav": [
                 "Configuration",
-                "Company"
+                "Company",
+                "All companies"
               ]
             },
             {
@@ -2261,7 +2328,8 @@
             {
               "nav": [
                 "Configuration",
-                "Company"
+                "Company",
+                "All companies"
               ]
             },
             {

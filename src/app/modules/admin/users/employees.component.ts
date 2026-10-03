@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
@@ -105,6 +106,13 @@ export class EmployeesComponent {
                     (!q || [r.user.name, r.user.email, r.user.phone ?? '', r.profile.designation, r.profile.employeeId].some((v) => v.toLowerCase().includes(q)))
             )
             .sort((a, b) => b.profile.joiningDate.localeCompare(a.profile.joiningDate));
+    });
+
+    /** Menu link: ?action=add */
+    private _deep = watchQuery((q) => {
+        if (q.get('action') === 'add' && this.access.can('users.add')) {
+            this.openAdd();
+        }
     });
 
     constructor(

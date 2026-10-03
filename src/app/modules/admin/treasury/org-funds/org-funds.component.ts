@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { AccessService } from 'app/core/access/access.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
@@ -187,6 +188,13 @@ export class OrgFundsComponent {
             categories: days.map((d) => d.toFormat('dd MMM')),
             colors: [this._theme.theme().primary, this._theme.theme().accent, '#0ea5e9', '#8b5cf6'],
         };
+    });
+
+    /** Menu link: ?action=add */
+    private _deep = watchQuery((q) => {
+        if (q.get('action') === 'add' && this.access.can('org-funds.add')) {
+            this.addOpen.set(true);
+        }
     });
 
     constructor(

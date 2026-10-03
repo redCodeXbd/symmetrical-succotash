@@ -1,3 +1,4 @@
+import { watchQuery, scrollToId } from 'app/core/navigation/deep-link';
 import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { AccessService } from 'app/core/access/access.service';
 import { Component, OnDestroy, ViewEncapsulation } from '@angular/core';
@@ -40,6 +41,14 @@ export class ThemeSettingsComponent implements OnDestroy {
     ];
     logoError: string | null = null;
     savedMessage = false;
+
+    /** Menu link: ?section=presets|company|colors|tables|preview */
+    private _deep = watchQuery((q) => {
+        const section = q.get('section');
+        if (section) {
+            scrollToId(`${section}-title`);
+        }
+    }, []);
 
     constructor(
         public theme: ThemeService,

@@ -1,3 +1,4 @@
+import { watchQuery } from 'app/core/navigation/deep-link';
 import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -64,6 +65,33 @@ export class ExpensesComponent {
     // Settings
     settingsMessage: { text: string; ok: boolean } | null = null;
     limitDraft: number | null = null;
+
+    /** Menu links: ?status=pending|unpaid|approved|rejected, ?range=this_month|last_30|this_year|all, ?action=add|quick|settings */
+    private _deep = watchQuery((q) => {
+        const status = q.get('status');
+        if (status && ['all', 'pending', 'approved', 'rejected', 'unpaid'].includes(status)) {
+            this.statusFilter.set(status as 'all' | 'pending' | 'approved' | 'rejected' | 'unpaid');
+            if (!q.get('range')) {
+                this.range.set('all');
+            }
+        }
+        const range = q.get('range');
+        if (range && this.ranges.some((r) => r.id === range)) {
+            this.range.set(range as Range);
+        }
+        const action = q.get('action');
+        if (action === 'add' && this.access.can('expenses.add')) {
+            this.openForm();
+        } else if (action === 'quick' && this.access.can('expenses.add')) {
+            setTimeout(() => {
+                const form = document.querySelector<HTMLElement>('form.exp-quick');
+                form?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                form?.querySelector<HTMLElement>('select, input')?.focus();
+            }, 250);
+        } else if (action === 'settings' && this.access.can('expenses.manage_categories')) {
+            this.settingsOpen.set(true);
+        }
+    });
 
     constructor(
         public service: ExpensesService,
