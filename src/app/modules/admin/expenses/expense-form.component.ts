@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DecimalPipe } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -39,7 +40,8 @@ export class ExpenseFormComponent implements OnInit {
         public projects: ProjectsService,
         public vendors: VendorsService,
         private _store: StoreService,
-        private _company: CompanyService
+        private _company: CompanyService,
+        private _confirm: ConfirmService
     ) {}
 
     get kind() {
@@ -153,7 +155,10 @@ export class ExpenseFormComponent implements OnInit {
         }
     }
 
-    save(): void {
+    async save(): Promise<void> {
+        if (this.expense && !(await this._confirm.update(`expense ${this.expense.id}`, { details: [['Amount', `BDT ${Number(this.model.amount).toLocaleString('en-US')}`]] }))) {
+            return;
+        }
         const input: ExpenseInput = { ...this.model };
         const result = this.expense ? this.service.update(this.expense.id, input) : this.service.add(input);
         const error = typeof result === 'string' ? result : null;

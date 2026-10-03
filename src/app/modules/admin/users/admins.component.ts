@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -23,7 +24,8 @@ export class AdminsComponent {
 
     constructor(
         public access: AccessService,
-        private users: UsersService
+        private users: UsersService,
+        private _confirm: ConfirmService
     ) {}
 
     otherRoles(u: AppUser): string[] {
@@ -40,13 +42,36 @@ export class AdminsComponent {
         this.pickId = '';
     }
 
-    remove(u: AppUser): void {
+    async remove(u: AppUser): Promise<void> {
+        const ok = await this._confirm.ask({
+            title: `Remove ${u.name} as an admin?`,
+            message: 'They keep their account but lose the Admin role. They fall back to a basic role if they have no other.',
+            tone: 'warning',
+            icon: 'heroicons_outline:shield-exclamation',
+            confirmLabel: 'Yes, remove admin',
+            details: [['Person', u.name], ['Email', u.email]],
+        });
+        if (!ok) {
+            return;
+        }
         const roleIds = u.roleIds.filter((r) => r !== 'admin');
         // A person always keeps at least a basic role.
         this._report(this.access.setUserRoles(u.id, roleIds.length ? roleIds : ['employee']), `${u.name} is no longer an admin.`);
     }
 
-    toggleActive(u: AppUser): void {
+    async toggleActive(u: AppUser): Promise<void> {
+        const turningOff = u.active !== false;
+        const ok = await this._confirm.ask({
+            title: `${turningOff ? 'Switch off' : 'Switch on'} ${u.name}?`,
+            message: turningOff ? 'They can no longer sign in until switched on again.' : 'They can sign in again.',
+            tone: turningOff ? 'warning' : 'success',
+            icon: turningOff ? 'heroicons_outline:pause-circle' : 'heroicons_outline:play-circle',
+            confirmLabel: turningOff ? 'Yes, switch off' : 'Yes, switch on',
+            details: [['Person', u.name]],
+        });
+        if (!ok) {
+            return;
+        }
         const error = this.access.updateUser(u.id, { active: u.active === false });
         this._report(error, u.active === false ? `${u.name} is active again.` : `${u.name} is now inactive.`);
     }

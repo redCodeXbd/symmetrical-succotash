@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Component, computed, signal, ViewChild, ViewEncapsulation } from '@angular/core';
@@ -68,7 +69,8 @@ export class ExpensesComponent {
         public service: ExpensesService,
         public access: AccessService,
         public projects: ProjectsService,
-        public company: CompanyService
+        public company: CompanyService,
+        private _confirm: ConfirmService
     ) {
         this.limitDraft = this.service.autoApproveLimit();
     }
@@ -191,7 +193,18 @@ export class ExpensesComponent {
     // @ Settings
     // -----------------------------------------------------------------------------------------------------
 
-    saveLimit(): void {
+    async saveLimit(): Promise<void> {
+        const ok = await this._confirm.ask({
+            title: 'Change the no-approval limit?',
+            message: 'Expenses up to this amount are approved as soon as they are saved. Larger ones go to the approval tree.',
+            tone: 'warning',
+            icon: 'heroicons_outline:adjustments-horizontal',
+            confirmLabel: 'Yes, change limit',
+            details: [['New limit', `BDT ${Number(this.limitDraft ?? 0).toLocaleString('en-US')}`]],
+        });
+        if (!ok) {
+            return;
+        }
         const error = this.service.setAutoApproveLimit(Number(this.limitDraft ?? 0));
         this.settingsMessage = error ? { text: error, ok: false } : { text: 'Limit saved.', ok: true };
     }

@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -109,7 +110,8 @@ export class EmployeesComponent {
     constructor(
         public users: UsersService,
         public access: AccessService,
-        public company: CompanyService
+        public company: CompanyService,
+        private _confirm: ConfirmService
     ) {}
 
     /** Choices for the company > branch > department > team pickers; a change clears the levels below it. */
@@ -219,14 +221,70 @@ export class EmployeesComponent {
         this._open('promote');
     }
 
+    /** The career of the person as a timeline: each promotion with only what changed, and the joining at the end. */
+    career(p: EmployeeProfile) {
+        const canSalary = this.access.can('users.view_salary');
+        const sorted = [...p.promotions].sort((a, b) => b.date.localeCompare(a.date));
+        const steps = sorted.map((h) => {
+            const changes: { label: string; from: string; to: string }[] = [];
+            if (h.from.designation !== h.to.designation) {
+                changes.push({ label: 'Designation', from: h.from.designation || 'New hire', to: h.to.designation });
+            }
+            if (h.from.employmentType !== h.to.employmentType) {
+                changes.push({ label: 'Employment', from: h.from.employmentType, to: h.to.employmentType });
+            }
+            if (h.from.department !== h.to.department) {
+                changes.push({ label: 'Department', from: h.from.department, to: h.to.department });
+            }
+            const raise = h.to.gross - h.from.gross;
+            return { h, changes, raise: canSalary ? raise : 0, pct: canSalary && h.from.gross > 0 ? (raise / h.from.gross) * 100 : 0, ago: DateTime.fromISO(h.date).toRelative() ?? '' };
+        });
+        const first = sorted[sorted.length - 1];
+        const startGross = first ? first.from.gross : p.salary.gross;
+        const tenure = DateTime.now().diff(DateTime.fromISO(p.joiningDate), ['years', 'months']).toObject();
+        const years = Math.floor(tenure.years ?? 0);
+        const months = Math.floor(tenure.months ?? 0);
+        return {
+            steps,
+            joined: { date: p.joiningDate, designation: first ? first.from.designation || p.designation : p.designation, type: first ? first.from.employmentType : p.employmentType, department: first ? first.from.department : p.department, gross: startGross },
+            tenure: [years ? `${years} yr` : '', months || !years ? `${months} mo` : ''].filter(Boolean).join(' '),
+            sinceLast: sorted[0] ? (DateTime.fromISO(sorted[0].date).toRelative({ style: 'short' }) ?? '') : '',
+            growth: canSalary && startGross > 0 ? ((p.salary.gross - startGross) / startGross) * 100 : 0,
+            startGross,
+        };
+    }
+
+    historyDoc = (): ReportDoc => {
+        const p = this.profile;
+        const canSalary = this.access.can('users.view_salary');
+        return {
+            kind: 'table',
+            title: `Promotion history of ${this.target()?.name ?? ''}`,
+            subtitle: `${p?.designation ?? ''} · ${p?.employeeId ?? ''} · ${p?.promotions.length ?? 0} promotions`,
+            columns: [{ header: 'Date' }, { header: 'From' }, { header: 'To' }, { header: 'Department' }, { header: 'Employment' }, { header: 'Approved by' }, ...(canSalary ? [{ header: 'Gross before', format: 'number' as const }, { header: 'Gross after', format: 'number' as const }] : [])],
+            rows: (p?.promotions ?? []).map((h) => [
+                DateTime.fromISO(h.date).toFormat('dd MMM y'), h.from.designation || 'New hire', h.to.designation, `${h.from.department} to ${h.to.department}`,
+                `${h.from.employmentType} to ${h.to.employmentType}`, h.by, ...(canSalary ? [h.from.gross, h.to.gross] : []),
+            ]),
+        };
+    };
+
     openHistory(user: AppUser): void {
         this.target.set(user);
         this._open('history');
     }
 
-    openDelete(user: AppUser): void {
-        this.target.set(user);
-        this._open('delete');
+    async openDelete(user: AppUser): Promise<void> {
+        const p = this.users.profile(user.id);
+        const ok = await this._confirm.delete(`${user.name}`, {
+            message: 'This removes the employee and their login. Their past fund requests stay in the records.',
+            details: [['Employee', user.name], ['Designation', p.designation || '-'], ['ID', p.employeeId || '-']],
+        });
+        if (!ok) {
+            return;
+        }
+        const error = this.users.remove(user.id);
+        this.message.set(error ? { text: error, ok: false } : { text: `${user.name} deleted.`, ok: true });
     }
 
     close(): void {
@@ -241,31 +299,53 @@ export class EmployeesComponent {
     // @ Actions
     // -----------------------------------------------------------------------------------------------------
 
-    save(): void {
+    async save(): Promise<void> {
         const t = this.target();
+        if (t && !(await this._confirm.update(t.name, { message: 'The details, work placement, pay and access you changed will replace the current ones.', details: [['Employee', t.name], ['Designation', this.form.designation]] }))) {
+            return;
+        }
         const result = t ? this.users.update(t.id, this.form) : this.users.add(this.form);
         const error = typeof result === 'string' ? result : null;
         this._finish(error, t ? 'Employee updated.' : 'Employee added. Give more roles in the General info tab if needed.');
     }
 
-    promote(): void {
+    async promote(): Promise<void> {
         const t = this.target();
         if (t) {
+            const before = this.users.profile(t.id);
+            const ok = await this._confirm.ask({
+                title: `Promote ${t.name}?`,
+                message: 'The new role and pay start now, and the change is added to their promotion history.',
+                tone: 'primary',
+                icon: 'heroicons_outline:arrow-trending-up',
+                confirmLabel: 'Yes, promote',
+                details: [['From', before.designation], ['To', this.form.designation], ['Gross pay', `${before.salary.gross.toLocaleString('en-US')} to ${Number(this.form.salary.gross).toLocaleString('en-US')}`]],
+            });
+            if (!ok) {
+                return;
+            }
             this._finish(this.users.promote(t.id, this.form), 'Employee promoted. See Promotion history.');
         }
     }
 
-    remove(): void {
-        const t = this.target();
-        if (t) {
-            this._finish(this.users.remove(t.id), `${t.name} deleted.`);
-        }
-    }
-
-    refund(fund: 'security' | 'provident'): void {
+    async refund(fund: 'security' | 'provident'): Promise<void> {
         const t = this.target();
         if (!t) {
             return;
+        }
+        const amount = Number(this.refundAmount[fund] ?? 0);
+        if (amount > 0) {
+            const ok = await this._confirm.ask({
+                title: `Refund from the ${fund} fund?`,
+                message: 'The amount is paid back to the employee and taken off the fund balance.',
+                tone: 'warning',
+                icon: 'heroicons_outline:banknotes',
+                confirmLabel: 'Yes, refund',
+                details: [['Employee', t.name], ['Fund', fund === 'security' ? 'Security fund' : 'Provident fund'], ['Amount', `BDT ${amount.toLocaleString('en-US')}`]],
+            });
+            if (!ok) {
+                return;
+            }
         }
         const error = this.users.refund(t.id, fund, Number(this.refundAmount[fund] ?? 0));
         this.error = error;

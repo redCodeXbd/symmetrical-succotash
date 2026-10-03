@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -86,7 +87,8 @@ export class RequestDetailComponent {
         private _fb: FormBuilder,
         public funds: FundsService,
         public org: OrgFundsService,
-        public access: AccessService
+        public access: AccessService,
+        private _confirm: ConfirmService
     ) {}
 
     get payments(): FundTransaction[] {
@@ -268,7 +270,15 @@ export class RequestDetailComponent {
         this.mode = 'view';
     }
 
-    closeRequest(): void {
+    private _facts(extra: [string, string][] = []): [string, string][] {
+        return [['Request', this.request.id], ['Employee', this.request.employee], ...extra];
+    }
+
+    async closeRequest(): Promise<void> {
+        const ok = await this._confirm.ask({ title: 'Close this request?', message: 'The unpaid part of the approved amount is released and no more payments can be made.', tone: 'warning', icon: 'heroicons_outline:lock-closed', confirmLabel: 'Yes, close request', details: this._facts([['Paid so far', `BDT ${this.request.paidAmount.toLocaleString('en-US')}`]]) });
+        if (!ok) {
+            return;
+        }
         this._finish(this.funds.closeRequest(this.request.id, this.closeForm.value.note ?? ''));
     }
 
@@ -288,48 +298,72 @@ export class RequestDetailComponent {
         );
     }
 
-    confirmReturn(): void {
+    async confirmReturn(): Promise<void> {
         if (this.confirmReturnForm.invalid || !this.activeReturnId) {
             this.confirmReturnForm.markAllAsTouched();
+            return;
+        }
+        const ok = await this._confirm.ask({ title: 'Confirm the money received?', message: 'It is added to the chosen fund and the employee\'s balance is reduced.', tone: 'success', icon: 'heroicons_outline:check-circle', confirmLabel: 'Yes, confirm received', details: this._facts() });
+        if (!ok) {
             return;
         }
         this._finish(this.funds.confirmReturn(this.activeReturnId, this.confirmReturnForm.value.fundId));
     }
 
-    rejectReturn(): void {
+    async rejectReturn(): Promise<void> {
         if (this.rejectReturnForm.invalid || !this.activeReturnId) {
             this.rejectReturnForm.markAllAsTouched();
+            return;
+        }
+        const ok = await this._confirm.ask({ title: 'Reject this return?', message: 'The employee is told the money was not accepted.', tone: 'danger', icon: 'heroicons_outline:x-circle', confirmLabel: 'Yes, reject return', details: [...this._facts(), ['Reason', this.rejectReturnForm.value.reason || '-']] });
+        if (!ok) {
             return;
         }
         this._finish(this.funds.rejectReturn(this.activeReturnId, this.rejectReturnForm.value.reason));
     }
 
-    cancelRequest(): void {
+    async cancelRequest(): Promise<void> {
+        const ok = await this._confirm.ask({ title: 'Cancel this request?', message: 'The request is withdrawn and will not be approved or paid.', tone: 'danger', icon: 'heroicons_outline:x-circle', confirmLabel: 'Yes, cancel request', cancelLabel: 'Keep it', details: this._facts([['Amount', `BDT ${this.request.amount.toLocaleString('en-US')}`]]) });
+        if (!ok) {
+            return;
+        }
         this.funds.cancel(this.request.id);
     }
 
-    approve(): void {
+    async approve(): Promise<void> {
         if (this.approveForm.invalid) {
             this.approveForm.markAllAsTouched();
+            return;
+        }
+        const ok = await this._confirm.ask({ title: 'Approve this request?', message: 'Your approval is recorded with your name. The last step sets the approved amount.', tone: 'success', icon: 'heroicons_outline:check-circle', confirmLabel: 'Yes, approve', details: this._facts([['Amount', `BDT ${Number(this.approveForm.value.amount).toLocaleString('en-US')}`]]) });
+        if (!ok) {
             return;
         }
         this._finish(this.funds.approve(this.request.id, Number(this.approveForm.value.amount)));
     }
 
-    reject(): void {
+    async reject(): Promise<void> {
         if (this.rejectForm.invalid) {
             this.rejectForm.markAllAsTouched();
+            return;
+        }
+        const ok = await this._confirm.ask({ title: 'Reject this request?', message: 'It stops here and the employee is told why.', tone: 'danger', icon: 'heroicons_outline:x-circle', confirmLabel: 'Yes, reject', details: [...this._facts(), ['Reason', this.rejectForm.value.reason || '-']] });
+        if (!ok) {
             return;
         }
         this._finish(this.funds.reject(this.request.id, this.rejectForm.value.reason));
     }
 
-    pay(): void {
+    async pay(): Promise<void> {
         if (this.payForm.invalid) {
             this.payForm.markAllAsTouched();
             return;
         }
         const v = this.payForm.getRawValue();
+        const ok = await this._confirm.ask({ title: 'Record this payment?', message: 'The money is taken from the chosen fund and added to the amount paid.', tone: 'warning', icon: 'heroicons_outline:banknotes', confirmLabel: 'Yes, record payment', details: this._facts([['Amount', `BDT ${Number(v.amount).toLocaleString('en-US')}`], ['Method', v.method]]) });
+        if (!ok) {
+            return;
+        }
         this._finish(
             this.funds.recordPayment(
                 this.request.id,

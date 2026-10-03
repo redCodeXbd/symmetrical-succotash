@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -50,7 +51,6 @@ export class VendorDetailComponent {
     tab = signal<Tab>('overview');
     message = signal<{ text: string; ok: boolean } | null>(null);
     editing = signal(false);
-    confirmDelete = signal(false);
     preview = signal<VendorInvoice | null>(null);
 
     vendor = computed<Vendor | null>(() => this.service.vendor(this._id()));
@@ -75,7 +75,8 @@ export class VendorDetailComponent {
         public access: AccessService,
         public projects: ProjectsService,
         route: ActivatedRoute,
-        private _router: Router
+        private _router: Router,
+        private _confirm: ConfirmService
     ) {
         route.paramMap.subscribe((p) => this._id.set(p.get('id') ?? ''));
     }
@@ -136,9 +137,12 @@ export class VendorDetailComponent {
         this._report(null, 'Vendor saved.');
     }
 
-    deleteVendor(): void {
+    async deleteVendor(): Promise<void> {
+        const v = this.vendor();
+        if (!(await this._confirm.delete('this vendor', { message: 'The vendor and its products are removed. Orders and invoices already made are kept in the records.', details: v ? [['Vendor', v.name]] : [] }))) {
+            return;
+        }
         const error = this.service.deleteVendor(this.id);
-        this.confirmDelete.set(false);
         error ? this._report(error, null) : this._router.navigate(['/vendors']);
     }
 
@@ -155,7 +159,10 @@ export class VendorDetailComponent {
         }
     }
 
-    deleteProduct(id: string): void {
+    async deleteProduct(id: string): Promise<void> {
+        if (!(await this._confirm.delete('this product', { message: 'It is removed from this vendor\'s price list.' }))) {
+            return;
+        }
         this._report(this.service.deleteProduct(id), 'Product removed.');
     }
 

@@ -80,16 +80,12 @@
                                             <td class="whitespace-nowrap text-right">
                                                 @if (r.locked) {
                                                     <span class="text-secondary text-sm">Always full access</span>
-                                                } @else if (deletingRole === r.id) {
-                                                    <span class="mr-3 text-sm">Delete "{{ r.name }}"?</span>
-                                                    <button type="button" class="mr-4 font-medium text-red-600 hover:underline" (click)="removeRole(r)">Delete</button>
-                                                    <button type="button" class="text-secondary hover:underline" (click)="deletingRole = null">Cancel</button>
                                                 } @else {
-                                                    @if (access.can('roles.edit')) {
+@if (access.can('roles.edit')) {
                                                         <button type="button" class="mr-4 font-medium text-primary hover:underline" (click)="startEdit(r)">Edit</button>
                                                     }
                                                     @if (access.can('roles.delete')) {
-                                                        <button type="button" class="font-medium text-red-600 hover:underline" (click)="deletingRole = r.id; message.set(null)">Delete</button>
+                                                        <button type="button" class="font-medium text-red-600 hover:underline" (click)="removeRole(r)">Delete</button>
                                                     }
                                                 }
                                             </td>
@@ -209,16 +205,11 @@
                                         <span class="text-secondary text-sm">BDT</span>
                                         <span class="flex-auto"></span>
                                         @if (access.can('approvals.edit')) {
-                                            @if (deletingRule === rule.id) {
-                                                <span class="text-sm">Delete this branch?</span>
-                                                <button type="button" class="font-medium text-red-600 hover:underline" (click)="removeRule(rule)">Delete</button>
-                                                <button type="button" class="text-secondary hover:underline" (click)="deletingRule = null">Cancel</button>
-                                            } @else {
-                                                <button type="button" class="font-medium text-primary hover:underline" (click)="startRule(rule)">Edit</button>
+                                            <button type="button" class="font-medium text-primary hover:underline" (click)="startRule(rule)">Edit</button>
                                                 @if (rule.minAmount !== 0) {
-                                                    <button type="button" class="font-medium text-red-600 hover:underline" (click)="deletingRule = rule.id; message.set(null)">Delete</button>
+                                                    <button type="button" class="font-medium text-red-600 hover:underline" (click)="removeRule(rule)">Delete</button>
                                                 }
-                                            }
+                                            
                                         }
                                     </div>
                                     <ol class="mt-4 flex flex-wrap items-center gap-2">

@@ -24,13 +24,7 @@
                         <button mat-stroked-button type="button" (click)="editing.set(true)">Edit project</button>
                     }
                     @if (access.can('projects.delete')) {
-                        @if (confirmDelete()) {
-                            <span class="text-sm">Delete this project?</span>
-                            <button mat-flat-button color="warn" type="button" (click)="deleteProject()">Delete</button>
-                            <button mat-stroked-button type="button" (click)="confirmDelete.set(false)">Cancel</button>
-                        } @else {
-                            <button mat-stroked-button color="warn" type="button" (click)="confirmDelete.set(true)">Delete</button>
-                        }
+                        <button mat-stroked-button color="warn" type="button" (click)="deleteProject()">Delete</button>
                     }
                 </div>
             </div>

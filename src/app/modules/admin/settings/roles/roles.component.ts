@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { SwitchComponent } from '../../treasury/shared/switch/switch.component';
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
@@ -48,7 +49,7 @@ export class RolesSettingsComponent {
     addStepRole = '';
     testAmount = 25000;
 
-    constructor(public access: AccessService) {}
+    constructor(public access: AccessService, private _confirm: ConfirmService) {}
 
     readonly sortedRules = computed(() => [...this.access.rules()].sort((a, b) => a.minAmount - b.minAmount));
     readonly testPath = computed(() => this.access.ruleFor(Number(this.testAmount) || 0).steps);
@@ -94,7 +95,10 @@ export class RolesSettingsComponent {
         }
     }
 
-    removeRole(role: Role): void {
+    async removeRole(role: Role): Promise<void> {
+        if (!(await this._confirm.delete(`the role "${role.name}"`, { message: 'People who hold only this role will lose what it allowed.', details: [['Role', role.name], ['People', String(this.peopleCount(role))], ['Permissions', String(this.permissionCount(role))]] }))) {
+            return;
+        }
         const error = this.access.deleteRole(role.id);
         this._report(error, `Role "${role.name}" deleted.`);
         this.deletingRole = null;
@@ -220,7 +224,10 @@ export class RolesSettingsComponent {
         }
     }
 
-    removeRule(rule: ApprovalRule): void {
+    async removeRule(rule: ApprovalRule): Promise<void> {
+        if (!(await this._confirm.delete('this approval branch', { message: 'Amounts in its range will follow the branch below it instead.', details: [['Covers', this.rangeText(rule) + ' BDT']] }))) {
+            return;
+        }
         this._report(this.access.deleteRule(rule.id), 'Branch deleted.');
         this.deletingRule = null;
     }

@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -51,7 +52,7 @@ export class CompanyFormComponent implements OnInit {
     form: CompanyInput = { code: '', name: '', legalName: '', tradeLicense: '', taxId: '', address: '', phone: '', email: '', currency: 'BDT', fiscalStartMonth: 7, active: true };
     error: string | null = null;
 
-    constructor(private _company: CompanyService) {}
+    constructor(private _company: CompanyService, private _confirm: ConfirmService) {}
 
     ngOnInit(): void {
         if (this.company) {
@@ -60,7 +61,10 @@ export class CompanyFormComponent implements OnInit {
         }
     }
 
-    save(): void {
+    async save(): Promise<void> {
+        if (this.company && !(await this._confirm.update(`the company "${this.company.name}"`))) {
+            return;
+        }
         const result = this.company ? this._company.updateCompany(this.company.id, this.form) : this._company.addCompany(this.form);
         if (typeof result === 'string') {
             this.error = result;

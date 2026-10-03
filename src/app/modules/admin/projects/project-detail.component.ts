@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -33,7 +34,6 @@ export class ProjectDetailComponent {
     tab = signal<Tab>('overview');
     message = signal<{ text: string; ok: boolean } | null>(null);
     editing = signal(false);
-    confirmDelete = signal(false);
     sourceFilter = signal<'all' | CostSource>('all');
     updateText = '';
     advance: number | null = null;
@@ -51,7 +51,8 @@ export class ProjectDetailComponent {
         private _clients: ClientsService,
         private _vendors: VendorsService,
         route: ActivatedRoute,
-        private _router: Router
+        private _router: Router,
+        private _confirm: ConfirmService
     ) {
         route.paramMap.subscribe((p) => this._id.set(p.get('id') ?? ''));
     }
@@ -97,9 +98,12 @@ export class ProjectDetailComponent {
         this._report(null, 'Project saved.');
     }
 
-    deleteProject(): void {
+    async deleteProject(): Promise<void> {
+        const p = this.project();
+        if (!(await this._confirm.delete('this project', { message: 'The project and its updates are removed.', details: p ? [['Project', p.name]] : [] }))) {
+            return;
+        }
         const error = this.service.delete(this._id());
-        this.confirmDelete.set(false);
         error ? this._report(error, null) : this._router.navigate(['/projects']);
     }
 

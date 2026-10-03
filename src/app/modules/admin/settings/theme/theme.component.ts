@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { AccessService } from 'app/core/access/access.service';
 import { Component, OnDestroy, ViewEncapsulation } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -42,7 +43,8 @@ export class ThemeSettingsComponent implements OnDestroy {
 
     constructor(
         public theme: ThemeService,
-        public access: AccessService
+        public access: AccessService,
+        private _confirm: ConfirmService
     ) {}
 
     get t(): AppTheme {
@@ -74,17 +76,26 @@ export class ThemeSettingsComponent implements OnDestroy {
         this.set(this.theme.deriveTable(this.t));
     }
 
-    save(): void {
+    async save(): Promise<void> {
+        if (!(await this._confirm.ask({ title: 'Save the theme for everyone?', message: 'Colours, logo, sidebar and table design change for every user.', tone: 'primary', icon: 'heroicons_outline:swatch', confirmLabel: 'Yes, save theme' }))) {
+            return;
+        }
         this.theme.save();
         this.savedMessage = true;
     }
 
-    discard(): void {
+    async discard(): Promise<void> {
+        if (!(await this._confirm.ask({ title: 'Discard your changes?', message: 'The theme goes back to the last saved one.', tone: 'warning', icon: 'heroicons_outline:arrow-uturn-left', confirmLabel: 'Yes, discard', cancelLabel: 'Keep editing' }))) {
+            return;
+        }
         this.savedMessage = false;
         this.theme.revert();
     }
 
-    restoreDefaults(): void {
+    async restoreDefaults(): Promise<void> {
+        if (!(await this._confirm.ask({ title: 'Restore the Encore defaults?', message: 'Your colours and logo are replaced by the defaults. You can still discard or save afterwards.', tone: 'warning', icon: 'heroicons_outline:arrow-path', confirmLabel: 'Yes, restore' }))) {
+            return;
+        }
         this.savedMessage = false;
         this.theme.restoreDefaults();
     }

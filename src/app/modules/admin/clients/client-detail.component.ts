@@ -1,3 +1,4 @@
+import { ConfirmService } from 'app/core/confirm/confirm.service';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -55,7 +56,6 @@ export class ClientDetailComponent {
     tab = signal<Tab>('overview');
     message = signal<{ text: string; ok: boolean } | null>(null);
     editing = signal(false);
-    confirmDelete = signal(false);
 
     client = computed<Client | null>(() => this.service.client(this._id()));
     projects = computed(() => this.service.projectsOf(this._id()));
@@ -92,7 +92,8 @@ export class ClientDetailComponent {
         public access: AccessService,
         private _shares: ShareService,
         route: ActivatedRoute,
-        private _router: Router
+        private _router: Router,
+        private _confirm: ConfirmService
     ) {
         route.paramMap.subscribe((p) => this._id.set(p.get('id') ?? ''));
     }
@@ -139,9 +140,12 @@ export class ClientDetailComponent {
         this._report(null, 'Client saved.');
     }
 
-    deleteClient(): void {
+    async deleteClient(): Promise<void> {
+        const c = this.client();
+        if (!(await this._confirm.delete('this client', { message: 'The client, its documents and portal access are removed.', details: c ? [['Client', c.name]] : [] }))) {
+            return;
+        }
         const error = this.service.deleteClient(this._id());
-        this.confirmDelete.set(false);
         if (error) {
             this._report(error, null);
         } else {
@@ -176,7 +180,10 @@ export class ClientDetailComponent {
         }
     }
 
-    deleteDocument(d: ClientDocument): void {
+    async deleteDocument(d: ClientDocument): Promise<void> {
+        if (!(await this._confirm.delete('this document', { details: [['Document', d.title]] }))) {
+            return;
+        }
         this._report(this.service.deleteDocument(d.id), 'Document deleted.');
     }
 
