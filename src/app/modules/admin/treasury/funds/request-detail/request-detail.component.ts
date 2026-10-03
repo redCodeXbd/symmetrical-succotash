@@ -182,7 +182,6 @@ export class RequestDetailComponent {
                 {
                     rows: [
                         ['Requested by', r.employee],
-                        ['Category', r.category],
                         ['Company', r.company],
                         ['Requested amount', money(r.amount)],
                         ['Approved amount', r.approvedAmount === null ? 'Not approved yet' : money(r.approvedAmount)],

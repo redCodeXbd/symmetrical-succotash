@@ -50,7 +50,7 @@ export class CategoriesSettingsComponent implements AfterViewInit {
         private _route: ActivatedRoute,
         private _confirm: ConfirmService
     ) {
-        const [orgGroup, requestGroup, storeGroup, expenseGroup] = CATEGORY_GROUPS;
+        const [orgGroup, storeGroup, expenseGroup] = CATEGORY_GROUPS;
         this.sections = [
             {
                 group: orgGroup,
@@ -58,13 +58,6 @@ export class CategoriesSettingsComponent implements AfterViewInit {
                 nounPlural: 'funds',
                 usage: (name) => org.funds().filter((f) => f.category === name).length,
                 rename: (from, to) => org.renameCategory(from, to),
-            },
-            {
-                group: requestGroup,
-                noun: 'request',
-                nounPlural: 'requests',
-                usage: (name) => funds.requests().filter((r) => r.category === name).length,
-                rename: (from, to) => funds.renameRequestCategory(from, to),
             },
             {
                 group: storeGroup,

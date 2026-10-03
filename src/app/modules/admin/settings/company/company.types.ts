@@ -37,17 +37,13 @@ export type UnitInput = Omit<OrgUnit, 'id'>;
 export interface CostRow {
     unit: OrgUnit;
     depth: number;
-    expenses: number;
-    funds: number;
     total: number;
 }
 
 export interface CostReport {
     rows: CostRow[];
-    /** Costs charged to no branch or department at all. */
-    unplaced: { expenses: number; funds: number; total: number };
-    expenses: number;
-    funds: number;
+    /** Approved expenses charged to no branch or department at all. */
+    unplaced: number;
     total: number;
 }
 

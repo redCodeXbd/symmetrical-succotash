@@ -236,10 +236,6 @@
             "target": "[role=dialog] mat-form-field:has-text(\"Amount\")"
           },
           {
-            "text": "Choose the category. The list is kept in Configuration > Categories.",
-            "target": "[role=dialog] mat-form-field:has-text(\"Category\")"
-          },
-          {
             "text": "Say what the money is for, so approvers can decide quickly.",
             "target": "[role=dialog] mat-form-field:has-text(\"Purpose\")"
           },
@@ -255,7 +251,7 @@
       }
     ],
     "tips": [
-      "Company, branch, department and currency come from your profile; you do not type them.",
+      "A request has no category, branch or department. When Accounts pay it, the money goes to your wallet.",
       "You can edit or cancel a request while it is still pending."
     ],
     "related": [
@@ -2188,7 +2184,7 @@
       "manager"
     ],
     "openPath": "/settings/company",
-    "brief": "Configuration > Company defines how the organisation is built: companies, then branches, departments and teams, plus the warehouses (stores) of each branch. Employees, expenses and fund requests are placed on this structure so costs can be seen per branch and department.",
+    "brief": "Configuration > Company defines how the organisation is built: companies, then branches, departments and teams, plus the warehouses (stores) of each branch. Employees and expenses are placed on this structure so costs can be seen per branch and department.",
     "useCases": [
       "A new branch or department opens.",
       "You want to see what each branch or department spent.",
@@ -2288,7 +2284,7 @@
             "target": "select[aria-label=Period]"
           },
           {
-            "text": "Approved expenses and fund request money, per branch with its departments under it.",
+            "text": "Approved expenses, per branch with its departments under it.",
             "target": "table"
           }
         ]
@@ -2297,7 +2293,7 @@
     "tips": [
       "A unit with children, people or warehouses cannot be deleted; deactivate it instead.",
       "Warehouses are the stores of the Store feature, placed under a branch.",
-      "Place employees in Users > Employees > Work. Charge costs on the expense and fund request forms.",
+      "Place employees in Users > Employees > Work. Charge expenses on the expense and fund request forms.",
       "Costs need the View costs permission under Company."
     ],
     "related": [

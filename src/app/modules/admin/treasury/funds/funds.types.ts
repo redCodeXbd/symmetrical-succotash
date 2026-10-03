@@ -41,8 +41,8 @@ export interface FundRequest {
     branchId?: string | null;
     departmentId?: string | null;
     purpose: string;
-    /** What the money is for. The list is managed in Configuration > Categories. */
-    category: string;
+    /** Only on older requests; new requests have no category. */
+    category?: string;
     amount: number;
     currency: string;
     neededBy: string;
@@ -124,16 +124,10 @@ export interface SourceFund {
 
 export interface FundRequestInput {
     purpose: string;
-    category: string;
     amount: number;
     neededBy: string;
     workOrder: string | null;
     attachment: string | null;
-    /** Where the cost is charged; left out, the request keeps the default branch and department. */
-    branchId?: string | null;
-    departmentId?: string | null;
-    branch?: string;
-    department?: string;
 }
 
 export interface PaymentInput {

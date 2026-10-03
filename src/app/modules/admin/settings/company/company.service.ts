@@ -3,7 +3,6 @@ import { AccessService } from 'app/core/access/access.service';
 import { StoreService } from '../../store/store.service';
 import { UsersService } from '../../users/users.service';
 import { ExpensesService } from '../../expenses/expenses.service';
-import { FundsService } from '../../treasury/funds/funds.service';
 import { ChargedTo } from './charged-to.component';
 import { CHILD_KIND, Company, CostReport, CostRow, CompanyInput, OrgUnit, UnitInput, UnitKind } from './company.types';
 
@@ -24,8 +23,7 @@ export class CompanyService {
         private _access: AccessService,
         private _users: UsersService,
         private _store: StoreService,
-        private _expenses: ExpensesService,
-        private _funds: FundsService
+        private _expenses: ExpensesService
     ) {}
 
     company(id: string): Company | null {
@@ -115,53 +113,30 @@ export class CompanyService {
      * counts in its branch's total.
      */
     costs(companyId: string, from: string | null): CostReport {
-        const direct = new Map<string, { expenses: number; funds: number }>();
-        const unplaced = { expenses: 0, funds: 0, total: 0 };
-        const add = (ids: (string | null)[], kind: 'expenses' | 'funds', amount: number) => {
+        const direct = new Map<string, number>();
+        let unplaced = 0;
+        for (const e of this._expenses.expenses()) {
+            if (e.status !== 'approved' || (from && e.date < from)) {
+                continue;
+            }
+            const ids = this.unitIdsOf(e);
             const target = this.unit(ids[1] ?? ids[0]);
             if (!target) {
-                unplaced[kind] += amount;
-                return;
-            }
-            if (target.companyId === companyId) {
-                const cur = direct.get(target.id) ?? { expenses: 0, funds: 0 };
-                cur[kind] += amount;
-                direct.set(target.id, cur);
-            }
-        };
-        for (const e of this._expenses.expenses()) {
-            if (e.status === 'approved' && (!from || e.date >= from)) {
-                add(this.unitIdsOf(e), 'expenses', e.amount);
+                unplaced += e.amount;
+            } else if (target.companyId === companyId) {
+                direct.set(target.id, (direct.get(target.id) ?? 0) + e.amount);
             }
         }
-        for (const r of this._funds.requests()) {
-            const net = r.paidAmount - r.returnedAmount;
-            if (net > 0 && (!from || r.submittedAt.slice(0, 10) >= from)) {
-                add(this.unitIdsOf(r), 'funds', net);
-            }
-        }
-        unplaced.total = unplaced.expenses + unplaced.funds;
-
-        const rolled = (id: string): { expenses: number; funds: number } => {
-            const own = direct.get(id) ?? { expenses: 0, funds: 0 };
-            return this.children(id).reduce((s, c) => {
-                const r = rolled(c.id);
-                return { expenses: s.expenses + r.expenses, funds: s.funds + r.funds };
-            }, { ...own });
-        };
+        const rolled = (id: string): number => this.children(id).reduce((sum, c) => sum + rolled(c.id), direct.get(id) ?? 0);
         const rows: CostRow[] = [];
         const walk = (parentId: string | null, depth: number) => {
             for (const unit of this.unitsOf(companyId, undefined, parentId).filter((u) => u.kind !== 'team')) {
-                const r = rolled(unit.id);
-                rows.push({ unit, depth, expenses: r.expenses, funds: r.funds, total: r.expenses + r.funds });
+                rows.push({ unit, depth, total: rolled(unit.id) });
                 walk(unit.id, depth + 1);
             }
         };
         walk(null, 0);
-        const top = rows.filter((r) => r.depth === 0);
-        const expenses = top.reduce((s, r) => s + r.expenses, 0);
-        const funds = top.reduce((s, r) => s + r.funds, 0);
-        return { rows, unplaced, expenses, funds, total: expenses + funds };
+        return { rows, unplaced, total: rows.filter((r) => r.depth === 0).reduce((sum, r) => sum + r.total, 0) };
     }
 
     // -----------------------------------------------------------------------------------------------------
